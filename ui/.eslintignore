@@ -1,0 +1,14 @@
+# don't ever lint node_modules
+node_modules
+# don't lint build output
+dist
+out
+# don't lint nyc coverage output
+coverage
+.vscode-test
+.vscode
+images
+test-resources
+.eslintrc.js
+webpack.config.js
+header.js

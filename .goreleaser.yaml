@@ -1,0 +1,58 @@
+before:
+  hooks:
+    - go mod download
+    - go mod tidy
+builds:
+  - id: backend
+    main: cmd/backend/main.go
+    binary: backend
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    asmflags:
+      - all=-trimpath={{.Env.GOPATH}}
+    flags:
+      - -mod=vendor
+    ldflags:
+      - -s -w -X main.build={{.Version}}
+    goarch:
+      - amd64
+      - arm64
+  - id: pipelines-finder
+    main: cmd/pipelines-finder/main.go
+    binary: pipelines-finder
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    asmflags:
+      - all=-trimpath={{.Env.GOPATH}}
+    flags:
+      - -mod=vendor
+    ldflags:
+      - -s -w -X main.build={{.Version}}
+    goarch:
+      - amd64
+      - arm64
+archives:
+  - files:
+      - LICENSE
+checksum:
+  name_template: "checksums.txt"
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+release:
+  draft: false
+  prerelease: "true"
+  name_template: "Release {{ .Tag }}"

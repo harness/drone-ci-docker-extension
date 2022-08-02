@@ -1,0 +1,13 @@
+kind: pipeline
+type: docker
+name: default
+platform:
+  os: linux
+  arch: arm64
+steps: 
+  - name: display enviornment variables
+    image: busybox
+    pull: if-not-exists
+    commands:
+    - printenv | grep 'DRONE_DESKTOP'
+

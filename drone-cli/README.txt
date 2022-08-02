@@ -1,0 +1,1 @@
+Customized Drone cli is packaged until the PR for Drone Desktop is merged to the https://github.com/harness/drone-cli

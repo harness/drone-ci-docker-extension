@@ -1,0 +1,67 @@
+{
+  "icon": "logo_dark.svg",
+  "vm": {
+    "composefile": "docker-compose.yaml",
+    "exposes": {
+      "socket": "extension-drone-desktop.sock"
+    }
+  },
+  "ui": {
+    "dashboard-tab": {
+      "title": "Drone Desktop",
+      "src": "index.html",
+      "root": "ui",
+      "backend": {
+        "socket": "extension-drone-desktop.sock"
+      }
+    }
+  },
+  "host": {
+    "binaries": [
+      {
+        "darwin": [
+          {
+            "path": "/tools/darwin/drone"
+          },
+          {
+            "path": "/tools/darwin/yq"
+          },
+          {
+            "path": "/tools/darwin/pipelines-finder"
+          },
+          {
+            "path": "/tools/run-drone"
+          }
+        ],
+        "linux": [
+          {
+            "path": "/tools/linux/drone"
+          },
+          {
+            "path": "/tools/linux/yq"
+          },
+          {
+            "path": "/tools/linux/pipelines-finder"
+          },
+          {
+            "path": "/tools/run-drone"
+          }
+        ],
+        "windows": [
+          {
+            "path": "/tools/windows/drone.exe"
+          },
+          {
+            "path": "/tools/windows/yq.exe"
+          },
+          {
+            "path": "/tools/windows/pipelines-finder.exe"
+          },
+          {
+            "path": "/tools/run-drone"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+kind: pipeline
+type: docker
+name: default
+platform:
+  os: linux
+  arch: arm64
+steps: 
+  - name: display secret variables
+    image: ubuntu
+    pull: if-not-exists
+    commands:
+    - echo "Secrets will be masked"
+    - printenv | grep 'SECRET'
+    - "if [ $SECRET_FOO = 'foo' ]; then echo 'Secret loaded correctly'; else echo 'Secret not loaded'; fi;"
+    environment:
+       SECRET_FOO:
+          from_secret: DRONE_DESKTOP_SECRET_FOO
+       SECRET_BAR:
+          from_secret: DRONE_DESKTOP_SECRET_BAR

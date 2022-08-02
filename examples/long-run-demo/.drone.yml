@@ -1,0 +1,22 @@
+kind: pipeline
+type: docker
+name: sleep-demos
+platform:
+  os: linux
+  arch: arm64
+steps: 
+  - name: sleep5
+    image: busybox
+    pull: if-not-exists
+    commands:
+    - x=0;while [ $x -lt 5 ]; do echo "hello"; sleep 1; x=$((x+1)); done
+  - name: an error step
+    image: busybox
+    pull: if-not-exists
+    commands:
+    - yq --help
+  # - name: sleep-5m
+  #   image: busybox
+  # pull: if-not-exists
+  #   commands:
+  #   - sleep 5m
