@@ -233,7 +233,7 @@ export const PipelinesTable = (props) => {
       <Paper sx={{ width: '100%', mb: 2 }}>
         <PipelineTableToolbar
           handleRemove={removeSelectedPipelines}
-          numSelected={selected.length}
+          numSelected={selected?.length}
         />
         <TableContainer>
           <Table
@@ -242,8 +242,8 @@ export const PipelinesTable = (props) => {
             size={dense ? 'small' : 'medium'}
           >
             <PipelinesTableHead
-              numSelected={selected.length}
-              rowCount={pipelines.length}
+              numSelected={selected?.length}
+              rowCount={pipelines?.length}
               onSelectAllClick={handleSelectAll}
             />
             {pipelinesStatus === 'loaded' && (
