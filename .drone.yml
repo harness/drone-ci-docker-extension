@@ -1,0 +1,28 @@
+kind: pipeline
+type: docker
+name: default
+
+steps:
+  - name : create tag
+    image: ghcr.io/caarlos0/svu
+    commands:
+      - suv next > /tmp/tag
+      - git tag "$(cat /tmp/tag/new.tag)
+    volumes:
+      - name: tags-and-digests
+        volumes: /tmp/tag
+    when:
+      event: 
+        - push
+
+  - name: echo tag
+    image: busybox
+    commands:
+      - echo "$(cat /tmp/tag/new.tag)"
+    volumes:
+      - name: tags-and-digests
+        volumes: /tmp/tag
+
+volumes:
+- name: tags-and-digests
+  temp: {}
