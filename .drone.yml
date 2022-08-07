@@ -23,6 +23,12 @@ steps:
       - name: tags-and-digests
         volumes: /tmp/tag
 
+trigger:
+  branch:
+  - main
+  ref:
+  - refs/tags/v*
+  
 volumes:
 - name: tags-and-digests
   temp: {}
