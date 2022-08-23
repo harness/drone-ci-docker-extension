@@ -52,7 +52,10 @@ export const PipelinesTable = (props) => {
       dispatch(importPipelines());
     }
     const loadEventTS = async () => {
-      const out = await getDockerDesktopClient().extension.vm.cli.exec('sh', ['-c', '"cat /data/currts"']);
+      const out = await getDockerDesktopClient().extension.vm.cli.exec('sh', [
+        '-c',
+        '"[ -f /data/currts ] && cat /data/currts"'
+      ]);
       if (out.stdout) {
         setEventTS(out.stdout);
       }
