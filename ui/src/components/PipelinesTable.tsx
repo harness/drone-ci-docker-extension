@@ -22,7 +22,7 @@ import {
   savePipelines
 } from '../features/pipelinesSlice';
 import { useAppDispatch } from '../app/hooks';
-import { getDockerDesktopClient, md5, pipelineFQN as getPipelineFQN } from '../utils';
+import { extractStepInfo, getDockerDesktopClient, md5, pipelineFQN as getPipelineFQN } from '../utils';
 import { Event, EventStatus, Step } from '../features/types';
 import { PipelineTableToolbar } from './Toolbar';
 import { PipelinesTableHead } from './PipelinesTableHead';
@@ -77,6 +77,10 @@ export const PipelinesTable = (props) => {
       'event=die',
       '--filter',
       'event=destroy',
+      '--filter',
+      'type=image',
+      '--filter',
+      'event=pull',
       '--format',
       '{{json .}}'
     ];
@@ -94,24 +98,19 @@ export const PipelinesTable = (props) => {
             return;
           }
 
-          //console.log('Actor %s', JSON.stringify(event.Actor));
-          const stepContainerId = event.Actor['ID'];
+          //console.log('Event %s', JSON.stringify(event));
+          const eventActorID = event.Actor['ID'];
           const pipelineDir = event.Actor.Attributes['io.drone.desktop.pipeline.dir'];
-          const pipelineID = md5(pipelineDir);
-          const pipelineName = event.Actor.Attributes['io.drone.stage.name'];
-          const pipelineFQN = getPipelineFQN(pipelineDir, pipelineName);
-          const stepName = event.Actor.Attributes['io.drone.step.name'];
-          const stepImage = event.Actor.Attributes['image'];
           switch (event.status) {
+            case EventStatus.PULL: {
+              //TODO update the status with image pull
+              console.log('Pulling Image %s', eventActorID);
+              break;
+            }
             case EventStatus.START: {
-              if (pipelineFQN && stepName) {
-                const stepInfo: Step = {
-                  stepContainerId,
-                  pipelineFQN,
-                  stepName,
-                  stepImage,
-                  status: 'start'
-                };
+              const pipelineID = md5(pipelineDir);
+              const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, 'start');
+              if (stepInfo.pipelineFQN && stepInfo.stepName) {
                 dispatch(
                   addStep({
                     pipelineID,
@@ -125,16 +124,16 @@ export const PipelinesTable = (props) => {
             case EventStatus.STOP:
             case EventStatus.DIE:
             case EventStatus.KILL: {
+              const pipelineID = md5(pipelineDir);
+              const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, 'dummy');
               //console.log('STOP/DIE/KILL %s', JSON.stringify(event));
               const exitCode = parseInt(event.Actor.Attributes['exitCode']);
-              if (pipelineFQN && stepName) {
-                const stepInfo: Step = {
-                  stepContainerId,
-                  pipelineFQN,
-                  stepName,
-                  stepImage,
-                  status: exitCode === 0 ? 'done' : 'error'
-                };
+              if (stepInfo.pipelineFQN && stepInfo.stepName) {
+                if (exitCode === 0) {
+                  stepInfo.status = 'done';
+                } else {
+                  stepInfo.status = 'error';
+                }
                 dispatch(
                   updateStep({
                     pipelineID,
