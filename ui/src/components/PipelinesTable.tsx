@@ -22,7 +22,7 @@ import {
   savePipelines
 } from '../features/pipelinesSlice';
 import { useAppDispatch } from '../app/hooks';
-import { extractStepInfo, getDockerDesktopClient, md5, pipelineFQN as getPipelineFQN } from '../utils';
+import { extractStepInfo, getDockerDesktopClient, md5 } from '../utils';
 import { Event, EventStatus, Step } from '../features/types';
 import { PipelineTableToolbar } from './Toolbar';
 import { PipelinesTableHead } from './PipelinesTableHead';
@@ -248,9 +248,13 @@ export const PipelinesTable = (props) => {
               rowCount={pipelines?.length}
               onSelectAllClick={handleSelectAll}
             />
+
             {pipelinesStatus === 'loaded' && (
               <TableBody>
-                {pipelines.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
+                {(pipelines.length > rowsPerPage
+                  ? pipelines.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  : pipelines
+                ).map((row) => {
                   //console.log('Row Key:' + row.id + ' ' + row.pipelineFile);
                   return (
                     <Row
