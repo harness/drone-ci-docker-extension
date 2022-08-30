@@ -34,8 +34,8 @@ steps:
   - name: fetch
     image: alpine/git
     commands:
-    - git fetch --tags
-  
+      - git fetch --tags
+
   - name: goreleaser
     image: goreleaser/goreleaser
     environment:
@@ -61,8 +61,8 @@ steps:
   - name: fetch
     image: alpine/git
     commands:
-    - git fetch --tags
-  
+      - git fetch --tags
+
   - name: goreleaser
     image: goreleaser/goreleaser
     pull: if-not-exists
@@ -87,7 +87,7 @@ steps:
       - name: frontend-build-dir
         path: /ui
 
-  - name: publish
+  - name: Publish GA
     image: plugins/docker:20.13
     pull: if-not-exists
     settings:
@@ -95,7 +95,6 @@ steps:
       dry_run: true
       auto_tag_suffix: linux-arm64
       dockerfile: docker/Dockerfile.linux.arm64
-      build_args_from_env: "DRONE_TAG"
       registry:
         from_secret: image_registry
       repo:
@@ -107,9 +106,36 @@ steps:
     volumes:
       - name: frontend-build-dir
         path: /drone/src/ui/build
+    when:
+      event:
+        - tag
+
+  - name: Publish Dev
+    image: plugins/docker:20.13
+    pull: if-not-exists
+    settings:
+      dry_run: true
+      auto_tag_suffix: linux-arm64
+      dockerfile: docker/Dockerfile.linux.arm64
+      registry:
+        from_secret: image_registry
+      repo:
+        from_secret: destination_image
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+    volumes:
+      - name: frontend-build-dir
+        path: /drone/src/ui/build
+    when:
+      branch:
+        - main
+      event:
+        - push
 volumes:
-   - name: frontend-build-dir
-     temp: {}
+  - name: frontend-build-dir
+    temp: {}
 ---
 kind: pipeline
 type: docker
@@ -128,8 +154,8 @@ steps:
   - name: fetch
     image: alpine/git
     commands:
-    - git fetch --tags
-  
+      - git fetch --tags
+
   - name: goreleaser
     image: goreleaser/goreleaser
     pull: if-not-exists
@@ -154,7 +180,7 @@ steps:
       - name: frontend-build-dir
         path: /ui
 
-  - name: publish
+  - name: Publish GA
     image: plugins/docker:20.13
     pull: if-not-exists
     settings:
@@ -162,7 +188,6 @@ steps:
       dry_run: true
       auto_tag_suffix: linux-amd64
       dockerfile: docker/Dockerfile.linux.amd64
-      build_args_from_env: "DRONE_TAG"
       registry:
         from_secret: image_registry
       repo:
@@ -174,9 +199,36 @@ steps:
     volumes:
       - name: frontend-build-dir
         path: /drone/src/ui/build
+    when:
+      event:
+        - tag
+  - name: Publish Dev
+    image: plugins/docker:20.13
+    pull: if-not-exists
+    settings:
+      auto_tag: true
+      dry_run: true
+      auto_tag_suffix: linux-amd64
+      dockerfile: docker/Dockerfile.linux.amd64
+      registry:
+        from_secret: image_registry
+      repo:
+        from_secret: destination_image
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+    volumes:
+      - name: frontend-build-dir
+        path: /drone/src/ui/build
+    when:
+      event:
+        - push
+      branch:
+        - main
 volumes:
-   - name: frontend-build-dir
-     temp: {}
+  - name: frontend-build-dir
+    temp: {}
 ---
 kind: pipeline
 type: docker
@@ -188,16 +240,16 @@ depends_on:
 
 trigger:
   event:
-  - tag
+    - tag
 
 steps:
-- name: publish
-  image: plugins/manifest:1.2
-  settings:
-    auto_tag: true
-    ignore_missing: true
-    spec: docker/manifest.tmpl
-    username:
-      from_secret: docker_username
-    password:
-      from_secret: docker_password
+  - name: publish
+    image: plugins/manifest:1.2
+    settings:
+      auto_tag: true
+      ignore_missing: true
+      spec: docker/manifest.tmpl
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password

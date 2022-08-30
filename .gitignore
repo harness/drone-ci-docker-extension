@@ -5,3 +5,4 @@ data
 .envrc
 .secret
 .drone.local
+.cache

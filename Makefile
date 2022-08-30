@@ -18,7 +18,7 @@ bin-all:	## Build binaries for all targetted architectures
 	goreleaser build --snapshot --rm-dist
 
 build-extension: ## Build service image to be deployed as a desktop extension
-	docker build --tag=$(IMAGE):$(TAG) .
+	drone exec --trusted --secret-file=secret .drone.local.yml
 
 install-extension: build-extension ## Install the extension
 	docker extension install $(IMAGE):$(TAG)
