@@ -1,5 +1,5 @@
 {
-  "icon": "logo_dark.svg",
+  "icon": "logo.svg",
   "vm": {
     "composefile": "docker-compose.yaml",
     "exposes": {

@@ -1,25 +1,13 @@
 ---
 kind: pipeline
 type: docker
-name: "Release Docker Image(arm64)"
-
-# trigger:
-#   branch:
-#     - main
-#   event:
-#     - push
+name: default
 
 platform:
   os: linux
   arch: arm64
 
 steps:
-  # need to fetch the tags to be available in next steps
-  # - name: fetch
-  #   image: alpine/git
-  #   commands:
-  #   - git fetch --tags
-  
   - name: goreleaser
     image: goreleaser/goreleaser
     pull: if-not-exists
@@ -29,10 +17,11 @@ steps:
         from_secret: github_token
     commands:
       - goreleaser release --snapshot --rm-dist --debug
-
+  
   - name: ui-build
     image: node:17.7-alpine3.14
     commands:
+      - npm set cache /usr/src/app/.npm
       - cd /ui
       - apk add --update rsync
       - cp $DRONE_WORKSPACE/ui/package.json ./package.json
@@ -44,16 +33,14 @@ steps:
       - name: frontend-build-dir
         path: /ui
 
-  - name: publish
+  - name: Publish GA
     image: plugins/docker:20.13
     pull: if-not-exists
     settings:
-      auto_tag: true
       dry_run: true
-      auto_tag_suffix: linux-amd64
       dockerfile: docker/Dockerfile.linux.arm64
-      build_args: 
-        - "DRONE_TAG=v0.0.0"
+      auto_tag: true
+      auto_tag_suffix: linux-arm64
       registry:
         from_secret: image_registry
       repo:
@@ -65,31 +52,32 @@ steps:
     volumes:
       - name: frontend-build-dir
         path: /drone/src/ui/build
+    when:
+      event:
+        - tag
+  - name: Publish Dev Build
+    image: plugins/docker:20.13
+    pull: if-not-exists
+    settings:
+      auto_tag: true
+      dry_run: true
+      dockerfile: docker/Dockerfile.linux.arm64
+      registry:
+        from_secret: image_registry
+      repo:
+        from_secret: destination_image
+      username:
+        from_secret: image_registry_username
+      password:
+        from_secret: image_registry_password
+    volumes:
+      - name: frontend-build-dir
+        path: /drone/src/ui/build
+    # when:
+    #   branch:
+    #    - main
+    #   event:
+    #     - push
 volumes:
    - name: frontend-build-dir
      temp: {}
----
-kind: pipeline
-type: docker
-name: "Publish Manifest"
-
-depends_on:
-  - "Release Docker Image(arm64)"
-
-# trigger:
-#   branch:
-#     - main
-#   event:
-#     - push
-
-steps:
-- name: publish
-  image: plugins/manifest:1.2
-  settings:
-    auto_tag: true
-    ignore_missing: true
-    spec: docker/manifest.tmpl
-    username:
-      from_secret: image_registry_username
-    password:
-      from_secret: image_registry_password

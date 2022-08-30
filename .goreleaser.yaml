@@ -1,7 +1,3 @@
-before:
-  hooks:
-    - go mod download
-    - go mod tidy
 builds:
   - id: backend
     main: cmd/backend/main.go
