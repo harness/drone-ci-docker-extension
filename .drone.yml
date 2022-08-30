@@ -25,10 +25,6 @@ kind: pipeline
 type: docker
 name: "Release Binaries"
 
-trigger:
-  event:
-    - tag
-
 steps:
   # need to fetch the tags to be available in next steps
   - name: fetch
@@ -43,14 +39,14 @@ steps:
         from_secret: github_token
     commands:
       - goreleaser release
+    when:
+      event:
+        - tag
+
 ---
 kind: pipeline
 type: docker
 name: "Release Docker Image(arm64)"
-
-trigger:
-  event:
-    - tag
 
 platform:
   os: linux
@@ -63,7 +59,7 @@ steps:
     commands:
       - git fetch --tags
 
-  - name: goreleaser
+  - name: Release Dev Binaries
     image: goreleaser/goreleaser
     pull: if-not-exists
     environment:
@@ -72,6 +68,24 @@ steps:
         from_secret: github_token
     commands:
       - goreleaser release --snapshot --rm-dist --debug
+    when:
+      event:
+        - push
+      branch:
+        - main
+
+  - name: Release GA Binaries
+    image: goreleaser/goreleaser
+    pull: if-not-exists
+    environment:
+      CGO_ENABLED: "0"
+      GITHUB_TOKEN:
+        from_secret: github_token
+    commands:
+      - goreleaser release --rm-dist
+    when:
+      event:
+        - tag
 
   - name: ui-build
     image: node:17.7-alpine3.14
@@ -156,7 +170,7 @@ steps:
     commands:
       - git fetch --tags
 
-  - name: goreleaser
+  - name: Release Dev Binaries
     image: goreleaser/goreleaser
     pull: if-not-exists
     environment:
@@ -165,6 +179,24 @@ steps:
         from_secret: github_token
     commands:
       - goreleaser release --snapshot --rm-dist --debug
+    when:
+      event:
+        - push
+      branch:
+        - main
+
+  - name: Release GA Binaries
+    image: goreleaser/goreleaser
+    pull: if-not-exists
+    environment:
+      CGO_ENABLED: "0"
+      GITHUB_TOKEN:
+        from_secret: github_token
+    commands:
+      - goreleaser release --rm-dist
+    when:
+      event:
+        - tag
 
   - name: ui-build
     image: node:17.7-alpine3.14
