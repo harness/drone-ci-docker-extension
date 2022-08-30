@@ -2,7 +2,7 @@
 
 A [Docker Desktop Extension](https://docs.docker.com/desktop/extensions/) to run and manage [drone pipelines](https://docs.drone.io/pipeline/overview/).
 
-> WARNING: This extension is under active development and expect to undergo lots of change and refactoring
+> **WARNING**: This extension is under active development and expect to undergo lots of change and refactoring
 
 ## Pre-requisites
 
@@ -63,31 +63,22 @@ You can remove one or more Drone pipelines, removing does not physically delete 
 ## Install Extension
 
 ```shell
-docker volume create drone-desktop-data
-docker extension install kameshsampath/drone-desktop-extension:v1.1.2
+docker extension install harness/drone-desktop-extension:0.0.1-beta
 ```
 
 ## Remove Extension
 
 ```shell
-make uninstall-extension
-```
-
-__(OR)__
-
-```shell
-docker extension rm kameshsampath/drone-desktop-extension
-```
-
-Delete the volume,
-
-```shell
-docker volume rm drone-desktop-data
+docker extension rm harness/drone-desktop-extension
 ```
 
 ## Issues
 
-We welcome your feedback and improvements. Please open an [issue](https://github.com/kameshsampath/drone-desktop-docker-extension/issues) for any bugs, feature requests
+We welcome your feedback and improvements. Please open an [issue](https://github.com/kameshsampath/drone-desktop-docker-extension/issues) for any bugs, feature requests.
+
+## Questions
+
+For any questions please use [discussions](https://github.com/kameshsampath/drone-desktop-docker-extension/discussions) for questions/discussions.
 
 ## Disclaimer
 

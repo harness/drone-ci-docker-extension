@@ -22,7 +22,7 @@ import {
   savePipelines
 } from '../features/pipelinesSlice';
 import { useAppDispatch } from '../app/hooks';
-import { getDockerDesktopClient, md5, pipelineFQN as getPipelineFQN } from '../utils';
+import { extractStepInfo, getDockerDesktopClient, md5 } from '../utils';
 import { Event, EventStatus, Step } from '../features/types';
 import { PipelineTableToolbar } from './Toolbar';
 import { PipelinesTableHead } from './PipelinesTableHead';
@@ -52,7 +52,10 @@ export const PipelinesTable = (props) => {
       dispatch(importPipelines());
     }
     const loadEventTS = async () => {
-      const out = await getDockerDesktopClient().extension.vm.cli.exec('sh', ['-c', '"cat /data/currts"']);
+      const out = await getDockerDesktopClient().extension.vm.cli.exec('sh', [
+        '-c',
+        '"[ -f /data/currts ] && cat /data/currts"'
+      ]);
       if (out.stdout) {
         setEventTS(out.stdout);
       }
@@ -74,6 +77,10 @@ export const PipelinesTable = (props) => {
       'event=die',
       '--filter',
       'event=destroy',
+      '--filter',
+      'type=image',
+      '--filter',
+      'event=pull',
       '--format',
       '{{json .}}'
     ];
@@ -91,24 +98,19 @@ export const PipelinesTable = (props) => {
             return;
           }
 
-          //console.log('Actor %s', JSON.stringify(event.Actor));
-          const stepContainerId = event.Actor['ID'];
+          //console.log('Event %s', JSON.stringify(event));
+          const eventActorID = event.Actor['ID'];
           const pipelineDir = event.Actor.Attributes['io.drone.desktop.pipeline.dir'];
-          const pipelineID = md5(pipelineDir);
-          const pipelineName = event.Actor.Attributes['io.drone.stage.name'];
-          const pipelineFQN = getPipelineFQN(pipelineDir, pipelineName);
-          const stepName = event.Actor.Attributes['io.drone.step.name'];
-          const stepImage = event.Actor.Attributes['image'];
           switch (event.status) {
+            case EventStatus.PULL: {
+              //TODO update the status with image pull
+              console.log('Pulling Image %s', eventActorID);
+              break;
+            }
             case EventStatus.START: {
-              if (pipelineFQN && stepName) {
-                const stepInfo: Step = {
-                  stepContainerId,
-                  pipelineFQN,
-                  stepName,
-                  stepImage,
-                  status: 'start'
-                };
+              const pipelineID = md5(pipelineDir);
+              const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, 'start');
+              if (stepInfo.pipelineFQN && stepInfo.stepName) {
                 dispatch(
                   addStep({
                     pipelineID,
@@ -122,16 +124,16 @@ export const PipelinesTable = (props) => {
             case EventStatus.STOP:
             case EventStatus.DIE:
             case EventStatus.KILL: {
+              const pipelineID = md5(pipelineDir);
+              const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, 'dummy');
               //console.log('STOP/DIE/KILL %s', JSON.stringify(event));
               const exitCode = parseInt(event.Actor.Attributes['exitCode']);
-              if (pipelineFQN && stepName) {
-                const stepInfo: Step = {
-                  stepContainerId,
-                  pipelineFQN,
-                  stepName,
-                  stepImage,
-                  status: exitCode === 0 ? 'done' : 'error'
-                };
+              if (stepInfo.pipelineFQN && stepInfo.stepName) {
+                if (exitCode === 0) {
+                  stepInfo.status = 'done';
+                } else {
+                  stepInfo.status = 'error';
+                }
                 dispatch(
                   updateStep({
                     pipelineID,
@@ -233,7 +235,7 @@ export const PipelinesTable = (props) => {
       <Paper sx={{ width: '100%', mb: 2 }}>
         <PipelineTableToolbar
           handleRemove={removeSelectedPipelines}
-          numSelected={selected.length}
+          numSelected={selected?.length}
         />
         <TableContainer>
           <Table
@@ -242,13 +244,17 @@ export const PipelinesTable = (props) => {
             size={dense ? 'small' : 'medium'}
           >
             <PipelinesTableHead
-              numSelected={selected.length}
-              rowCount={pipelines.length}
+              numSelected={selected?.length}
+              rowCount={pipelines?.length}
               onSelectAllClick={handleSelectAll}
             />
+
             {pipelinesStatus === 'loaded' && (
               <TableBody>
-                {pipelines.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
+                {(pipelines.length > rowsPerPage
+                  ? pipelines.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  : pipelines
+                ).map((row) => {
                   //console.log('Row Key:' + row.id + ' ' + row.pipelineFile);
                   return (
                     <Row

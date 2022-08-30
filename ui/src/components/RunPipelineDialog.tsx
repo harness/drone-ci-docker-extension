@@ -58,7 +58,7 @@ export default function RunPipelineDialog({ ...props }) {
       const cmd = await ddClient.docker.cli.exec('network', ['ls', "--format='{{.Name}}'"]);
       if (cmd.stdout) {
         const networkNames = cmd.stdout?.trim().split('\n');
-        console.log('Networks %s', JSON.stringify(networkNames));
+        //console.log('Networks %s', JSON.stringify(networkNames));
         setDockerNetworks(networkNames);
       }
     };
@@ -70,7 +70,7 @@ export default function RunPipelineDialog({ ...props }) {
       const cmd = await ddClient.extension.host.cli.exec('yq', ["'.steps.[]|.name'", pipelineFile]);
       if (cmd.stdout) {
         const stepNames = cmd.stdout?.trim().split('\n');
-        console.log('Pipeline Steps %s', JSON.stringify(stepNames));
+        //console.log('Pipeline Steps %s', JSON.stringify(stepNames));
         setPipelineSteps(stepNames);
       }
     };
@@ -86,7 +86,7 @@ export default function RunPipelineDialog({ ...props }) {
     if (result.canceled) {
       return;
     }
-    if (result.filePaths.length > 0) {
+    if (result.filePaths?.length > 0) {
       setSecretFile(result.filePaths[0]);
       return;
     }
@@ -101,7 +101,7 @@ export default function RunPipelineDialog({ ...props }) {
     if (result.canceled) {
       return;
     }
-    if (result.filePaths.length > 0) {
+    if (result.filePaths?.length > 0) {
       setEnvFile(result.filePaths[0]);
       return;
     }
@@ -133,6 +133,12 @@ export default function RunPipelineDialog({ ...props }) {
 
     const pipelineExecArgs = new Array<string>();
 
+    // Add --trusted arg
+    if (trusted) {
+      //console.log('Adding trusted');
+      pipelineExecArgs.push(`--trusted`);
+    }
+
     //Add --env-file arg
     if (envFile) {
       //console.log('Adding envfile');
@@ -146,7 +152,7 @@ export default function RunPipelineDialog({ ...props }) {
     }
 
     //Add steps to include
-    if (includeSteps && includeSteps.length > 0) {
+    if (includeSteps && includeSteps?.length > 0) {
       //console.log('Adding includeSteps');
       const incSteps = includeSteps.map((s) => `--include="${s}"`);
       //console.log('Included Steps ', JSON.stringify(incSteps));
@@ -162,7 +168,7 @@ export default function RunPipelineDialog({ ...props }) {
     //The pipeline file to use
     pipelineExecArgs.push(pipelineFile);
 
-    //console.log('Pipeline Exec Args %s', JSON.stringify(pipelineExecArgs));
+    console.log('Pipeline Exec Args %s', JSON.stringify(pipelineExecArgs));
 
     await ddClient.extension.host.cli.exec('run-drone', pipelineExecArgs, {
       stream: {

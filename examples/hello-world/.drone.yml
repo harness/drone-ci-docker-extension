@@ -1,0 +1,50 @@
+kind: pipeline
+type: docker
+name: default
+platform:
+  os: linux
+  arch: arm64
+steps:
+- name: unit test
+  image: kameshsampath/drone-java-maven-plugin:v1.0.3
+  pull: if-not-exists
+  settings:
+    maven_mirror_url: http://nexus:8081/repository/maven-public
+    goals:
+    - clean 
+    - test
+- name: package as jar
+  image: kameshsampath/drone-java-maven-plugin:v1.0.3
+  pull: if-not-exists
+  settings:
+    maven_mirror_url: http://nexus:8081/repository/maven-public
+    goals:
+    - clean 
+    - install
+    - -DskipTests
+- name: push image to registry
+  image: plugins/docker
+  pull: if-not-exists
+  settings:
+    insecure: true
+    registry: k3d-myregistry.localhost:5000
+    repo: k3d-myregistry.localhost:5000/example/hello-world
+    context: .
+    tags:
+     - 1.0.0-SNAPSHOT
+     - latest
+- name: deploy app to k8s
+  image: kameshsampath/kube-dev-tools
+  pull: never
+  commands:
+    - k3d kubeconfig get my-demos > $KUBECONFIG
+    - export DOCKER_INTERNAL_IP=$(docker inspect k3d-my-demos-server-0 --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')
+    - kubectl config set clusters.k3d-my-demos.server https://$DOCKER_INTERNAL_IP:6443
+    - kubectl apply -f k8s/
+  volumes:
+    - name: dockersock
+      path: /var/run/docker.sock
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/docker.sock

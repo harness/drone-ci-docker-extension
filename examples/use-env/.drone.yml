@@ -9,5 +9,5 @@ steps:
     image: busybox
     pull: if-not-exists
     commands:
-    - printenv | grep 'DRONE_DESKTOP'
+    - printenv
 

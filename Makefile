@@ -21,11 +21,11 @@ build-extension: ## Build service image to be deployed as a desktop extension
 	docker build --tag=$(IMAGE):$(TAG) .
 
 install-extension: build-extension ## Install the extension
-	docker volume create $(VOLUME_NAME)
 	docker extension install $(IMAGE):$(TAG)
 
 uninstall-extension:	## Uninstall the extension
-		docker extension rm $(IMAGE):$(TAG)
+	docker extension rm $(IMAGE):$(TAG)
+	docker volume rm $(VOLUME_NAME)
 
 update-extension: build-extension ## Update the extension
 	docker extension update $(IMAGE):$(TAG)
@@ -33,16 +33,16 @@ update-extension: build-extension ## Update the extension
 prepare-buildx: ## Create buildx builder for multi-arch build, if not exists
 	docker buildx inspect $(BUILDER) || docker buildx create --name=$(BUILDER) --driver=docker-container --driver-opt=network=host
 
-push-extension: prepare-buildx ## Build & Upload extension image to hub. Do not push if tag already exists: TAG=$(shell svu c) make push-extension
-	docker pull $(IMAGE):$(shell svu c) && echo "Failure: Tag already exists" || docker buildx build --push --builder=$(BUILDER) --platform=linux/amd64,linux/arm64 --build-arg TAG=$(shell svu c) --tag=$(IMAGE):$(shell svu c) .
+push-extension: prepare-buildx ## Build & Upload extension image to hub. Do not push if tag already exists: TAG=$(TAG) make push-extension
+	docker pull $(IMAGE):$(TAG) && echo "Failure: Tag already exists" || docker buildx build --push --builder=$(BUILDER) --platform=linux/amd64,linux/arm64 --build-arg TAG=$(TAG) --tag=$(IMAGE):$(TAG) --tag=$(IMAGE):latest .
 
 release-beta:	# Create a new beta release
-	git tag "$(shell svu next --suffix beta)"
+	git tag $$(svu patch --suffix=beta)
 	git push --tags
 	goreleaser --rm-dist
 
 release:	# Create a new release
-	git tag "$(shell svu next)"
+	git tag $$(svu next)
 	git push --tags
 	goreleaser --rm-dist
 
@@ -55,6 +55,9 @@ tidy:	## Runs go mod tidy
 	
 test:	## Runs the test
 	./hack/test.sh
+
+test-drone-pipeline: ## Build service image to be deployed as a desktop extension
+	drone exec --trusted --secret-file=.secret .drone.local.yml
 
 vendor:	## Vendoring
 	go mod vendor

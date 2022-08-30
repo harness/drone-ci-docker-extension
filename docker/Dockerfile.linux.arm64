@@ -1,0 +1,56 @@
+FROM --platform=arm64 alpine
+LABEL org.opencontainers.image.title="Drone CI" \
+    org.opencontainers.image.description="Drone CI" \
+    org.opencontainers.image.vendor="Harness" \
+    com.docker.desktop.extension.icon="https://github.com/drone/brand/raw/master/logos/png/dark/drone-logo-png-dark-128.png" \
+    com.docker.desktop.extension.api.version=">= 0.2.3" \
+    com.docker.extension.screenshots="[{\"alt\":\"List of Pipelines\", \"url\":\"https://github.com/harness/drone-desktop-docker-extension/raw/main/docs/images/list.png\"}, {\"alt\":\"Pipeline Details\", \"url\":\"https://github.com/harness/drone-desktop-docker-extension/raw/main/docs/images/details.png\"}]" \
+    com.docker.extension.detailed-description="Drone is a self-service Continuous Integration platform for busy development teams. This extension will help developers do Continuous Integration on their laptops using <a href=\"https://drone.io\">Drone</a> CI." \
+    com.docker.extension.publisher-url="https://www.drone.io/" \
+    com.docker.extension.additional-urls="[{\"title\":\"Documentation\",\"url\":\"https://docs.drone.io\"}, {\"title\":\"Support\",\"url\":\"https://github.com/harness/drone-desktop-docker-extension/issues\"}, {\"title\":\"License\",\"url\":\"https://github.com/harness/drone-desktop-docker-extension/blob/main/LICENSE\"}, {\"title\":\"Discussions\",\"url\":\"https://github.com/harness/drone-desktop-docker-extension/discussions\"}]" \
+    com.docker.extension.changelog="https://github.com/harness/drone-desktop-docker-extension/blob/main/CHANGELOG.md"
+
+ARG TARGETARCH=arm64
+ARG DRONE_TAG
+
+RUN apk add --update --no-cache jq bash curl rsync \
+    && mkdir -p /tools/darwin \
+    && mkdir -p /tools/linux \
+    && mkdir -p /tools/windows
+
+# Download yq
+RUN curl -sL https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_darwin_arm64 -o /tools/darwin/yq 
+
+RUN curl -sL https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_$TARGETARCH -o /tools/linux/yq 
+
+# No arm64 yq exists for windows
+# End Download yq
+
+## Copy Drone CLI
+COPY $DRONE_WORKSPACE/drone-cli/darwin/$TARGETARCH/drone /tools/darwin/drone
+COPY $DRONE_WORKSPACE/drone-cli/linux/$TARGETARCH/drone /tools/linux/drone
+RUN chmod +x /tools/darwin/drone \
+  && chmod +x /tools/linux/drone
+
+## Copy pipelines-finder
+
+COPY $DRONE_WORKSPACE/dist/pipelines-finder_darwin_$TARGETARCH/pipelines-finder  /tools/darwin/pipelines-finder
+COPY $DRONE_WORKSPACE/dist/pipelines-finder_linux_$TARGETARCH/pipelines-finder  /tools/linux/pipelines-finder
+COPY $DRONE_WORKSPACE/dist/pipelines-finder_windows_$TARGETARCH/pipelines-finder.exe  /tools/windows/pipelines-finder.exe
+
+RUN chmod +x /tools/darwin/pipelines-finder \
+   && chmod + /tools/linux/pipelines-finder
+
+# COPY backend service
+COPY $DRONE_WORKSPACE/dist/backend_linux_$TARGETARCH/backend  /backend
+RUN chmod +x /backend
+
+COPY docker-compose.yaml .
+COPY metadata.json .
+COPY *.svg ./
+
+COPY /ui/build/build ./ui
+
+COPY scripts/run-drone.sh /tools/run-drone
+
+CMD /backend -socket /run/guest-services/extension-drone-desktop.sock

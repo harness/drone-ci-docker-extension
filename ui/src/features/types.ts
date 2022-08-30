@@ -3,7 +3,8 @@ export enum EventStatus {
   DESTROY = 'destroy',
   STOP = 'stop',
   DIE = 'die',
-  KILL = 'kill'
+  KILL = 'kill',
+  PULL = 'pull'
 }
 
 export interface Event {
