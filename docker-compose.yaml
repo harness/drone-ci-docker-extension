@@ -7,5 +7,3 @@ services:
         target: /data
 volumes:
   drone-desktop-data:
-    external: true
-

@@ -3,3 +3,5 @@
 dist
 data
 .envrc
+.secret
+.drone.local

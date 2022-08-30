@@ -1,0 +1,95 @@
+---
+kind: pipeline
+type: docker
+name: "Release Docker Image(arm64)"
+
+# trigger:
+#   branch:
+#     - main
+#   event:
+#     - push
+
+platform:
+  os: linux
+  arch: arm64
+
+steps:
+  # need to fetch the tags to be available in next steps
+  # - name: fetch
+  #   image: alpine/git
+  #   commands:
+  #   - git fetch --tags
+  
+  - name: goreleaser
+    image: goreleaser/goreleaser
+    pull: if-not-exists
+    environment:
+      CGO_ENABLED: "0"
+      GITHUB_TOKEN:
+        from_secret: github_token
+    commands:
+      - goreleaser release --snapshot --rm-dist --debug
+
+  - name: ui-build
+    image: node:17.7-alpine3.14
+    commands:
+      - cd /ui
+      - apk add --update rsync
+      - cp $DRONE_WORKSPACE/ui/package.json ./package.json
+      - cp $DRONE_WORKSPACE/ui/package-lock.json ./package-lock.json
+      - npm ci
+      - rsync -av --exclude-from="$DRONE_WORKSPACE/ui/excludes.txt"  $DRONE_WORKSPACE/ui/ /ui/
+      - npm run build
+    volumes:
+      - name: frontend-build-dir
+        path: /ui
+
+  - name: publish
+    image: plugins/docker:20.13
+    pull: if-not-exists
+    settings:
+      auto_tag: true
+      dry_run: true
+      auto_tag_suffix: linux-amd64
+      dockerfile: docker/Dockerfile.linux.arm64
+      build_args: 
+        - "DRONE_TAG=v0.0.0"
+      registry:
+        from_secret: image_registry
+      repo:
+        from_secret: destination_image
+      username:
+        from_secret: image_registry_username
+      password:
+        from_secret: image_registry_password
+    volumes:
+      - name: frontend-build-dir
+        path: /drone/src/ui/build
+volumes:
+   - name: frontend-build-dir
+     temp: {}
+---
+kind: pipeline
+type: docker
+name: "Publish Manifest"
+
+depends_on:
+  - "Release Docker Image(arm64)"
+
+# trigger:
+#   branch:
+#     - main
+#   event:
+#     - push
+
+steps:
+- name: publish
+  image: plugins/manifest:1.2
+  settings:
+    auto_tag: true
+    ignore_missing: true
+    spec: docker/manifest.tmpl
+    username:
+      from_secret: image_registry_username
+    password:
+      from_secret: image_registry_password
