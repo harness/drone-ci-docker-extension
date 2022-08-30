@@ -23,30 +23,7 @@ steps:
 ---
 kind: pipeline
 type: docker
-name: "Release Binaries"
-
-steps:
-  # need to fetch the tags to be available in next steps
-  - name: fetch
-    image: alpine/git
-    commands:
-      - git fetch --tags
-
-  - name: goreleaser
-    image: goreleaser/goreleaser
-    environment:
-      GITHUB_TOKEN:
-        from_secret: github_token
-    commands:
-      - goreleaser release
-    when:
-      event:
-        - tag
-
----
-kind: pipeline
-type: docker
-name: "Release Docker Image(arm64)"
+name: "Build and Release (arm64)"
 
 platform:
   os: linux
@@ -96,7 +73,7 @@ steps:
       - cp $DRONE_WORKSPACE/ui/package-lock.json ./package-lock.json
       - npm ci
       - rsync -av --exclude-from="$DRONE_WORKSPACE/ui/excludes.txt"  $DRONE_WORKSPACE/ui/ /ui/
-      - npm run build
+      - CI=false npm run build
     volumes:
       - name: frontend-build-dir
         path: /ui
@@ -153,11 +130,7 @@ volumes:
 ---
 kind: pipeline
 type: docker
-name: "Release Docker Image(amd64)"
-
-trigger:
-  event:
-    - tag
+name: "Build and Release (amd64)"
 
 platform:
   os: linux
@@ -207,7 +180,7 @@ steps:
       - cp $DRONE_WORKSPACE/ui/package-lock.json ./package-lock.json
       - npm ci
       - rsync -av --exclude-from="$DRONE_WORKSPACE/ui/excludes.txt"  $DRONE_WORKSPACE/ui/ /ui/
-      - npm run build
+      - CI=false npm run build
     volumes:
       - name: frontend-build-dir
         path: /ui
@@ -267,15 +240,11 @@ type: docker
 name: "Publish Manifest"
 
 depends_on:
-  - "Release Docker Image(arm64)"
-  - "Release Docker Image(amd64)"
-
-trigger:
-  event:
-    - tag
+  - "Build and Release (arm64)"
+  - "Build and Release (amd64)"
 
 steps:
-  - name: publish
+  - name: Publish GA Manifests
     image: plugins/manifest:1.2
     settings:
       auto_tag: true
@@ -285,3 +254,21 @@ steps:
         from_secret: docker_username
       password:
         from_secret: docker_password
+    when:
+      event:
+        - tag
+  - name: Publish Dev Manifests
+    image: plugins/manifest:1.2
+    settings:
+      auto_tag: true
+      ignore_missing: true
+      spec: docker/manifest.tmpl
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+    when:
+      branch:
+        - main
+      event:
+        - tag
