@@ -99,6 +99,7 @@ steps:
     image: plugins/docker
     pull: if-not-exists
     settings:
+      auto_tag: true
       auto_tag_suffix: linux-arm64
       dockerfile: docker/Dockerfile.linux.arm64
       registry:
