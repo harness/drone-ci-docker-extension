@@ -1,6 +1,5 @@
 IMAGE?=kameshsampath/drone-desktop-extension
 TAG?=latest
-VOLUME_NAME=drone-desktop-data
 
 BUILDER=buildx-multi-arch
 
@@ -18,14 +17,13 @@ bin-all:	## Build binaries for all targetted architectures
 	goreleaser build --snapshot --rm-dist
 
 build-extension: ## Build service image to be deployed as a desktop extension
-	drone exec --trusted --secret-file=secret .drone.local.yml
+	drone exec --trusted --secret-file=.secret .drone.local.yml
 
 install-extension: build-extension ## Install the extension
 	docker extension install $(IMAGE):$(TAG)
 
 uninstall-extension:	## Uninstall the extension
 	docker extension rm $(IMAGE):$(TAG)
-	docker volume rm $(VOLUME_NAME)
 
 update-extension: build-extension ## Update the extension
 	docker extension update $(IMAGE):$(TAG)
@@ -68,5 +66,12 @@ lint:	## Run lint on the project
 clean:	## Cleans output
 	go clean
 	rm -rf dist
+
+debug-enable:
+	docker extension dev debug $(IMAGE)
+	docker extension dev ui-source $(IMAGE) http://localhost:3000
+
+ebug-reset:
+	docker extension dev reset $(IMAGE)
 
 .PHONY: bin extension push-extension help	tidy	test	vendor	lint	clean

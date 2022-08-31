@@ -11,6 +11,7 @@ LABEL org.opencontainers.image.title="Drone CI" \
     com.docker.extension.changelog="https://github.com/harness/drone-desktop-docker-extension/blob/main/CHANGELOG.md"
 
 ARG TARGETARCH=amd64
+ARG ARCH_VERSION=v1
 
 RUN apk add --update --no-cache jq bash curl rsync \
     && mkdir -p /tools/darwin \
@@ -18,39 +19,39 @@ RUN apk add --update --no-cache jq bash curl rsync \
     && mkdir -p /tools/windows
 
 # Download yq
-RUN curl -sL https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_darwin_$TARGETARCH -o /tools/darwin/yq 
+RUN curl -sL "https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_darwin_${TARGETARCH}" -o /tools/darwin/yq 
 
-RUN curl -sL https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_$TARGETARCH -o /tools/linux/yq 
+RUN curl -sL "https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_${TARGETARCH}" -o /tools/linux/yq 
 
-RUN curl -sL https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_windows_amd64 -o /tools/windows/yq.exe 
+RUN curl -sL "https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_windows_${TARGETARCH}" -o /tools/windows/yq.exe 
 
 # End Download yq
 
 ## Copy Drone CLI
-COPY $DRONE_WORKSPACE/drone-cli/darwin/$TARGETARCH/drone /tools/darwin/drone
-COPY $DRONE_WORKSPACE/drone-cli/linux/$TARGETARCH/drone /tools/linux/drone
-COPY $DRONE_WORKSPACE/drone-cli/windows/$TARGETARCH/drone.exe /tools/windows/drone.exe
+COPY "${DRONE_WORKSPACE}/drone-cli/darwin/${TARGETARCH}/drone" /tools/darwin/drone
+COPY "${DRONE_WORKSPACE}/drone-cli/linux/${TARGETARCH}/drone" /tools/linux/drone
+COPY "${DRONE_WORKSPACE}/drone-cli/windows/$TARGETARCH/drone.exe" /tools/windows/drone.exe
 RUN chmod +x /tools/darwin/drone \
   && chmod +x /tools/linux/drone
 
 ## Copy pipelines-finder
 
-COPY $DRONE_WORKSPACE/dist/pipelines-finder_darwin_$TARGETARCH/pipelines-finder  /tools/darwin/pipelines-finder
-COPY $DRONE_WORKSPACE/dist/pipelines-finder_linux_$TARGETARCH/pipelines-finder  /tools/linux/pipelines-finder
-COPY $DRONE_WORKSPACE/dist/pipelines-finder_windows_$TARGETARCH/pipelines-finder.exe  /tools/windows/pipelines-finder.exe
+COPY "${DRONE_WORKSPACE}/dist/pipelines-finder_darwin_${TARGETARCH}_${ARCH_VERSION}"/pipelines-finder  /tools/darwin/pipelines-finder
+COPY "${DRONE_WORKSPACE}/dist/pipelines-finder_linux_${TARGETARCH}_${ARCH_VERSION}"/pipelines-finder  /tools/linux/pipelines-finder
+COPY "${DRONE_WORKSPACE}/dist/pipelines-finder_windows_${TARGETARCH}_${ARCH_VERSION}"/pipelines-finder.exe  /tools/windows/pipelines-finder.exe
 
 RUN chmod +x /tools/darwin/pipelines-finder \
    && chmod + /tools/linux/pipelines-finder
 
 # COPY backend service
-COPY $DRONE_WORKSPACE/dist/backend_linux_$TARGETARCH/backend  /backend
+COPY "${DRONE_WORKSPACE}/dist/backend_linux_${TARGETARCH}_${ARCH_VERSION}/backend"  /backend
 RUN chmod +x /backend
 
 COPY docker-compose.yaml .
 COPY metadata.json .
 COPY *.svg ./
 
-COPY /ui/build/build ./ui
+COPY ui/build ./ui
 
 COPY scripts/run-drone.sh /tools/run-drone
 

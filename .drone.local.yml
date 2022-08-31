@@ -8,59 +8,29 @@ platform:
   arch: arm64
 
 steps:
-  - name: goreleaser
-    image: goreleaser/goreleaser
-    pull: if-not-exists
-    environment:
-      CGO_ENABLED: "0"
-      GITHUB_TOKEN:
-        from_secret: github_token
-    commands:
-      - goreleaser release --snapshot --rm-dist --debug
+  # - name: goreleaser
+  #   image: goreleaser/goreleaser
+  #   pull: if-not-exists
+  #   environment:
+  #     CGO_ENABLED: "0"
+  #     GITHUB_TOKEN:
+  #       from_secret: github_token
+  #   commands:
+  #     - goreleaser release --snapshot --rm-dist --debug
   
   - name: ui-build
     image: node:17.7-alpine3.14
     commands:
-      - npm set cache /usr/src/app/.npm
-      - cd /ui
-      - apk add --update rsync
-      - cp $DRONE_WORKSPACE/ui/package.json ./package.json
-      - cp $DRONE_WORKSPACE/ui/package-lock.json ./package-lock.json
+      - cd ui
       - npm ci
-      - rsync -av --exclude-from="$DRONE_WORKSPACE/ui/excludes.txt"  $DRONE_WORKSPACE/ui/ /ui/
-      - npm run build
-    volumes:
-      - name: frontend-build-dir
-        path: /ui
+      - CI=false npm run build
 
-  - name: Publish GA
-    image: plugins/docker:20.13
+  - name: Publish Dev Build arm64
+    image: plugins/docker
     pull: if-not-exists
     settings:
-      dry_run: true
-      dockerfile: docker/Dockerfile.linux.arm64
       auto_tag: true
       auto_tag_suffix: linux-arm64
-      registry:
-        from_secret: image_registry
-      repo:
-        from_secret: destination_image
-      username:
-        from_secret: image_registry_username
-      password:
-        from_secret: image_registry_password
-    volumes:
-      - name: frontend-build-dir
-        path: /drone/src/ui/build
-    when:
-      event:
-        - tag
-  - name: Publish Dev Build
-    image: plugins/docker:20.13
-    pull: if-not-exists
-    settings:
-      auto_tag: true
-      dry_run: true
       dockerfile: docker/Dockerfile.linux.arm64
       registry:
         from_secret: image_registry
@@ -70,14 +40,31 @@ steps:
         from_secret: image_registry_username
       password:
         from_secret: image_registry_password
-    volumes:
-      - name: frontend-build-dir
-        path: /drone/src/ui/build
-    # when:
-    #   branch:
-    #    - main
-    #   event:
-    #     - push
-volumes:
-   - name: frontend-build-dir
-     temp: {}
+
+  - name: Publish Dev Build amd64
+    image: plugins/docker
+    pull: if-not-exists
+    settings:
+      auto_tag: true
+      auto_tag_suffix: linux-amd64
+      dockerfile: docker/Dockerfile.linux.amd64
+      registry:
+        from_secret: image_registry
+      repo:
+        from_secret: destination_image
+      username:
+        from_secret: image_registry_username
+      password:
+        from_secret: image_registry_password
+
+  - name: Publish Dev Manifests
+    image: plugins/manifest:1.2
+    settings:
+      tags:
+       - latest
+      ignore_missing: true
+      spec: docker/manifest.local.tmpl
+      username:
+        from_secret: image_registry_username
+      password:
+        from_secret: image_registry_password
