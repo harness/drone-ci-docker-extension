@@ -72,23 +72,16 @@ steps:
   - name: ui-build
     image: node:17.7-alpine3.14
     commands:
-      - cd /ui
-      - apk add --update rsync
-      - cp $DRONE_WORKSPACE/ui/package.json ./package.json
-      - cp $DRONE_WORKSPACE/ui/package-lock.json ./package-lock.json
+      - cd ui
       - npm ci
-      - rsync -av --exclude-from="$DRONE_WORKSPACE/ui/excludes.txt"  $DRONE_WORKSPACE/ui/ /ui/
       - CI=false npm run build
-    volumes:
-      - name: frontend-build-dir
-        path: /ui
 
   - name: Publish GA
     image: plugins/docker
     pull: if-not-exists
+    privileged: true
     settings:
       auto_tag: true
-      dry_run: true
       auto_tag_suffix: linux-arm64
       dockerfile: docker/Dockerfile.linux.arm64
       registry:
@@ -99,9 +92,6 @@ steps:
         from_secret: docker_username
       password:
         from_secret: docker_password
-    volumes:
-      - name: frontend-build-dir
-        path: /drone/src/ui/build
     when:
       event:
         - tag
@@ -110,7 +100,6 @@ steps:
     image: plugins/docker
     pull: if-not-exists
     settings:
-      dry_run: true
       auto_tag_suffix: linux-arm64
       dockerfile: docker/Dockerfile.linux.arm64
       registry:
@@ -121,17 +110,11 @@ steps:
         from_secret: docker_username
       password:
         from_secret: docker_password
-    volumes:
-      - name: frontend-build-dir
-        path: /drone/src/ui/build
     when:
       branch:
         - main
       event:
         - push
-volumes:
-  - name: frontend-build-dir
-    temp: {}
 ---
 kind: pipeline
 type: docker
@@ -184,23 +167,15 @@ steps:
   - name: ui-build
     image: node:17.7-alpine3.14
     commands:
-      - cd /ui
-      - apk add --update rsync
-      - cp $DRONE_WORKSPACE/ui/package.json ./package.json
-      - cp $DRONE_WORKSPACE/ui/package-lock.json ./package-lock.json
+      - cd ui
       - npm ci
-      - rsync -av --exclude-from="$DRONE_WORKSPACE/ui/excludes.txt"  $DRONE_WORKSPACE/ui/ /ui/
       - CI=false npm run build
-    volumes:
-      - name: frontend-build-dir
-        path: /ui
 
   - name: Publish GA
     image: plugins/docker
     pull: if-not-exists
     settings:
       auto_tag: true
-      dry_run: true
       auto_tag_suffix: linux-amd64
       dockerfile: docker/Dockerfile.linux.amd64
       registry:
@@ -211,9 +186,6 @@ steps:
         from_secret: docker_username
       password:
         from_secret: docker_password
-    volumes:
-      - name: frontend-build-dir
-        path: /drone/src/ui/build
     when:
       event:
         - tag
@@ -223,7 +195,6 @@ steps:
     pull: if-not-exists
     settings:
       auto_tag: true
-      dry_run: true
       auto_tag_suffix: linux-amd64
       dockerfile: docker/Dockerfile.linux.amd64
       registry:
@@ -234,17 +205,11 @@ steps:
         from_secret: docker_username
       password:
         from_secret: docker_password
-    volumes:
-      - name: frontend-build-dir
-        path: /drone/src/ui/build
     when:
       event:
         - push
       branch:
         - main
-volumes:
-  - name: frontend-build-dir
-    temp: {}
 ---
 kind: pipeline
 type: docker

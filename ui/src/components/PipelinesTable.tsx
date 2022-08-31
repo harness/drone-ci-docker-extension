@@ -50,11 +50,12 @@ export const PipelinesTable = (props) => {
   useEffect(() => {
     if (pipelinesStatus === 'idle') {
       dispatch(importPipelines());
+      return;
     }
     const loadEventTS = async () => {
-      const out = await getDockerDesktopClient().extension.vm.cli.exec('sh', [
+      const out = await getDockerDesktopClient().extension.vm.cli.exec('bash', [
         '-c',
-        '"[ -f /data/currts ] && cat /data/currts"'
+        "'[ -f /data/currts ] && cat /data/currts || date +%s > /data/currts'"
       ]);
       if (out.stdout) {
         setEventTS(out.stdout);
@@ -157,7 +158,7 @@ export const PipelinesTable = (props) => {
       process.close();
       //Write the current tstamp to a file so that we can track the events later
       const writeCurrTstamp = async () => {
-        await getDockerDesktopClient().extension.vm.cli.exec('sh', ['-c', '"date +%s > /data/currts"']);
+        await getDockerDesktopClient().extension.vm.cli.exec('bash', ['-c', '"date +%s > /data/currts"']);
       };
       writeCurrTstamp();
     };
