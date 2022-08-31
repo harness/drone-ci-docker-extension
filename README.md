@@ -65,13 +65,13 @@ You can remove one or more Drone pipelines, removing does not physically delete 
 ## Install Extension
 
 ```shell
-docker extension install harness/drone-desktop-extension:0.0.1-beta
+docker extension install drone/drone-desktop-extension:0.0.1-beta
 ```
 
 ## Remove Extension
 
 ```shell
-docker extension rm harness/drone-desktop-extension
+docker extension rm drone/drone-desktop-extension
 ```
 
 ## Issues
