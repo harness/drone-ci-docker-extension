@@ -79,7 +79,6 @@ steps:
   - name: Publish GA
     image: plugins/docker
     pull: if-not-exists
-    privileged: true
     settings:
       auto_tag: true
       auto_tag_suffix: linux-arm64
