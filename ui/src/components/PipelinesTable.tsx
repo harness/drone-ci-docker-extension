@@ -50,16 +50,15 @@ export const PipelinesTable = (props) => {
   useEffect(() => {
     if (pipelinesStatus === 'idle') {
       dispatch(importPipelines());
+      return;
     }
     const loadEventTS = async () => {
       const out = await getDockerDesktopClient().extension.vm.cli.exec('bash', [
         '-c',
-        '"[ -f /data/currts ] && cat /data/currts"'
+        "'[ -f /data/currts ] && cat /data/currts || date +%s > /data/currts'"
       ]);
       if (out.stdout) {
         setEventTS(out.stdout);
-      } else {
-        console.log(out.stderr);
       }
     };
     loadEventTS().catch(console.error);

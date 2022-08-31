@@ -2,7 +2,7 @@ FROM --platform=arm64 alpine
 LABEL org.opencontainers.image.title="Drone CI" \
     org.opencontainers.image.description="Drone CI" \
     org.opencontainers.image.vendor="Harness" \
-    com.docker.desktop.extension.icon="https://github.com/drone/brand/raw/master/logos/png/dark/drone-logo-png-dark-128.png" \
+    com.docker.desktop.extension.icon="https://github.com/harness/drone-desktop-docker-extension/raw/main/icon.svg" \
     com.docker.desktop.extension.api.version=">= 0.2.3" \
     com.docker.extension.screenshots="[{\"alt\":\"List of Pipelines\", \"url\":\"https://github.com/harness/drone-desktop-docker-extension/raw/main/docs/images/list.png\"}, {\"alt\":\"Pipeline Details\", \"url\":\"https://github.com/harness/drone-desktop-docker-extension/raw/main/docs/images/details.png\"}]" \
     com.docker.extension.detailed-description="Drone is a self-service Continuous Integration platform for busy development teams. This extension will help developers do Continuous Integration on their laptops using <a href=\"https://drone.io\">Drone</a> CI." \
@@ -21,6 +21,9 @@ RUN apk add --update --no-cache jq bash curl rsync \
 RUN curl -sL "https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_darwin_${TARGETARCH}" -o /tools/darwin/yq 
 
 RUN curl -sL "https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_${TARGETARCH}" -o /tools/linux/yq 
+
+RUN chmod +x /tools/darwin/yq \
+  && chmod +x /tools/linux/yq
 
 # No arm64 yq exists for windows
 # End Download yq

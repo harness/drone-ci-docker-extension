@@ -71,7 +71,7 @@ debug-enable:
 	docker extension dev debug $(IMAGE)
 	docker extension dev ui-source $(IMAGE) http://localhost:3000
 
-ebug-reset:
+debug-reset:
 	docker extension dev reset $(IMAGE)
 
 .PHONY: bin extension push-extension help	tidy	test	vendor	lint	clean
