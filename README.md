@@ -1,5 +1,7 @@
 # Drone Desktop
 
+[![Build Status](https://harness.drone.io/api/badges/harness/drone-desktop-docker-extension/status.svg?ref=refs/heads/main)](https://harness.drone.io/harness/drone-desktop-docker-extension)
+
 A [Docker Desktop Extension](https://docs.docker.com/desktop/extensions/) to run and manage [drone pipelines](https://docs.drone.io/pipeline/overview/).
 
 > **WARNING**: This extension is under active development and expect to undergo lots of change and refactoring
