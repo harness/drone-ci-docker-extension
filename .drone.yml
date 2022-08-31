@@ -13,7 +13,7 @@ steps:
     pull: if-not-exists
     settings:
       github_token:
-        from_secret: github_token
+        from_secret: extn_github_token
       extra_options: |
         release-type: simple
         bump-patch-for-minor-pre-major: true
@@ -79,7 +79,6 @@ steps:
   - name: Publish GA
     image: plugins/docker
     pull: if-not-exists
-    privileged: true
     settings:
       auto_tag: true
       auto_tag_suffix: linux-arm64
