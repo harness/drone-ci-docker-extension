@@ -2,7 +2,7 @@ FROM --platform=arm64 alpine
 LABEL org.opencontainers.image.title="Drone CI" \
     org.opencontainers.image.description="Drone CI" \
     org.opencontainers.image.vendor="Harness" \
-    com.docker.desktop.extension.icon="https://github.com/harness/drone-desktop-docker-extension/raw/main/icon.svg" \
+    com.docker.desktop.extension.icon="https://github.com/harness/drone-desktop-docker-extension/raw/main/icon.png" \
     com.docker.desktop.extension.api.version=">= 0.2.3" \
     com.docker.extension.screenshots="[{\"alt\":\"List of Pipelines\", \"url\":\"https://github.com/harness/drone-desktop-docker-extension/raw/main/docs/images/list.png\"}, {\"alt\":\"Pipeline Details\", \"url\":\"https://github.com/harness/drone-desktop-docker-extension/raw/main/docs/images/details.png\"}]" \
     com.docker.extension.detailed-description="Drone is a self-service Continuous Integration platform for busy development teams. This extension will help developers do Continuous Integration on their laptops using <a href=\"https://drone.io\">Drone</a> CI." \
