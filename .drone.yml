@@ -84,7 +84,7 @@ steps:
         path: /ui
 
   - name: Publish GA
-    image: plugins/docker:20.13
+    image: plugins/docker
     pull: if-not-exists
     settings:
       auto_tag: true
@@ -107,7 +107,7 @@ steps:
         - tag
 
   - name: Publish Dev
-    image: plugins/docker:20.13
+    image: plugins/docker
     pull: if-not-exists
     settings:
       dry_run: true
@@ -196,7 +196,7 @@ steps:
         path: /ui
 
   - name: Publish GA
-    image: plugins/docker:20.13
+    image: plugins/docker
     pull: if-not-exists
     settings:
       auto_tag: true
@@ -219,7 +219,7 @@ steps:
         - tag
 
   - name: Publish Dev
-    image: plugins/docker:20.13
+    image: plugins/docker
     pull: if-not-exists
     settings:
       auto_tag: true
