@@ -13,7 +13,7 @@ steps:
     pull: if-not-exists
     settings:
       github_token:
-        from_secret: github_token
+        from_secret: extn_github_token
       extra_options: |
         release-type: simple
         bump-patch-for-minor-pre-major: true
