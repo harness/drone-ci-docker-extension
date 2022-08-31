@@ -23,7 +23,7 @@ export function App() {
     return () => {
       //Write the current tstamp to a file so that we can track the events later
       const writeCurrTstamp = async () => {
-        await getDockerDesktopClient().extension.vm.cli.exec('sh', ['-c', '"date +%s > /data/currts"']);
+        await getDockerDesktopClient().extension.vm.cli.exec('bash', ['-c', '"date +%s > /data/currts"']);
       };
       writeCurrTstamp().catch(console.error);
     };
