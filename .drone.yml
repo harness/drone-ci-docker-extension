@@ -271,4 +271,4 @@ steps:
       branch:
         - main
       event:
-        - tag
+        - push
