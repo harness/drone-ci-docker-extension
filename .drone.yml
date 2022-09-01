@@ -16,7 +16,9 @@ steps:
         from_secret: extn_github_token
       extra_options: |
         release-type: simple
+        bump-minor-pre-major: true
         bump-patch-for-minor-pre-major: true
+        prerelease: true
     when:
       event:
         - push
@@ -47,7 +49,7 @@ steps:
     environment:
       CGO_ENABLED: "0"
       GITHUB_TOKEN:
-        from_secret: github_token
+        from_secret: extn_github_token
     commands:
       - goreleaser release --snapshot --rm-dist --debug
     when:
@@ -62,7 +64,7 @@ steps:
     environment:
       CGO_ENABLED: "0"
       GITHUB_TOKEN:
-        from_secret: github_token
+        from_secret: extn_github_token
     commands:
       - goreleaser release --rm-dist
     when:
@@ -148,7 +150,7 @@ steps:
     environment:
       CGO_ENABLED: "0"
       GITHUB_TOKEN:
-        from_secret: github_token
+        from_secret: extn_github_token
     commands:
       - goreleaser release --snapshot --rm-dist --debug
     when:
@@ -163,7 +165,7 @@ steps:
     environment:
       CGO_ENABLED: "0"
       GITHUB_TOKEN:
-        from_secret: github_token
+        from_secret: extn_github_token
     commands:
       - goreleaser release --rm-dist
     when:
