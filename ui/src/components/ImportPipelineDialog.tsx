@@ -32,7 +32,7 @@ export default function ImportDialog({ ...props }) {
       }
     } catch (error) {
       console.log(error);
-      ddClient.desktopUI.toast.error(`Error importing pipelines : ${error}`);
+      ddClient.desktopUI.toast.error(`Error importing pipelines : ${JSON.stringify(error)}`);
     } finally {
       setActionInProgress(false);
       props.onClose();
