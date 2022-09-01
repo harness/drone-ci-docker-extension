@@ -2,7 +2,7 @@
 
 [![Build Status](https://harness.drone.io/api/badges/harness/drone-desktop-docker-extension/status.svg?ref=refs/heads/main)](https://harness.drone.io/harness/drone-desktop-docker-extension)
 
-A [Docker Desktop Extension](https://docs.docker.com/desktop/extensions/) to run and manage [drone pipelines](https://docs.drone.io/pipeline/overview/).
+A [Docker Desktop Extension](https://docs.docker.com/desktop/extensions/) to run [Drone CI](https://drone.io) pipelines on your laptops.
 
 > **WARNING**: This extension is under active development and expect to undergo lots of change and refactoring
 
@@ -18,7 +18,7 @@ Search and import existing Drone Pipelines, ideally these are project source fol
 
 ![Import Pipelines](./docs/images/drone_desktop_feature_import.gif)
 
-> __NOTE__: You can use the [examples](./examples) folder as the base directory to import few example pipelines.
+> **NOTE**: You can use the [examples](./examples) folder as the base directory to import few example pipelines.
 
 ### Open Drone pipeline project in Visual Studio Code
 
@@ -41,38 +41,39 @@ The extension allows you to run pipelines that have been imported using the "Imp
 ### Run Specific Steps
 
 ![Run in Trusted mode](./docs/images/drone_desktop_feature_run_pipelines_include.gif)
- 
+
 ### Run Pipelines with Environment File
 
 ![Run in Trusted mode](./docs/images/drone_desktop_feature_run_pipelines_with_env.gif)
- 
+
 ### Run Pipelines with Secret File
 
 ![Run in Trusted mode](./docs/images/drone_desktop_feature_run_pipelines_with_secret.gif)
- 
+
 ### Remove Pipelines
 
 You can remove one or more Drone pipelines, removing does not physically delete but the pipeline is ignored by the extension watchers.
 
 ![Remove Pipelines](./docs/images/drone_desktop_feature_remove_pipelines.gif)
 
-## TODO
-
-- [ ] [View Logs](https://github.com/kameshsampath/drone-desktop-docker-extension/issues/1)
-- [ ] [Exec into running container](https://github.com/kameshsampath/drone-desktop-docker-extension/issues/2)
-- [ ] [Use database for backend over JSON file](https://github.com/kameshsampath/drone-desktop-docker-extension/issues/3)
-
 ## Install Extension
 
 ```shell
-docker extension install drone/drone-desktop-extension:0.0.1-beta
+docker extension install drone/drone-desktop-docker-extension:0.0.2
 ```
+
+***IMPORTANT**: It is recommended to install the extension using Docker Extension Marketplace.
 
 ## Remove Extension
 
 ```shell
-docker extension rm drone/drone-desktop-extension
+docker extension rm drone/drone-desktop-docker-extension
 ```
+
+## Documentation
+
+- <https://docs.drone.io/>
+- <https://docs.drone.io/quickstart/cli/>
 
 ## Issues
 
