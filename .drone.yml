@@ -16,7 +16,9 @@ steps:
         from_secret: extn_github_token
       extra_options: |
         release-type: simple
+        bump-minor-pre-major: true
         bump-patch-for-minor-pre-major: true
+        prerelease: true
     when:
       event:
         - push
