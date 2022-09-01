@@ -1,6 +1,6 @@
 FROM --platform=amd64 alpine
 LABEL org.opencontainers.image.title="Drone CI" \
-    org.opencontainers.image.description="Drone CI" \
+    org.opencontainers.image.description="Running Drone CI pipelines from your laptops." \
     org.opencontainers.image.vendor="Harness" \
     com.docker.desktop.extension.icon="https://github.com/harness/drone-desktop-docker-extension/raw/main/icon.png" \
     com.docker.desktop.extension.api.version=">= 0.2.3" \
@@ -13,7 +13,7 @@ LABEL org.opencontainers.image.title="Drone CI" \
 ARG TARGETARCH=amd64
 ARG ARCH_VERSION=v1
 
-RUN apk add --update --no-cache jq bash curl rsync \
+RUN apk add --update --no-cache jq bash curl \
     && mkdir -p /tools/darwin \
     && mkdir -p /tools/linux \
     && mkdir -p /tools/windows
@@ -52,9 +52,9 @@ RUN chmod +x /backend
 
 COPY docker-compose.yaml .
 COPY metadata.json .
-COPY *.svg ./
+COPY *.svg .
 
-COPY ui/build ./ui
+COPY ui/build ui
 
 COPY scripts/run-drone.sh /tools/run-drone
 

@@ -71,10 +71,16 @@ steps:
 
   - name: ui-build
     image: node:17.7-alpine3.14
+    environment:
+      CI: false
+      # this is required by Docker Extension to load
+      # static files from extension path on the Host
+      PUBLIC_URL: .
+      BROWSER: none
     commands:
       - cd ui
       - npm ci
-      - CI=false npm run build
+      - npm run build
 
   - name: Publish GA
     image: plugins/docker
@@ -166,10 +172,16 @@ steps:
 
   - name: ui-build
     image: node:17.7-alpine3.14
+    environment:
+      CI: false
+      # this is required by Docker Extension to load
+      # static files from extension path on the Host
+      PUBLIC_URL: .
+      BROWSER: none
     commands:
       - cd ui
       - npm ci
-      - CI=false npm run build
+      - npm run build
 
   - name: Publish GA
     image: plugins/docker

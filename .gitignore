@@ -1,8 +1,10 @@
 *.code-workspace
 **/node_modules
+.npm
 dist
 data
 .envrc
 .secret
 .drone.local
 .cache
+!ui/.env

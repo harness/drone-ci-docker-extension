@@ -8,22 +8,28 @@ platform:
   arch: arm64
 
 steps:
-  # - name: goreleaser
-  #   image: goreleaser/goreleaser
-  #   pull: if-not-exists
-  #   environment:
-  #     CGO_ENABLED: "0"
-  #     GITHUB_TOKEN:
-  #       from_secret: github_token
-  #   commands:
-  #     - goreleaser release --snapshot --rm-dist --debug
-  
+  - name: goreleaser
+    image: goreleaser/goreleaser
+    pull: if-not-exists
+    environment:
+      CGO_ENABLED: "0"
+      GITHUB_TOKEN:
+        from_secret: github_token
+    commands:
+      - goreleaser release --snapshot --rm-dist --debug
+
   - name: ui-build
     image: node:17.7-alpine3.14
+    environment:
+      CI: false
+      # this is required by Docker Extension to load
+      # static files from extension path on the Host
+      PUBLIC_URL: .
+      BROWSER: none
     commands:
       - cd ui
       - npm ci
-      - CI=false npm run build
+      - npm run build
 
   - name: Publish Dev Build arm64
     image: plugins/docker
@@ -61,7 +67,7 @@ steps:
     image: plugins/manifest:1.2
     settings:
       tags:
-       - latest
+        - latest
       ignore_missing: true
       spec: docker/manifest.local.tmpl
       username:
