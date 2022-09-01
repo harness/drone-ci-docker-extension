@@ -25,6 +25,34 @@ steps:
 ---
 kind: pipeline
 type: docker
+name: "Release Binaries"
+
+platform:
+  os: linux
+  arch: arm64
+
+trigger:
+  event:
+    - tag
+steps:
+  # need to fetch the tags to be available in next steps
+  - name: fetch
+    image: alpine/git
+    commands:
+      - git fetch --tags
+
+  - name: Release GA Binaries
+    image: goreleaser/goreleaser
+    pull: if-not-exists
+    environment:
+      CGO_ENABLED: "0"
+      GITHUB_TOKEN:
+        from_secret: extn_github_token
+    commands:
+      - goreleaser release --rm-dist
+---
+kind: pipeline
+type: docker
 name: "Build and Release (arm64)"
 
 platform:
@@ -32,6 +60,8 @@ platform:
   arch: arm64
 
 trigger:
+  branch:
+    - main
   event:
     - tag
     - push
@@ -43,30 +73,26 @@ steps:
     commands:
       - git fetch --tags
 
-  - name: Release Dev Binaries
+  - name: Build Dev Binaries
     image: goreleaser/goreleaser
     pull: if-not-exists
     environment:
       CGO_ENABLED: "0"
-      GITHUB_TOKEN:
-        from_secret: extn_github_token
     commands:
-      - goreleaser release --snapshot --rm-dist --debug
+      - goreleaser build --snapshot --rm-dist --debug
     when:
       event:
         - push
       branch:
         - main
 
-  - name: Release GA Binaries
+  - name: Build GA Binaries
     image: goreleaser/goreleaser
     pull: if-not-exists
     environment:
       CGO_ENABLED: "0"
-      GITHUB_TOKEN:
-        from_secret: extn_github_token
     commands:
-      - goreleaser release --rm-dist
+      - goreleaser build --rm-dist
     when:
       event:
         - tag
@@ -133,6 +159,8 @@ platform:
   arch: amd64
 
 trigger:
+  branch:
+    - main
   event:
     - tag
     - push
@@ -144,30 +172,26 @@ steps:
     commands:
       - git fetch --tags
 
-  - name: Release Dev Binaries
+  - name: Build Dev Binaries
     image: goreleaser/goreleaser
     pull: if-not-exists
     environment:
       CGO_ENABLED: "0"
-      GITHUB_TOKEN:
-        from_secret: extn_github_token
     commands:
-      - goreleaser release --snapshot --rm-dist --debug
+      - goreleaser build --snapshot --rm-dist --debug
     when:
       event:
         - push
       branch:
         - main
 
-  - name: Release GA Binaries
+  - name: Build GA Binaries
     image: goreleaser/goreleaser
     pull: if-not-exists
     environment:
       CGO_ENABLED: "0"
-      GITHUB_TOKEN:
-        from_secret: extn_github_token
     commands:
-      - goreleaser release --rm-dist
+      - goreleaser build --rm-dist
     when:
       event:
         - tag
@@ -234,6 +258,8 @@ depends_on:
   - "Build and Release (amd64)"
 
 trigger:
+  branch:
+    - main
   event:
     - tag
     - push
