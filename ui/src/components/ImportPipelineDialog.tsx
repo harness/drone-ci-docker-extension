@@ -36,7 +36,7 @@ export default function ImportDialog({ ...props }) {
       props.onClose();
     }
   };
-  const selectDronePipelineFile = async () => {
+  const selectDronePipelines = async () => {
     const result = await ddClient.desktopUI.dialog.showOpenDialog({
       properties: ['openDirectory'],
       message: 'Select base directory to discover pipelines'
@@ -47,10 +47,10 @@ export default function ImportDialog({ ...props }) {
 
     try {
       const cmd = await ddClient.extension.host.cli.exec('pipelines-finder', ['-path', result.filePaths[0]]);
-      console.log(' Pipeline find %s', JSON.stringify(cmd));
+      console.log(' Pipeline find %s', JSON.stringify(cmd.stdout));
       if (cmd.stdout) {
         const droneFiles = JSON.parse(cmd.stdout);
-        //console.log('Drone files %s', droneFiles.length);
+        console.log('Drone files %s', droneFiles.length);
         savePipelines(droneFiles);
       }
     } catch (err) {
@@ -102,7 +102,7 @@ export default function ImportDialog({ ...props }) {
         </Button>
         <Button
           variant="contained"
-          onClick={selectDronePipelineFile}
+          onClick={selectDronePipelines}
         >
           Search
         </Button>

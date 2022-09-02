@@ -35,16 +35,25 @@ steps:
     settings:
       tags:
        - latest
+      dry_run: true
+      purge: false
+      daemon_off: true
       dockerfile: docker/Dockerfile.linux.arm64
-      registry:
-        from_secret: image_registry
+      registry: docker.io
       repo:
         from_secret: destination_image
       username:
         from_secret: image_registry_username
       password:
         from_secret: image_registry_password
+    volumes:
+    - name: dockersock
+      path: /var/run/docker.sock
 
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/docker.sock
 ---
 kind: pipeline
 type: docker
@@ -79,6 +88,9 @@ steps:
     image: plugins/docker
     pull: if-not-exists
     settings:
+      dry_run: true
+      purge: false
+      daemon_off: true
       tags:
       - latest
       dockerfile: docker/Dockerfile.linux.amd64
@@ -90,4 +102,11 @@ steps:
         from_secret: image_registry_username
       password:
         from_secret: image_registry_password
+    volumes:
+    - name: dockersock
+      path: /var/run/docker.sock
 
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/docker.sock

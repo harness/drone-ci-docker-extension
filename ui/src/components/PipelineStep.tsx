@@ -16,8 +16,8 @@ export const PipelineStep = (props: { row: Step }) => {
         key={row.stepContainerId}
         sx={{ '& > *': { borderTop: 'unset', borderBottom: 'unset' } }}
       >
-        <TableCell>{row.stepName}</TableCell>
-        <TableCell>{row.stepImage} </TableCell>
+        <TableCell>{row.name}</TableCell>
+        <TableCell>{row.name} </TableCell>
         <TableCell>
           <StepStatus status={row.status} />
         </TableCell>

@@ -76,7 +76,7 @@ export const Row = (props) => {
             component="th"
             scope="row"
           >
-            {pipelineDisplayName(row.pipelinePath, row.pipelineName)}
+            {pipelineDisplayName(row.pipelinePath, row.stageName)}
           </TableCell>
         </Tooltip>
         <TableCell
@@ -93,7 +93,7 @@ export const Row = (props) => {
           <PipelineRowActions
             pipelineID={row.id}
             pipelineFile={row.pipelineFile}
-            pipelineName={row.pipelineName}
+            stageName={row.stageName}
             workspacePath={row.pipelinePath}
             logHandler={logHandler}
             openHandler={setOpen}
@@ -136,7 +136,7 @@ export const Row = (props) => {
                       row.steps.map((step) => (
                         <>
                           <PipelineStep
-                            key={`${row.id}-${md5(step.stepName)}`}
+                            key={`${row.id}-${md5(step.name)}`}
                             row={step}
                           />
                         </>

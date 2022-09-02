@@ -76,7 +76,7 @@ export const pipelinesSlice = createSlice({
         if (!oldSteps) {
           oldSteps = [step];
         } else {
-          const stepIdx = _.findIndex(oldSteps, { stepName: step.stepName });
+          const stepIdx = _.findIndex(oldSteps, { name: step.name });
           if (stepIdx != -1) {
             oldSteps[stepIdx] = step;
           } else {
@@ -94,7 +94,7 @@ export const pipelinesSlice = createSlice({
       if (idx != -1) {
         // console.log(' Update Found::' + idx + '::' + JSON.stringify(state.rows[idx]));
         const oldSteps = state.rows[idx].steps;
-        const stepIdx = _.findIndex(oldSteps, { stepName: step.stepName });
+        const stepIdx = _.findIndex(oldSteps, { name: step.name });
         //console.log('Update Found Step::' + stepIdx + '::' + JSON.stringify(oldSteps));
         if (stepIdx != -1) {
           oldSteps[stepIdx] = step;
@@ -108,7 +108,7 @@ export const pipelinesSlice = createSlice({
       const { pipelineID, step } = action.payload;
       const idx = _.findIndex(state.rows, { id: pipelineID });
       if (idx != -1) {
-        const j = _.findIndex(state.rows[idx].steps, { name: step.stepName });
+        const j = _.findIndex(state.rows[idx].steps, { name: step.name });
         state.rows[idx].steps.splice(j, 1);
       }
     },
@@ -165,13 +165,13 @@ function updatePipelineStatus(state, pipelineId: string) {
 }
 
 function rowsFromPayload(payload: Pipeline[]) {
-  //console.log('Received Payload ' + JSON.stringify(payload));
+  console.log('Received Payload ' + JSON.stringify(payload));
   const rows = [];
   payload.map((v) => {
     rows.push({
       id: v.id,
       pipelinePath: v.pipelinePath,
-      pipelineName: v.pipelineName?.replace(/[\n\r]/g, ''),
+      stageName: v.stageName?.replace(/[\n\r]/g, ''),
       pipelineFile: v.pipelineFile,
       steps: v?.steps,
       status: v?.status

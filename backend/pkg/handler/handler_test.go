@@ -42,22 +42,48 @@ func TestGetPipelines(t *testing.T) {
 
 	expected := []*DronePipeline{
 		{
-			ID:           "0592f315d12d71632b2fea692fc9625e",
-			Name:         "GoLang Build",
+			ID:           "2766b8e028dfd7ee1fea1b2b74355a90",
+			StageName:    "GoLang Build",
 			Path:         "/tmp/test-golang-project",
 			PipelineFile: "/tmp/test-golang-project/.drone.yml",
+			Steps: []PipelineStep{
+				{StepName: "step-one", StepImage: "busybox", Status: "done"},
+				{StepName: "step-two", StepImage: "alpine", Status: "error"},
+			},
+			Status: PipelineStatus{
+				Total: 2,
+				Error: 1,
+				Done:  1,
+			},
 		},
 		{
-			ID:           "55feaccf5aff35d79551b5cffa7ffff9",
-			Name:         "Java Build",
+			ID:           "563f1cdfe5970775b835d97d75ef6397",
+			StageName:    "Java Build",
 			Path:         "/tmp/test-java-project",
 			PipelineFile: "/tmp/test-java-project/.drone.yml",
+			Steps: []PipelineStep{
+				{StepName: "step-one", StepImage: "busybox", Status: "done"},
+				{StepName: "step-two", StepImage: "alpine", Status: "done"},
+			},
+			Status: PipelineStatus{
+				Total: 2,
+				Error: 0,
+				Done:  2,
+			},
 		},
 		{
-			ID:           "d8366124dbd49939f0485772abd3617d",
-			Name:         "Node Build",
+			ID:           "f6d03b00771697d8b78e816104c38bae",
+			StageName:    "Node Build",
 			Path:         "/tmp/test-nodejs-project",
 			PipelineFile: "/tmp/test-nodejs-project/.drone.yml",
+			Steps: []PipelineStep{
+				{StepName: "step-one", StepImage: "busybox", Status: "done"},
+			},
+			Status: PipelineStatus{
+				Total: 1,
+				Error: 0,
+				Done:  1,
+			},
 		},
 	}
 	e := echo.New()
@@ -84,7 +110,7 @@ func TestDeletePipelines(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pipelineIdsJSON := `["55feaccf5aff35d79551b5cffa7ffff9","d8366124dbd49939f0485772abd3617d"]`
+	pipelineIdsJSON := `["563f1cdfe5970775b835d97d75ef6397","f6d03b00771697d8b78e816104c38bae"]`
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(pipelineIdsJSON))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -105,7 +131,7 @@ func TestDeletePipelines(t *testing.T) {
 		json.Unmarshal(rec.Body.Bytes(), &ids)
 		assert.NotNil(t, ids)
 		assert.Equal(t, len(ids), 2)
-		assert.True(t, reflect.DeepEqual(ids, []string{"55feaccf5aff35d79551b5cffa7ffff9", "d8366124dbd49939f0485772abd3617d"}))
+		assert.True(t, reflect.DeepEqual(ids, []string{"563f1cdfe5970775b835d97d75ef6397", "f6d03b00771697d8b78e816104c38bae"}))
 	}
 	os.Remove(dataFile)
 }
@@ -121,7 +147,7 @@ func TestDeletePipeline(t *testing.T) {
 	c := e.NewContext(req, rec)
 	c.SetPath("/pipeline/:id")
 	c.SetParamNames("id")
-	c.SetParamValues("d8366124dbd49939f0485772abd3617d")
+	c.SetParamValues("f6d03b00771697d8b78e816104c38bae")
 	dataFile := getDataFile("db.json")
 
 	h, err := NewHandler(dataFile)
@@ -139,7 +165,7 @@ func TestDeletePipeline(t *testing.T) {
 		}
 		json.Unmarshal(b, &dp)
 		assert.NotNil(t, dp)
-		ok := h.hasElement("d8366124dbd49939f0485772abd3617d")
+		ok := h.hasElement("f6d03b00771697d8b78e816104c38bae")
 		assert.False(t, ok)
 	}
 	os.Remove(dataFile)
@@ -153,8 +179,8 @@ func TestSavePipeline(t *testing.T) {
 	e := echo.New()
 	newPipelineJSON := `[
 		{
-		"id": "0592f315d12d71632b2fea692fc9625e",
-		"pipelineName":"GoLang Build", 
+		"id": "2766b8e028dfd7ee1fea1b2b74355a90",
+		"stageName":"GoLang Build", 
 		"pipelinePath":"/tmp/test-golang-project",
 		"pipelineFile": "/tmp/test-golang-project/.drone.yml"
 		}
@@ -175,7 +201,7 @@ func TestSavePipeline(t *testing.T) {
 		assert.NotNil(t, dps)
 		assert.Equal(t, len(dps), 1)
 		assert.True(t, reflect.DeepEqual(dps, []*DronePipeline{
-			{ID: "0592f315d12d71632b2fea692fc9625e", Name: "GoLang Build", Path: "/tmp/test-golang-project", PipelineFile: "/tmp/test-golang-project/.drone.yml"},
+			{ID: "2766b8e028dfd7ee1fea1b2b74355a90", StageName: "GoLang Build", Path: "/tmp/test-golang-project", PipelineFile: "/tmp/test-golang-project/.drone.yml"},
 		}))
 	}
 	os.Remove(dataFile)
@@ -189,19 +215,19 @@ func TestUpdatePipeline(t *testing.T) {
 	e := echo.New()
 	newPipelineJSON := `[
 		{
-			"id": "0592f315d12d71632b2fea692fc9625e",
-			"pipelineName": "GoLang Build",
+			"id": "2766b8e028dfd7ee1fea1b2b74355a90",
+			"stageName": "GoLang Build",
 			"pipelinePath": "/tmp/test-golang-project",
 			"pipelineFile": "/tmp/test-golang-project/.drone.yml",
 			"steps": [
 			  {
-				"stepName": "step-one",
-				"stepImage": "busybox",
+				"name": "step-one",
+				"image": "busybox",
 				"status": "done"
 			  },
 			  {
-				"stepName": "step-two",
-				"stepImage": "alpine",
+				"name": "step-two",
+				"image": "alpine",
 				"status": "error"
 			  }
 			],
@@ -229,8 +255,8 @@ func TestUpdatePipeline(t *testing.T) {
 		assert.Equal(t, len(dps), 1)
 
 		dp := dps[0]
-		assert.Equal(t, "0592f315d12d71632b2fea692fc9625e", dp.ID)
-		assert.Equal(t, "GoLang Build", dp.Name)
+		assert.Equal(t, "2766b8e028dfd7ee1fea1b2b74355a90", dp.ID)
+		assert.Equal(t, "GoLang Build", dp.StageName)
 		assert.Equal(t, "/tmp/test-golang-project", dp.Path)
 		assert.Equal(t, "/tmp/test-golang-project/.drone.yml", dp.PipelineFile)
 		assert.NotNil(t, dp.Status)
@@ -248,16 +274,20 @@ func TestSavePipelines(t *testing.T) {
 		t.Fatal(err)
 	}
 	e := echo.New()
+	expected := []*DronePipeline{
+		{ID: "2766b8e028dfd7ee1fea1b2b74355a90", StageName: "GoLang Build", Path: "/tmp/test-golang-project", PipelineFile: "/tmp/test-golang-project/.drone.yml", Steps: []PipelineStep{}, Status: PipelineStatus{}},
+		{ID: "563f1cdfe5970775b835d97d75ef6397", StageName: "Java Build", Path: "/tmp/test-java-project", PipelineFile: "/tmp/test-java-project/.drone.yml", Steps: []PipelineStep{}, Status: PipelineStatus{}},
+	}
 	newPipelinesJSON := `[
 	{
-	"id": "0592f315d12d71632b2fea692fc9625e",
-	"pipelineName":"GoLang Build", 
+	"id": "2766b8e028dfd7ee1fea1b2b74355a90",
+	"stageName":"GoLang Build", 
 	"pipelinePath":"/tmp/test-golang-project",
 	"pipelineFile": "/tmp/test-golang-project/.drone.yml"
 	},
 	{
-	"id":"307074e99d8d27f4e6d2172b8a714220",
-	"pipelineName":"Java Build", 
+	"id":"563f1cdfe5970775b835d97d75ef6397",
+	"stageName":"Java Build", 
 	"pipelinePath":"/tmp/test-java-project",
 	"pipelineFile":"/tmp/test-java-project/.drone.yml"}
 	]`
@@ -271,14 +301,11 @@ func TestSavePipelines(t *testing.T) {
 	}
 	if assert.NoError(t, h.SavePipelines(c)) {
 		assert.Equal(t, http.StatusCreated, rec.Code)
-		var dps []*DronePipeline
-		json.Unmarshal(rec.Body.Bytes(), &dps)
-		assert.NotNil(t, dps)
-		assert.Equal(t, len(dps), 2)
-		assert.True(t, reflect.DeepEqual(dps, []*DronePipeline{
-			{ID: "0592f315d12d71632b2fea692fc9625e", Name: "GoLang Build", Path: "/tmp/test-golang-project", PipelineFile: "/tmp/test-golang-project/.drone.yml"},
-			{ID: "307074e99d8d27f4e6d2172b8a714220", Name: "Java Build", Path: "/tmp/test-java-project", PipelineFile: "/tmp/test-java-project/.drone.yml"},
-		}))
+		var actual []*DronePipeline
+		json.Unmarshal(rec.Body.Bytes(), &actual)
+		assert.NotNil(t, actual)
+		assert.Equal(t, len(actual), 2)
+		assert.True(t, reflect.DeepEqual(actual, expected))
 	}
 	os.Remove(dataFile)
 }

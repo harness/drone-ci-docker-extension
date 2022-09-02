@@ -23,8 +23,8 @@ export interface Event {
 export interface Step {
   stepContainerId: string;
   pipelineFQN: string;
-  stepName: string;
-  stepImage: string;
+  name: string;
+  image: string;
   status: string;
 }
 
@@ -32,7 +32,7 @@ export interface Step {
 //in the UI
 export interface Pipeline {
   id: string;
-  pipelineName: string;
+  stageName: string;
   pipelinePath: string;
   pipelineFile: string;
   status: PipelineStatus;

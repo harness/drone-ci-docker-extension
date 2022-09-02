@@ -12,16 +12,16 @@ export function getDockerDesktopClient() {
   return client;
 }
 
-export function pipelineFQN(pipelinePath: string, pipelineName: string): string {
-  if (pipelineName.indexOf('/') != -1) {
-    pipelineName = pipelineName.split('/')[1];
+export function pipelineFQN(pipelinePath: string, stageName: string): string {
+  if (stageName.indexOf('/') != -1) {
+    stageName = stageName.split('/')[1];
   }
-  return `${pipelinePath.replaceAll('/', '-')}~~${pipelineName}`;
+  return `${pipelinePath.replaceAll('/', '-')}~~${stageName}`;
 }
 
-export function pipelineDisplayName(pipelinePath: string, pipelineName: string): string {
+export function pipelineDisplayName(pipelinePath: string, stageName: string): string {
   const paths = pipelinePath.split('/');
-  return `${paths[paths.length - 1]}/${pipelineName}`;
+  return `${paths[paths.length - 1]}/${stageName}`;
 }
 
 export function vscodeURI(pipelinePath: string): string {
@@ -42,12 +42,12 @@ export async function getStepsCount(pipelinePath: string): Promise<number> {
 }
 
 export function extractStepInfo(event: any, eventActorID: string, pipelineDir: string, status: string): Step {
-  const pipelineName = event.Actor.Attributes['io.drone.stage.name'];
+  const stageName = event.Actor.Attributes['io.drone.stage.name'];
   return {
     stepContainerId: eventActorID,
-    pipelineFQN: pipelineFQN(pipelineDir, pipelineName),
-    stepName: event.Actor.Attributes['io.drone.step.name'],
-    stepImage: event.Actor.Attributes['image'],
+    pipelineFQN: pipelineFQN(pipelineDir, stageName),
+    name: event.Actor.Attributes['io.drone.step.name'],
+    image: event.Actor.Attributes['image'],
     status: status
   };
 }

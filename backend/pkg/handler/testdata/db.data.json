@@ -1,18 +1,18 @@
 [
   {
-    "id": "0592f315d12d71632b2fea692fc9625e",
-    "pipelineName": "GoLang Build",
+    "id": "2766b8e028dfd7ee1fea1b2b74355a90",
+    "stageName": "GoLang Build",
     "pipelinePath": "/tmp/test-golang-project",
     "pipelineFile": "/tmp/test-golang-project/.drone.yml",
     "steps": [
       {
-        "stepName": "step-one",
-        "stepImage": "busybox",
+        "name": "step-one",
+        "image": "busybox",
         "status": "done"
       },
       {
-        "stepName": "step-two",
-        "stepImage": "alpine",
+        "name": "step-two",
+        "image": "alpine",
         "status": "error"
       }
     ],
@@ -23,8 +23,8 @@
     }
   },
   {
-    "id": "55feaccf5aff35d79551b5cffa7ffff9",
-    "pipelineName": "Java Build",
+    "id": "563f1cdfe5970775b835d97d75ef6397",
+    "stageName": "Java Build",
     "pipelinePath": "/tmp/test-java-project",
     "pipelineFile": "/tmp/test-java-project/.drone.yml",
     "status": {
@@ -34,20 +34,20 @@
     },
     "steps": [
       {
-        "stepName": "step-one",
-        "stepImage": "busybox",
+        "name": "step-one",
+        "image": "busybox",
         "status": "done"
       },
       {
-        "stepName": "step-two",
-        "stepImage": "alpine",
-        "status": "error"
+        "name": "step-two",
+        "image": "alpine",
+        "status": "done"
       }
     ]
   },
   {
-    "id": "d8366124dbd49939f0485772abd3617d",
-    "pipelineName": "Node Build",
+    "id": "f6d03b00771697d8b78e816104c38bae",
+    "stageName": "Node Build",
     "pipelinePath": "/tmp/test-nodejs-project",
     "pipelineFile": "/tmp/test-nodejs-project/.drone.yml",
     "status": {
@@ -57,8 +57,8 @@
     },
     "steps": [
       {
-        "stepName": "step-one",
-        "stepImage": "busybox",
+        "name": "step-one",
+        "image": "busybox",
         "status": "done"
       }
     ]

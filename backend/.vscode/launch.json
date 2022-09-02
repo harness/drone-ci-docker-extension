@@ -9,7 +9,11 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "${fileDirname}"
+      "program": "${fileDirname}",
+      "args": [
+        "-path",
+        "/Users/kameshs/git/harness/drone-desktop-docker-extension/examples/multi-stage"
+      ]
     }
   ]
 }

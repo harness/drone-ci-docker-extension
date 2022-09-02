@@ -110,7 +110,7 @@ export const PipelinesTable = (props) => {
             case EventStatus.START: {
               const pipelineID = md5(pipelineDir);
               const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, 'start');
-              if (stepInfo.pipelineFQN && stepInfo.stepName) {
+              if (stepInfo.pipelineFQN && stepInfo.name) {
                 dispatch(
                   addStep({
                     pipelineID,
@@ -128,7 +128,7 @@ export const PipelinesTable = (props) => {
               const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, 'dummy');
               //console.log('STOP/DIE/KILL %s', JSON.stringify(event));
               const exitCode = parseInt(event.Actor.Attributes['exitCode']);
-              if (stepInfo.pipelineFQN && stepInfo.stepName) {
+              if (stepInfo.pipelineFQN && stepInfo.name) {
                 if (exitCode === 0) {
                   stepInfo.status = 'done';
                 } else {

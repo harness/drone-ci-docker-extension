@@ -23,7 +23,7 @@ type DronePipelineStep struct {
 
 type DronePipeline struct {
 	ID           string              `yaml:"id" json:"id"`
-	PipelineName string              `yaml:"name" json:"name"`
+	StageName    string              `yaml:"name" json:"stageName"`
 	PipelinePath string              `yaml:"pipelinePath,omitempty" json:"pipelinePath,omitempty"`
 	PipelineFile string              `yaml:"pipelineFile,omitempty" json:"pipelineFile,omitempty"`
 	Steps        []DronePipelineStep `yaml:"steps" json:"steps"`
@@ -94,7 +94,7 @@ func main() {
 				}
 				dronePipeline.PipelineFile = path
 				dronePipeline.PipelinePath = filepath.Dir(path)
-				dronePipeline.ID = generateID(dronePipeline.PipelineName, path)
+				dronePipeline.ID = generateID(dronePipeline.StageName, path)
 				dronePipelines = append(dronePipelines, *dronePipeline)
 			}
 		}

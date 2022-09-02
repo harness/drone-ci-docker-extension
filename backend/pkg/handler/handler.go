@@ -19,8 +19,8 @@ type (
 
 	//PipelineStep represents a pipeline step
 	PipelineStep struct {
-		StepName  string `json:"stepName"`
-		StepImage string `json:"stepImage"`
+		StepName  string `json:"name"`
+		StepImage string `json:"image"`
 		Status    string `json:"status"`
 	}
 
@@ -34,7 +34,7 @@ type (
 	//DronePipeline is the request data to save the Pipeline
 	DronePipeline struct {
 		ID           string         `json:"id"`
-		Name         string         `json:"pipelineName"`
+		StageName    string         `json:"stageName"`
 		Path         string         `json:"pipelinePath"`
 		PipelineFile string         `json:"pipelineFile"`
 		Steps        []PipelineStep `json:"steps,omitempty"`
@@ -142,12 +142,12 @@ func (h *Handler) SavePipelines(c echo.Context) error {
 	for _, dp := range dps {
 		//Update existing
 		if h.hasElement(dp.ID) {
-			log.Infof("Updating existing pipeline %s " + dp.PipelineFile)
+			log.Infof("Updating existing pipeline %s ", dp.PipelineFile)
 			if idx := h.indexOf(dp.ID); idx != 1 {
 				h.db[idx] = dp
 			}
 		} else { //Add new
-			log.Infof("Adding new pipeline %s " + dp.PipelineFile)
+			log.Infof("Adding new pipeline %s ", dp.PipelineFile)
 			h.db = append(h.db, dp)
 		}
 	}

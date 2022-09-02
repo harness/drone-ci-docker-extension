@@ -9,7 +9,7 @@ import RunPipelineDialog from './RunPipelineDialog';
 export const PipelineRowActions = (props: {
   pipelineID: string;
   workspacePath: string;
-  pipelineName: string;
+  stageName: string;
   pipelineFile: string;
   logHandler;
   openHandler;
