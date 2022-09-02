@@ -1,5 +1,5 @@
 import { IconButton, Stack, Tooltip } from '@mui/material';
-import { getDockerDesktopClient, vscodeURI } from '../utils';
+import { vscodeURI } from '../utils';
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 import { useState } from 'react';
 import RemovePipelineDialog from './RemovePipelineDialog';

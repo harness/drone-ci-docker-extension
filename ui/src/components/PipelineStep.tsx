@@ -17,7 +17,7 @@ export const PipelineStep = (props: { row: Step }) => {
         sx={{ '& > *': { borderTop: 'unset', borderBottom: 'unset' } }}
       >
         <TableCell>{row.name}</TableCell>
-        <TableCell>{row.name} </TableCell>
+        <TableCell>{row.image} </TableCell>
         <TableCell>
           <StepStatus status={row.status} />
         </TableCell>

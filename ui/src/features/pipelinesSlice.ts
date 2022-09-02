@@ -35,7 +35,7 @@ function computePipelineStatus(state, pipelineId): PipelineStatus {
 
 export const importPipelines = createAsyncThunk('pipelines/loadPipelines', async () => {
   const response = (await ddClient.extension.vm.service.get('/pipelines')) as Pipeline[];
-  //console.log('Loading pipelines from backend %s', JSON.stringify(response));
+  //console.log('Loading pipelines from backend %s', response.length);
   return response;
 });
 
@@ -165,7 +165,7 @@ function updatePipelineStatus(state, pipelineId: string) {
 }
 
 function rowsFromPayload(payload: Pipeline[]) {
-  console.log('Received Payload ' + JSON.stringify(payload));
+  //console.log('Received Payload ' + JSON.stringify(payload));
   const rows = [];
   payload.map((v) => {
     rows.push({

@@ -2,24 +2,16 @@ import { Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useAppDispatch } from '../app/hooks';
 import { updateStepCount } from '../features/pipelinesSlice';
-import { getDockerDesktopClient } from '../utils';
 
 export const PipelineStatus = (props) => {
   const dispatch = useAppDispatch();
-  const { status, pipelineID, pipelineFile } = props;
+  const { status, pipelineID, stepsCount } = props;
   const [statusColor, setStatusColor] = useState('info');
   const [statusText, setStatusText] = useState('');
   //console.log('Pipeline Status' + JSON.stringify(status));
 
   useEffect(() => {
-    const countSteps = async () => {
-      const out = await getDockerDesktopClient().extension.host.cli.exec('yq', ["'.steps|length'", pipelineFile]);
-      //console.log('Pipeline ' + pipelineFile + ' has ' + out.stdout + ' steps');
-      if (out && out.stdout) {
-        dispatch(updateStepCount({ pipelineID, status: { total: parseInt(out.stdout) } }));
-      }
-    };
-    countSteps();
+    dispatch(updateStepCount({ pipelineID, status: { total: stepsCount } }));
   }, []);
 
   useEffect(() => {
