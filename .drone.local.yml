@@ -13,10 +13,55 @@ steps:
     pull: if-not-exists
     environment:
       CGO_ENABLED: "0"
-      GITHUB_TOKEN:
-        from_secret: github_token
     commands:
-      - goreleaser release --snapshot --rm-dist --debug
+      - cd backend
+      - goreleaser build --snapshot --rm-dist --debug
+
+  - name: ui-build
+    image: node:17.7-alpine3.14
+    environment:
+      # this is required by Docker Extension to load
+      # static files from extension path on the Host
+      PUBLIC_URL: .
+      BROWSER: none
+    commands:
+      - cd ui
+      - yarn ci
+      - yarn build
+
+  - name: Publish Dev Build arm64
+    image: plugins/docker
+    pull: if-not-exists
+    settings:
+      tags:
+       - latest
+      dockerfile: docker/Dockerfile.linux.arm64
+      registry:
+        from_secret: image_registry
+      repo:
+        from_secret: destination_image
+      username:
+        from_secret: image_registry_username
+      password:
+        from_secret: image_registry_password
+
+---
+kind: pipeline
+type: docker
+name: linux-amd64
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+  - name: goreleaser
+    image: goreleaser/goreleaser
+    pull: if-not-exists
+    environment:
+      CGO_ENABLED: "0"
+    commands:
+      - goreleaser build --snapshot --rm-dist --debug
 
   - name: ui-build
     image: node:17.7-alpine3.14
@@ -28,31 +73,14 @@ steps:
       BROWSER: none
     commands:
       - cd ui
-      - npm ci
-      - npm run build
-
-  - name: Publish Dev Build arm64
-    image: plugins/docker
-    pull: if-not-exists
-    settings:
-      auto_tag: true
-      auto_tag_suffix: linux-arm64
-      dockerfile: docker/Dockerfile.linux.arm64
-      registry:
-        from_secret: image_registry
-      repo:
-        from_secret: destination_image
-      username:
-        from_secret: image_registry_username
-      password:
-        from_secret: image_registry_password
-
+      - yarn ci
+      - yarn build
   - name: Publish Dev Build amd64
     image: plugins/docker
     pull: if-not-exists
     settings:
-      auto_tag: true
-      auto_tag_suffix: linux-amd64
+      tags:
+      - latest
       dockerfile: docker/Dockerfile.linux.amd64
       registry:
         from_secret: image_registry
@@ -63,14 +91,3 @@ steps:
       password:
         from_secret: image_registry_password
 
-  - name: Publish Dev Manifests
-    image: plugins/manifest:1.2
-    settings:
-      tags:
-        - latest
-      ignore_missing: true
-      spec: docker/manifest.local.tmpl
-      username:
-        from_secret: image_registry_username
-      password:
-        from_secret: image_registry_password
