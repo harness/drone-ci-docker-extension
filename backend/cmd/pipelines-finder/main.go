@@ -3,9 +3,10 @@ package main
 import (
 	"crypto/md5"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,15 +16,20 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type DronePipelineStep struct {
+	Name  string `yaml:"name" json:"name"`
+	Image string `yaml:"image" json:"image"`
+}
+
 type DronePipeline struct {
-	ID           string `json:"id"`
-	PipelineName string `json:"pipelineName"`
-	PipelinePath string `json:"pipelinePath"`
-	PipelineFile string `json:"pipelineFile"`
+	ID           string              `yaml:"id" json:"id"`
+	PipelineName string              `yaml:"name" json:"name"`
+	PipelinePath string              `yaml:"pipelinePath,omitempty" json:"pipelinePath,omitempty"`
+	PipelineFile string              `yaml:"pipelineFile,omitempty" json:"pipelineFile,omitempty"`
+	Steps        []DronePipelineStep `yaml:"steps" json:"steps"`
 }
 
 func main() {
-
 	var dronePipelines []DronePipeline
 
 	var directory string
@@ -42,7 +48,6 @@ func main() {
 	}
 
 	err = filepath.Walk(directory, func(path string, fi os.FileInfo, err error) error {
-
 		if err != nil {
 			fmt.Println(err)
 			return nil
@@ -66,17 +71,32 @@ func main() {
 		}
 
 		if !info.IsDir() && strings.HasSuffix(path, ".drone.yml") {
-			pipelineName, err := pipelineName(path)
 			if err != nil {
 				log.Fatal(err)
 			}
-			dronePipeline := DronePipeline{
-				ID:           generateId(filepath.Dir(path)),
-				PipelinePath: filepath.Dir(path),
-				PipelineFile: path,
-				PipelineName: pipelineName,
+
+			file, err := os.Open(path)
+			if err != nil {
+				log.Fatal(err)
 			}
-			dronePipelines = append(dronePipelines, dronePipeline)
+			decoder := yaml.NewDecoder(file)
+			dronePipeline := new(DronePipeline)
+			for {
+				err := decoder.Decode(dronePipeline)
+				if dronePipeline == nil {
+					continue
+				}
+				if errors.Is(err, io.EOF) {
+					break
+				}
+				if err != nil {
+					log.Fatal(err)
+				}
+				dronePipeline.PipelineFile = path
+				dronePipeline.PipelinePath = filepath.Dir(path)
+				dronePipeline.ID = generateID(dronePipeline.PipelineName, path)
+				dronePipelines = append(dronePipelines, *dronePipeline)
+			}
 		}
 
 		return nil
@@ -92,24 +112,8 @@ func main() {
 	}
 
 	fmt.Printf(string(b))
-
 }
 
-func pipelineName(path string) (string, error) {
-	var yml map[string]interface{}
-	b, err := ioutil.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-
-	err = yaml.Unmarshal(b, &yml)
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%s", yml["name"]), nil
-}
-
-func generateId(path string) string {
-	return fmt.Sprintf("%x", md5.Sum([]byte(path)))
+func generateID(stageName, path string) string {
+	return fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%s|%s", stageName, path))))
 }

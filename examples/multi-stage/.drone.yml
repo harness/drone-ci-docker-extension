@@ -1,0 +1,52 @@
+---
+kind: pipeline
+type: docker
+name: default
+platform:
+  os: linux
+  arch: arm64
+steps: 
+  - name: hello world
+    image: busybox
+    pull: if-not-exists
+    commands:
+    - x=0;while [ $x -lt 5 ]; do echo "hello world"; sleep 1; x=$((x+1)); done
+  - name: good bye world
+    image: busybox
+    pull: if-not-exists
+    commands:
+    - x=0;while [ $x -lt 5 ]; do echo "good bye world"; sleep 1; x=$((x+1)); done
+---
+kind: pipeline
+type: docker
+name: use-env
+platform:
+  os: linux
+  arch: arm64
+steps: 
+  - name: display enviornment variables
+    image: busybox
+    pull: if-not-exists
+    commands:
+    - printenv
+
+---
+kind: pipeline
+type: docker
+name: use-secret
+platform:
+  os: linux
+  arch: arm64
+steps: 
+  - name: display secret variables
+    image: ubuntu
+    pull: if-not-exists
+    commands:
+    - echo "Secrets will be masked"
+    - printenv | grep 'SECRET'
+    - "if [ $SECRET_FOO = 'foo' ]; then echo 'Secret loaded correctly'; else echo 'Secret not loaded'; fi;"
+    environment:
+       SECRET_FOO:
+          from_secret: DRONE_DESKTOP_SECRET_FOO
+       SECRET_BAR:
+          from_secret: DRONE_DESKTOP_SECRET_BAR

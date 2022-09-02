@@ -5,7 +5,7 @@ platform:
   os: linux
   arch: arm64
 steps: 
-  - name: display enviornment variables
+  - name: display environment variables
     image: busybox
     pull: if-not-exists
     commands:

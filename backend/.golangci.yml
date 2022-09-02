@@ -27,4 +27,7 @@ linters:
     - errcheck
 
 linters-settings:
-  gosec: {}
+  gosec:
+    excludes:
+      - 'G401' # ignore md5 rules as its used only for hashing trivial value
+      - 'G501' # ignore md5 rules as its used only for hashing trivial value
