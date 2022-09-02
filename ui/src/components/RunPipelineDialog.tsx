@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   Button,
-  Typography,
-  FormGroup,
   FormControlLabel,
   Checkbox,
   Stack,
@@ -11,13 +9,10 @@ import {
   Select,
   MenuItem,
   ListItemText,
-  OutlinedInput,
   SelectChangeEvent,
-  TextField,
-  Paper,
   InputBase,
+  Paper,
   IconButton,
-  Grid,
   Tooltip
 } from '@mui/material';
 import Dialog from '@mui/material/Dialog';
@@ -25,8 +20,6 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import SearchIcon from '@mui/icons-material/Search';
-import CancelIcon from '@mui/icons-material/Cancel';
-import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
 import InfoIcon from '@mui/icons-material/Info';
 import BackspaceIcon from '@mui/icons-material/Backspace';
 import { getDockerDesktopClient } from '../utils';
@@ -353,18 +346,16 @@ export default function RunPipelineDialog({ ...props }) {
       </DialogContent>
       <DialogActions>
         <Button
-          variant="contained"
+          variant="outlined"
           onClick={() => {
             props.onClose();
           }}
-          endIcon={<CancelIcon />}
         >
           Cancel
         </Button>
         <Button
           variant="contained"
           onClick={runPipeline}
-          endIcon={<PlayCircleFilledWhiteIcon />}
         >
           Run
         </Button>

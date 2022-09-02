@@ -128,7 +128,7 @@ export const Row = (props) => {
                       <TableCell>Name</TableCell>
                       <TableCell>Container</TableCell>
                       <TableCell>Status</TableCell>
-                      <TableCell>Actions</TableCell>
+                      {/* <TableCell>Actions</TableCell> */}
                     </TableRow>
                   </TableHead>
                   <TableBody>

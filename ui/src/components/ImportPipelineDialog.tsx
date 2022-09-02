@@ -4,8 +4,6 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import SearchIcon from '@mui/icons-material/Search';
-import CancelIcon from '@mui/icons-material/Cancel';
 
 import { getDockerDesktopClient } from '../utils';
 import { useAppDispatch } from '../app/hooks';
@@ -95,18 +93,16 @@ export default function ImportDialog({ ...props }) {
       </DialogContent>
       <DialogActions>
         <Button
-          variant="contained"
+          variant="outlined"
           onClick={() => {
             props.onClose();
           }}
-          endIcon={<CancelIcon />}
         >
           Cancel
         </Button>
         <Button
           variant="contained"
           onClick={selectDronePipelineFile}
-          endIcon={<SearchIcon />}
         >
           Search
         </Button>

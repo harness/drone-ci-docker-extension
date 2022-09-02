@@ -1,5 +1,4 @@
 import { IconButton, Toolbar, Tooltip, Typography } from '@mui/material';
-import FilterListIcon from '@mui/icons-material/FilterList';
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 import { alpha } from '@mui/material/styles';
 
@@ -42,11 +41,8 @@ export const PipelineTableToolbar = (props) => {
           </IconButton>
         </Tooltip>
       ) : (
-        <Tooltip title="Filter list">
-          <IconButton>
-            <FilterListIcon />
-          </IconButton>
-        </Tooltip>
+        // TODO add filters
+        <></>
       )}
     </Toolbar>
   );

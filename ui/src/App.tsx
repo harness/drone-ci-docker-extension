@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Grid, Stack, Typography } from '@mui/material';
 import ImportDialog from './components/ImportPipelineDialog';
-import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { PipelinesTable } from './components/PipelinesTable';
 import { getDockerDesktopClient } from './utils';
 
@@ -43,7 +42,7 @@ export function App() {
           color="text.secondary"
           sx={{ mt: 2 }}
         >
-          Do Continuous Integrations (CI) on your computer.
+          Run Continuous Integration & Delivery Pipelines (CI/CD) from within Docker Desktop.
         </Typography>
         <Grid
           container
@@ -56,7 +55,6 @@ export function App() {
             <Button
               variant="contained"
               onClick={handleImportPipeline}
-              endIcon={<AddCircleIcon />}
             >
               Import Pipelines
             </Button>

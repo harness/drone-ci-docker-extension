@@ -11,8 +11,6 @@ import {
 } from '@mui/material';
 import React from 'react';
 import { useAppDispatch } from '../app/hooks';
-import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
 import { getDockerDesktopClient } from '../utils';
 import { removePipelines } from '../features/pipelinesSlice';
 
@@ -73,18 +71,16 @@ export default function RemovePipelineDialog({ ...props }) {
       </DialogContent>
       <DialogActions>
         <Button
-          variant="contained"
+          variant="outlined"
           onClick={() => {
             props.onClose();
           }}
-          endIcon={<CancelIcon />}
         >
           Cancel
         </Button>
         <Button
           variant="contained"
           onClick={handleDeletePipeline}
-          endIcon={<RemoveCircleIcon />}
         >
           Remove
         </Button>
