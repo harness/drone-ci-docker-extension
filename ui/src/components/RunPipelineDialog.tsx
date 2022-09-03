@@ -23,10 +23,13 @@ import SearchIcon from '@mui/icons-material/Search';
 import InfoIcon from '@mui/icons-material/Info';
 import BackspaceIcon from '@mui/icons-material/Backspace';
 import { getDockerDesktopClient } from '../utils';
+import { useAppDispatch } from '../app/hooks';
+import { resetPipelineStatus } from '../features/pipelinesSlice';
 
 export default function RunPipelineDialog({ ...props }) {
+  const dispatch = useAppDispatch();
   const ddClient = getDockerDesktopClient();
-  const { pipelineID, pipelineFile, workspacePath, logHandler, openHandler } = props;
+  const { pipelineID, pipelineFile, workspacePath, logHandler, openHandler, stepCount } = props;
   const [pipelineSteps, setPipelineSteps] = useState<string[]>([]);
   const [includeSteps, setIncludeSteps] = React.useState<string[]>([]);
   const [dockerNetworks, setDockerNetworks] = React.useState<string[]>([]);
@@ -161,8 +164,8 @@ export default function RunPipelineDialog({ ...props }) {
     //The pipeline file to use
     pipelineExecArgs.push(pipelineFile);
 
-    console.log('Pipeline Exec Args %s', JSON.stringify(pipelineExecArgs));
-
+    //console.log('Pipeline Exec Args %s', JSON.stringify(pipelineExecArgs));
+    dispatch(resetPipelineStatus({ pipelineID, status: { error: 0, done: 0, running: 0, total: stepCount } }));
     await ddClient.extension.host.cli.exec('run-drone', pipelineExecArgs, {
       stream: {
         splitOutputLines: true,

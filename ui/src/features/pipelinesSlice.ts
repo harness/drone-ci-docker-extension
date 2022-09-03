@@ -106,6 +106,21 @@ export const pipelinesSlice = createSlice({
       const pipelineIds = action.payload;
       // console.log('Action::removePipelines::Payload' + JSON.stringify(pipelineIds));
       state.rows = _.remove(state.rows, (o) => !_.includes(pipelineIds, o.id));
+    },
+    resetPipelineStatus: (state, action: PayloadAction<StepCountPayload>) => {
+      const { pipelineID, status } = action.payload;
+      const idx = _.findIndex(state.rows, { id: pipelineID });
+      if (idx != -1) {
+        state.rows[idx].status.total = status.total;
+        state.rows[idx].status.error = status.error;
+        state.rows[idx].status.running = status.running;
+        state.rows[idx].status.done = status.done;
+        //reset step statuses
+        state.rows[idx].steps.forEach((step) => {
+          step.status = 'reset';
+        });
+      }
+      updatePipelineStatus(state, pipelineID);
     }
   },
   extraReducers: (builder) => {
@@ -125,8 +140,15 @@ export const pipelinesSlice = createSlice({
   }
 });
 
-export const { loadPipelines, pipelineStatus, updateStep, deleteSteps, removePipelines, updateStepCount } =
-  pipelinesSlice.actions;
+export const {
+  loadPipelines,
+  pipelineStatus,
+  updateStep,
+  deleteSteps,
+  removePipelines,
+  updateStepCount,
+  resetPipelineStatus
+} = pipelinesSlice.actions;
 
 export const selectRows = (state: RootState) => state.pipelines.rows;
 export const dataLoadStatus = (state: RootState) => state.pipelines.status;

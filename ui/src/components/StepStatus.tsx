@@ -1,4 +1,3 @@
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingIcon from '@mui/icons-material/Pending';
 import { Typography } from '@mui/material';
 export const StepStatus = (props: { status: string }) => {

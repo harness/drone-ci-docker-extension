@@ -11,10 +11,11 @@ export const PipelineRowActions = (props: {
   workspacePath: string;
   stageName: string;
   pipelineFile: string;
+  stepCount: number;
   logHandler;
   openHandler;
 }) => {
-  const { pipelineID, pipelineFile, workspacePath, logHandler, openHandler } = props;
+  const { pipelineID, pipelineFile, workspacePath, logHandler, openHandler, stepCount } = props;
   const [removeConfirm, setRemoveConfirm] = useState(false);
   const [openRunPipeline, setOpenRunPipeline] = useState(false);
 
@@ -79,6 +80,7 @@ export const PipelineRowActions = (props: {
           workspacePath={workspacePath}
           logHandler={logHandler}
           openHandler={openHandler}
+          stepCount={stepCount}
         />
       )}
     </Stack>

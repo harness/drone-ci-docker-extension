@@ -215,6 +215,7 @@ export const Row = (props) => {
             workspacePath={row.pipelinePath}
             logHandler={logHandler}
             openHandler={setOpen}
+            stepCount={row.steps?.length}
           />
         </TableCell>
       </TableRow>
