@@ -65,28 +65,6 @@ export const pipelinesSlice = createSlice({
       // console.log('New Rows ', JSON.stringify(newRows));
       state.rows = _.unionBy(state.rows, newRows, 'id');
     },
-    addStep: (state, action: PayloadAction<StepPayload>) => {
-      //console.log('Action::' + action.type + '::' + JSON.stringify(action.payload));
-      const { pipelineID, step } = action.payload;
-      const idx = _.findIndex(state.rows, { id: pipelineID });
-      if (idx != -1) {
-        // console.log('Add Step Found::' + idx + '::' + JSON.stringify(state.rows[idx]));
-        let oldSteps = state.rows[idx].steps;
-        //this will be the first step of the pipeline
-        if (!oldSteps) {
-          oldSteps = [step];
-        } else {
-          const stepIdx = _.findIndex(oldSteps, { name: step.name });
-          if (stepIdx != -1) {
-            oldSteps[stepIdx] = step;
-          } else {
-            oldSteps = [...oldSteps, step];
-          }
-        }
-        state.rows[idx].steps = oldSteps;
-        updatePipelineStatus(state, pipelineID);
-      }
-    },
     updateStep: (state, action: PayloadAction<StepPayload>) => {
       //console.log('Action::' + action.type + '::' + JSON.stringify(action.payload));
       const { pipelineID, step } = action.payload;
@@ -147,7 +125,7 @@ export const pipelinesSlice = createSlice({
   }
 });
 
-export const { loadPipelines, pipelineStatus, addStep, updateStep, deleteSteps, removePipelines, updateStepCount } =
+export const { loadPipelines, pipelineStatus, updateStep, deleteSteps, removePipelines, updateStepCount } =
   pipelinesSlice.actions;
 
 export const selectRows = (state: RootState) => state.pipelines.rows;

@@ -18,7 +18,7 @@ import { useAppDispatch } from '../app/hooks';
 import { PipelineRowActions } from './PipelineRowActions';
 import { Checkbox, TextareaAutosize } from '@mui/material';
 import { Event, EventStatus } from '../features/types';
-import { updateStep, addStep, savePipelines } from '../features/pipelinesSlice';
+import { updateStep, savePipelines } from '../features/pipelinesSlice';
 
 export const Row = (props) => {
   const logRef: any = useRef();
@@ -114,7 +114,7 @@ export const Row = (props) => {
               const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, 'start');
               if (stageName) {
                 dispatch(
-                  addStep({
+                  updateStep({
                     pipelineID,
                     step: stepInfo
                   })
