@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/md5"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -22,22 +21,16 @@ type Step struct {
 }
 
 type Stage struct {
-	Kind      string `yaml:"kind" json:"-"`
-	StageName string `yaml:"name" json:"stageName"`
-	Steps     []Step `yaml:"steps" json:"steps"`
-}
-
-type Pipeline struct {
-	ID           string   `yaml:"id" json:"id"`
-	PipelinePath string   `yaml:"pipelinePath,omitempty" json:"pipelinePath,omitempty"`
-	PipelineFile string   `yaml:"pipelineFile,omitempty" json:"pipelineFile,omitempty"`
-	Stages       []*Stage `json:"stages"`
+	Kind         string `yaml:"kind" json:"-"`
+	PipelinePath string `yaml:"pipelinePath,omitempty" json:"pipelinePath,omitempty"`
+	PipelineFile string `yaml:"pipelineFile,omitempty" json:"pipelineFile,omitempty"`
+	StageName    string `yaml:"name" json:"stageName"`
+	Steps        []Step `yaml:"steps" json:"steps"`
 }
 
 func main() {
-
 	var directory string
-	pipelines := make(map[string]*Pipeline, 0)
+	var stages []*Stage
 
 	flag.StringVar(&directory, "path", "", "Root Path to discover drone pipelines")
 	flag.Parse()
@@ -84,11 +77,12 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			pipeline := new(Pipeline)
-			var stages []*Stage
+
 			decoder := yaml.NewDecoder(file)
 			for {
 				stage := new(Stage)
+				stage.PipelineFile = path
+				stage.PipelinePath = filepath.Dir(path)
 				err := decoder.Decode(stage)
 				if stage == nil {
 					continue
@@ -101,13 +95,6 @@ func main() {
 				}
 				stages = append(stages, stage)
 			}
-
-			pipeline.ID = generateID(path)
-			pipeline.PipelineFile = path
-			pipeline.PipelinePath = filepath.Dir(path)
-			pipeline.Stages = stages
-
-			pipelines[pipeline.ID] = pipeline
 		}
 
 		return nil
@@ -117,14 +104,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	b, err := json.Marshal(pipelines)
+	b, err := json.Marshal(stages)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf(string(b))
-}
-
-func generateID(path string) string {
-	return fmt.Sprintf("%x", md5.Sum([]byte(path)))
 }

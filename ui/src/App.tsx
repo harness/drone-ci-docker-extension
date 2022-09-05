@@ -4,11 +4,10 @@ import { Button, Grid, Stack, Typography } from '@mui/material';
 import ImportDialog from './components/ImportPipelineDialog';
 import { PipelinesTable } from './components/PipelinesTable';
 import { getDockerDesktopClient } from './utils';
-import { dataLoadStatus, importPipelines, pipelineStatus, selectRows } from './features/pipelinesSlice';
+import { dataLoadStatus, importPipelines } from './features/pipelinesSlice';
 import { useAppDispatch } from './app/hooks';
 export function App() {
   const [openImportDialog, setOpenImportDialog] = useState<boolean>(false);
-  const pipelines = useSelector(selectRows);
   const pipelinesStatus = useSelector(dataLoadStatus);
   const dispatch = useAppDispatch();
 

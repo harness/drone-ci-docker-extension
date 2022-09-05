@@ -6,20 +6,20 @@ import TableRow from '@mui/material/TableRow';
 import { Step } from '../features/types';
 import { StepStatus } from './StepStatus';
 
-export const PipelineStep = (props: { row: Step }) => {
-  const { row } = props;
-  //console.log('Adding Steps ' + JSON.stringify(row));
+export const PipelineStep = (props: { step: Step }) => {
+  const { step } = props;
+  //console.log('Adding Steps ' + JSON.stringify(step));
 
   return (
     <Fragment>
       <TableRow
-        key={row.stepContainerId}
+        key={step.stepContainerId}
         sx={{ '& > *': { borderTop: 'unset', borderBottom: 'unset' } }}
       >
-        <TableCell>{row.name}</TableCell>
-        <TableCell>{row.image} </TableCell>
+        <TableCell>{step.name}</TableCell>
+        <TableCell>{step.image} </TableCell>
         <TableCell>
-          <StepStatus status={row.status} />
+          <StepStatus status={step.status} />
         </TableCell>
       </TableRow>
     </Fragment>

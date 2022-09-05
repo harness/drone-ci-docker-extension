@@ -18,41 +18,30 @@ const (
 	Failed
 )
 
-//Pipeline represents Drone pipeline
-type Pipeline struct {
-	bun.BaseModel `bun:"table:pipelines,alias:p"`
-
-	ID           string    `bun:",pk"`
-	PipelinePath string    `bun:",notnull"`
-	PipelineFile string    `bun:",notnull"`
-	CreatedAt    time.Time `bun:",nullzero,notnull,default:current_timestamp"`
-	ModifiedAt   time.Time
-}
-
 //Stage represents Drone Stage
 type Stage struct {
 	bun.BaseModel `bun:"table:stages,alias:s"`
 
-	ID         int64  `bun:",pk,autoincrement"`
-	StageName  string `bun:",notnull"`
-	Status     Status `bun:",notnull"`
-	Logs       []byte
-	PipelineID string    `bun:",notnull"`
-	Pipeline   *Pipeline `bun:"rel:belongs-to,join:pipeline_id=id"`
-	CreatedAt  time.Time `bun:",nullzero,notnull,default:current_timestamp"`
-	ModifiedAt time.Time
+	ID           int          `bun:",pk,autoincrement"`
+	PipelineFile string       `bun:",notnull" json:"pipelineFile"`
+	PipelinePath string       `bun:",notnull" json:"pipelinePath"`
+	StageName    string       `bun:",notnull" json:"stageName"`
+	Status       Status       `bun:",notnull" json:"status"`
+	Steps        []*StageStep `bun:"rel:has-many,join:id=stage_id"`
+	Logs         []byte       `json:"logs"`
+	CreatedAt    time.Time    `bun:",nullzero,notnull,default:current_timestamp" json:"-"`
+	ModifiedAt   time.Time    `json:"-"`
 }
 
 //StageStep represents Stage step
 type StageStep struct {
-	bun.BaseModel `bun:"table:stage_steps,alias:t"`
+	bun.BaseModel `bun:"table:stage_steps,alias:st"`
 
-	ID         int64     `bun:",pk,autoincrement"`
-	Name       string    `bun:",notnull"`
-	Image      string    `bun:",notnull"`
-	Status     Status    `bun:",notnull"`
-	StageID    string    `bun:",notnull"`
-	Stage      *Stage    `bun:"rel:belongs-to,join:stage_id=id"`
-	CreatedAt  time.Time `bun:",nullzero,notnull,default:current_timestamp"`
-	ModifiedAt time.Time
+	ID         int       `bun:",pk,autoincrement"`
+	Name       string    `bun:",notnull" json:"name"`
+	Image      string    `bun:",notnull" json:"image"`
+	Status     Status    `bun:",notnull" json:"status"`
+	StageID    int       `bun:",notnull" json:"-"`
+	CreatedAt  time.Time `bun:",nullzero,notnull,default:current_timestamp" json:"-"`
+	ModifiedAt time.Time `json:"-"`
 }

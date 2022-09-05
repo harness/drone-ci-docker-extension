@@ -8,8 +8,9 @@ require (
 )
 
 require (
-	github.com/stretchr/testify v1.7.1
+	github.com/stretchr/testify v1.8.0
 	github.com/uptrace/bun v1.1.8
+	github.com/uptrace/bun/dbfixture v1.1.8
 	github.com/uptrace/bun/dialect/sqlitedialect v1.1.8
 	github.com/uptrace/bun/driver/sqliteshim v1.1.8
 	github.com/uptrace/bun/extra/bundebug v1.1.8
@@ -24,7 +25,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.15 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc // indirect
-	github.com/uptrace/bun/dbfixture v1.1.8 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect

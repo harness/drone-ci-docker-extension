@@ -6,7 +6,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/db"
+	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/handler"
 	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/utils"
 	echo "github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
@@ -44,17 +44,12 @@ func main() {
 
 	//Init DB
 	ctx := context.Background()
-	db := db.New(ctx, log, dbFile)
-	db.Init()
 
-	// h, err := handler.NewHandler(dbPath)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// router.GET("/pipelines", h.GetPipelines)
-	// router.POST("/pipeline", h.SavePipelines)
-	// router.POST("/pipelines/delete", h.DeletePipelines)
-	// router.DELETE("/pipeline/:id", h.DeletePipeline)
+	h := handler.NewHandler(ctx, dbFile, log)
+	router.GET("/pipelines", h.GetPipelines)
+	router.POST("/pipeline", h.SavePipelines)
+	router.POST("/pipelines/delete", h.DeletePipelines)
+	router.DELETE("/pipeline/:id", h.DeletePipeline)
 
 	log.Fatal(router.Start(startURL))
 }

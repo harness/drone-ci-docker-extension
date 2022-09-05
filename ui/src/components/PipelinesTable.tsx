@@ -13,11 +13,11 @@ import {
 } from '@mui/material';
 import { Row } from './PipelineRow';
 import { dataLoadStatus, removePipelines, selectRows } from '../features/pipelinesSlice';
-import { useAppDispatch } from '../app/hooks';
-import { getDockerDesktopClient } from '../utils';
 import { PipelineTableToolbar } from './Toolbar';
 import { PipelinesTableHead } from './PipelinesTableHead';
 import RemovePipelineDialog from './RemovePipelineDialog';
+
+import { useAppDispatch } from '../app/hooks';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const PipelinesTable = () => {
@@ -121,11 +121,7 @@ export const PipelinesTable = () => {
             />
             {pipelinesStatus === 'loaded' && (
               <TableBody>
-                {(pipelines.length > rowsPerPage
-                  ? pipelines.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  : pipelines
-                ).map((row) => {
-                  //console.log('Row Key:' + row.id + ' ' + row.pipelineFile);
+                {pipelines.map((row) => {
                   return (
                     <Row
                       key={row.id}

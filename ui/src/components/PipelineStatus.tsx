@@ -11,7 +11,17 @@ export const PipelineStatus = (props) => {
   //console.log('Pipeline Status' + JSON.stringify(status));
 
   useEffect(() => {
-    dispatch(updateStepCount({ pipelineID, status: { total: stepsCount } }));
+    dispatch(
+      updateStepCount({
+        pipelineID,
+        status: {
+          done: status.done,
+          error: status.error,
+          running: status.running,
+          total: stepsCount
+        }
+      })
+    );
   }, []);
 
   useEffect(() => {

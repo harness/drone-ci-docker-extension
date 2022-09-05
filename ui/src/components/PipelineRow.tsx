@@ -1,4 +1,4 @@
-import { Fragment, useRef, useState, useEffect } from 'react';
+import React, { Fragment, useRef, useState, useEffect } from 'react';
 import IconButton from '@mui/material/IconButton';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
@@ -18,7 +18,7 @@ import { useAppDispatch } from '../app/hooks';
 import { PipelineRowActions } from './PipelineRowActions';
 import { Checkbox, TextareaAutosize } from '@mui/material';
 import { Event, EventStatus } from '../features/types';
-import { updateStep, savePipelines } from '../features/pipelinesSlice';
+import { updateStep, savePipelines, persistPipeline } from '../features/pipelinesSlice';
 
 export const Row = (props) => {
   const logRef: any = useRef();
@@ -110,7 +110,7 @@ export const Row = (props) => {
               break;
             }
             case EventStatus.START: {
-              const pipelineID = md5(`${stageName}|${row.pipelineFile}`);
+              const pipelineID = row.id;
               const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, 'start');
               if (stageName) {
                 dispatch(
@@ -126,7 +126,7 @@ export const Row = (props) => {
             case EventStatus.STOP:
             case EventStatus.DIE:
             case EventStatus.KILL: {
-              const pipelineID = md5(`${stageName}|${row.pipelineFile}`);
+              const pipelineID = row.id;
               const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, 'dummy');
               //console.log('STOP/DIE/KILL %s', JSON.stringify(event));
               const exitCode = parseInt(event.Actor.Attributes['exitCode']);
@@ -142,7 +142,7 @@ export const Row = (props) => {
                     step: stepInfo
                   })
                 );
-                dispatch(savePipelines());
+                dispatch(persistPipeline(pipelineID));
               }
               break;
             }
@@ -163,7 +163,7 @@ export const Row = (props) => {
       };
       writeCurrTstamp();
     };
-  }, [eventTS]);
+  }, [row.id]);
 
   return (
     <Fragment>
@@ -253,12 +253,10 @@ export const Row = (props) => {
                   <TableBody>
                     {row.steps &&
                       row.steps.map((step) => (
-                        <>
-                          <PipelineStep
-                            key={`${row.id}-${md5(step.name)}`}
-                            row={step}
-                          />
-                        </>
+                        <PipelineStep
+                          key={`${row.id}-${md5(step.name)}`}
+                          step={step}
+                        />
                       ))}
                   </TableBody>
                 </Table>

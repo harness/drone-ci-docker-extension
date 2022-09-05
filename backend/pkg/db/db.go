@@ -15,19 +15,19 @@ import (
 
 //Config configures the database to initialize
 type Config struct {
-	ctx    context.Context
+	Ctx    context.Context
 	dbOnce sync.Once
-	log    *logrus.Logger
-	dbFile string
-	db     *bun.DB
+	Log    *logrus.Logger
+	DBFile string
+	DB     *bun.DB
 }
 
 //New creates a new instance of Config to create and initialize new database
 func New(ctx context.Context, log *logrus.Logger, dbFile string) *Config {
 	db := &Config{
-		ctx:    ctx,
-		log:    log,
-		dbFile: dbFile,
+		Ctx:    ctx,
+		Log:    log,
+		DBFile: dbFile,
 	}
 
 	return db
@@ -36,9 +36,9 @@ func New(ctx context.Context, log *logrus.Logger, dbFile string) *Config {
 //Init initializes the database
 func (c *Config) Init() *bun.DB {
 	c.dbOnce.Do(func() {
-		log := c.log
+		log := c.Log
 		log.Info("Initializing DB")
-		sqlite, err := sql.Open(sqliteshim.ShimName, fmt.Sprintf("file:%s?cache=shared", c.dbFile))
+		sqlite, err := sql.Open(sqliteshim.ShimName, fmt.Sprintf("file:%s?cache=shared", c.DBFile))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -49,11 +49,12 @@ func (c *Config) Init() *bun.DB {
 			log.Fatal(err)
 		}
 		log.Infoln("Connected to the database")
+		isVerbose := log.Level == logrus.DebugLevel || log.Level == logrus.TraceLevel
 		db.AddQueryHook(bundebug.NewQueryHook(
-			bundebug.WithVerbose(logrus.GetLevel() == logrus.DebugLevel),
-			bundebug.FromEnv(""),
+			bundebug.WithVerbose(isVerbose),
+			bundebug.WithVerbose(isVerbose),
 		))
-		c.db = db
+		c.DB = db
 
 		//Setup Schema
 		if err := c.createTables(); err != nil {
@@ -61,46 +62,25 @@ func (c *Config) Init() *bun.DB {
 		}
 	})
 
-	return c.db
+	return c.DB
 }
 
 func (c *Config) createTables() error {
-	//Pipelines
-	if _, err := c.db.NewCreateTable().
-		Model((*Pipeline)(nil)).
-		IfNotExists().
-		Exec(c.ctx); err != nil {
-		return err
-	}
 	//Stages
-	if _, err := c.db.NewCreateTable().
+	if _, err := c.DB.NewCreateTable().
 		Model((*Stage)(nil)).
 		IfNotExists().
-		ForeignKey(`("pipeline_id") REFERENCES pipeline("id") ON DELETE CASCADE`).
-		Exec(c.ctx); err != nil {
+		Exec(c.Ctx); err != nil {
 		return err
 	}
 	//Stage Steps
-	if _, err := c.db.NewCreateTable().
+	if _, err := c.DB.NewCreateTable().
 		Model((*StageStep)(nil)).
 		IfNotExists().
 		ForeignKey(`("stage_id") REFERENCES stages("id") ON DELETE CASCADE`).
-		Exec(c.ctx); err != nil {
+		Exec(c.Ctx); err != nil {
 		return err
 	}
 
 	return nil
 }
-
-// func (c *Config) resetTables() error {
-// 	if err := c.db.ResetModel(c.ctx, (*Pipeline)(nil)); err != nil {
-// 		return err
-// 	}
-// 	if err := c.db.ResetModel(c.ctx, (*Stage)(nil)); err != nil {
-// 		return err
-// 	}
-// 	if err := c.db.ResetModel(c.ctx, (*StageStep)(nil)); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
