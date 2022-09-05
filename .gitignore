@@ -9,3 +9,4 @@ data
 .cache
 !ui/.env
 !bin
+backend/demo.db

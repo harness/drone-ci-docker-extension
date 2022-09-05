@@ -1,0 +1,128 @@
+- model: Pipeline
+  rows:
+    - _id: helloWorld
+      id: 8765a81db28a4507f7cd35b8e216a6db
+      pipeline_path: /tmp/examples/hello-world
+      pipeline_file: /tmp/examples/hello-world/.drone.yml
+      created_at: "{{ now }}"
+    - _id: useSecrets
+      id: 9f882a868215acf0a9cc2c5e42ac59de
+      pipeline_path: /tmp/examples/use-secrets
+      pipeline_file: /tmp/examples/use-secrets/.drone.yml
+      created_at: "{{ now }}"
+    - _id: multiStage
+      id: dc66f80208a11f3f4a43b658bb19e362
+      pipeline_path: /tmp/examples/multi-stage
+      pipeline_file: /tmp/examples/multi-stage/.drone.yml
+      created_at: "{{ now }}"
+    - _id: longRunDemo
+      id: 9632e0bda2ee86429ffe555260a6efc6
+      pipeline_path: /tmp/examples/long-run-demo
+      pipeline_file: /tmp/examples/long-run-demo/.drone.yml
+      created_at: "{{ now }}"
+    - _id: useEnv
+      id: f7ed9d8ebee50a3c7c81e9f8a5562d4d
+      pipeline_path: /tmp/examples/user-env
+      pipeline_file: /tmp/examples/user-env/.drone.yml
+      created_at: "{{ now }}"
+
+- model: Stage
+  rows:
+    - _id: hwDefault
+      stage_name: "default"
+      status: 0
+      pipeline_id: "{{ $.Pipeline.helloWorld.ID }}"
+      created_at: "{{ now }}"
+    - _id: useSecretsDefault
+      stage_name: "default"
+      status: 0
+      pipeline_id: "{{ $.Pipeline.useSecrets.ID }}"
+      created_at: "{{ now }}"
+    - _id: multiStageDefault
+      stage_name: "default"
+      status: 0
+      pipeline_id: "{{ $.Pipeline.multiStage.ID }}"
+      created_at: "{{ now }}"
+    - _id: multiStageUseEnv
+      stage_name: "use-env"
+      status: 0
+      pipeline_id: "{{ $.Pipeline.multiStage.ID }}"
+      created_at: "{{ now }}"
+    - _id: multiStageUseSecrets
+      stage_name: "use-secrets"
+      status: 0
+      pipeline_id: "{{ $.Pipeline.multiStage.ID }}"
+      created_at: "{{ now }}"
+    - _id: sleepDemos
+      stage_name: "default"
+      status: 0
+      pipeline_id: "{{ $.Pipeline.longRunDemo.ID }}"
+      created_at: "{{ now }}"
+    - _id: useEnvDefault
+      stage_name: "default"
+      status: 
+      pipeline_id: "{{ $.Pipeline.useEnv.ID }}"
+      created_at: "{{ now }}"
+
+- model: StageStep
+  rows:
+    - name: "unit test"
+      image: "kameshsampath/drone-java-maven-plugin:v1.0.3"
+      status: 
+      stage_id: "{{ $.Stage.hwDefault.ID }}"
+      created_at: "{{ now }}"
+    - name: "package as jar"
+      image: "kameshsampath/drone-java-maven-plugin:v1.0.3"
+      status: 
+      stage_id: "{{ $.Stage.hwDefault.ID }}"
+      created_at: "{{ now }}"
+    - name: "push image to registry"
+      image: "plugins/docker"
+      status: 0
+      stage_id: "{{ $.Stage.hwDefault.ID }}"
+      created_at: "{{ now }}"
+    - name: "deploy app to k8s"
+      image: "kameshsampath/kube-dev-tools"
+      status: 0
+      stage_id: "{{ $.Stage.hwDefault.ID }}"
+      created_at: "{{ now }}"
+    - name: "display secret variables"
+      image: "ubuntu"
+      status: 0
+      stage_id: "{{ $.Stage.useSecretsDefault.ID }}"
+      created_at: "{{ now }}"
+    - name: "hello world"
+      image: "busybox"
+      status: 0
+      stage_id: "{{ $.Stage.multiStageDefault.ID }}"
+      created_at: "{{ now }}"
+    - name: "good bye world"
+      image: "busybox"
+      status: 0
+      stage_id: "{{ $.Stage.multiStageDefault.ID }}"
+      created_at: "{{ now }}"
+    - name: "display environment variables"
+      image: "busybox"
+      status: 0
+      stage_id: "{{ $.Stage.multiStageUseEnv.ID }}"
+      created_at: "{{ now }}"
+    - name: "display secret variables"
+      image: "ubuntu"
+      status: 0
+      stage_id: "{{ $.Stage.multiStageUseSecrets.ID }}"
+      created_at: "{{ now }}"
+    - name: "sleep5"
+      image: "busybox"
+      status: 0
+      stage_id: "{{ $.Stage.sleepDemos.ID }}"
+      created_at: "{{ now }}"
+    - name: "an error step"
+      image: "busybox"
+      status: 0
+      stage_id: "{{ $.Stage.sleepDemos.ID }}"
+      created_at: "{{ now }}"
+    - name: "display environment variables"
+      image: "busybox"
+      status: 0
+      stage_id: "{{ $.Stage.useEnvDefault.ID }}"
+      created_at: "{{ now }}"

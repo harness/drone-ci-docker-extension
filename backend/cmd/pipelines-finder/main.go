@@ -16,23 +16,28 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type DronePipelineStep struct {
+type Step struct {
 	Name  string `yaml:"name" json:"name"`
 	Image string `yaml:"image" json:"image"`
 }
 
-type DronePipeline struct {
-	ID           string              `yaml:"id" json:"id"`
-	StageName    string              `yaml:"name" json:"stageName"`
-	PipelinePath string              `yaml:"pipelinePath,omitempty" json:"pipelinePath,omitempty"`
-	PipelineFile string              `yaml:"pipelineFile,omitempty" json:"pipelineFile,omitempty"`
-	Steps        []DronePipelineStep `yaml:"steps" json:"steps"`
+type Stage struct {
+	Kind      string `yaml:"kind" json:"-"`
+	StageName string `yaml:"name" json:"stageName"`
+	Steps     []Step `yaml:"steps" json:"steps"`
+}
+
+type Pipeline struct {
+	ID           string   `yaml:"id" json:"id"`
+	PipelinePath string   `yaml:"pipelinePath,omitempty" json:"pipelinePath,omitempty"`
+	PipelineFile string   `yaml:"pipelineFile,omitempty" json:"pipelineFile,omitempty"`
+	Stages       []*Stage `json:"stages"`
 }
 
 func main() {
-	var dronePipelines []DronePipeline
 
 	var directory string
+	pipelines := make(map[string]*Pipeline, 0)
 
 	flag.StringVar(&directory, "path", "", "Root Path to discover drone pipelines")
 	flag.Parse()
@@ -79,11 +84,13 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
+			pipeline := new(Pipeline)
+			var stages []*Stage
 			decoder := yaml.NewDecoder(file)
-			dronePipeline := new(DronePipeline)
 			for {
-				err := decoder.Decode(dronePipeline)
-				if dronePipeline == nil {
+				stage := new(Stage)
+				err := decoder.Decode(stage)
+				if stage == nil {
 					continue
 				}
 				if errors.Is(err, io.EOF) {
@@ -92,11 +99,15 @@ func main() {
 				if err != nil {
 					log.Fatal(err)
 				}
-				dronePipeline.PipelineFile = path
-				dronePipeline.PipelinePath = filepath.Dir(path)
-				dronePipeline.ID = generateID(dronePipeline.StageName, path)
-				dronePipelines = append(dronePipelines, *dronePipeline)
+				stages = append(stages, stage)
 			}
+
+			pipeline.ID = generateID(path)
+			pipeline.PipelineFile = path
+			pipeline.PipelinePath = filepath.Dir(path)
+			pipeline.Stages = stages
+
+			pipelines[pipeline.ID] = pipeline
 		}
 
 		return nil
@@ -106,7 +117,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	b, err := json.Marshal(dronePipelines)
+	b, err := json.Marshal(pipelines)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -114,6 +125,6 @@ func main() {
 	fmt.Printf(string(b))
 }
 
-func generateID(stageName, path string) string {
-	return fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%s|%s", stageName, path))))
+func generateID(path string) string {
+	return fmt.Sprintf("%x", md5.Sum([]byte(path)))
 }

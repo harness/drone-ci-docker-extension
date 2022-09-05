@@ -1,0 +1,89 @@
+{
+  "8765a81db28a4507f7cd35b8e216a6db": {
+    "id": "8765a81db28a4507f7cd35b8e216a6db",
+    "pipelinePath": "/tmp/examples/hello-world",
+    "pipelineFile": "/tmp/examples/hello-world/.drone.yml",
+    "stages": [
+      {
+        "stageName": "default",
+        "steps": [
+          {
+            "name": "unit test",
+            "image": "kameshsampath/drone-java-maven-plugin:v1.0.3"
+          },
+          {
+            "name": "package as jar",
+            "image": "kameshsampath/drone-java-maven-plugin:v1.0.3"
+          },
+          { "name": "push image to registry", "image": "plugins/docker" },
+          {
+            "name": "deploy app to k8s",
+            "image": "kameshsampath/kube-dev-tools"
+          }
+        ]
+      }
+    ]
+  },
+  "9f882a868215acf0a9cc2c5e42ac59de": {
+    "id": "9f882a868215acf0a9cc2c5e42ac59de",
+    "pipelinePath": "/tmp/examples/use-secrets",
+    "pipelineFile": "/tmp/examples/use-secrets/.drone.yml",
+    "stages": [
+      {
+        "stageName": "default",
+        "steps": [{ "name": "display secret variables", "image": "ubuntu" }]
+      }
+    ]
+  },
+  "dc66f80208a11f3f4a43b658bb19e362": {
+    "id": "dc66f80208a11f3f4a43b658bb19e362",
+    "pipelinePath": "/tmp/examples/multi-stage",
+    "pipelineFile": "/tmp/examples/multi-stage/.drone.yml",
+    "stages": [
+      {
+        "stageName": "default",
+        "steps": [
+          { "name": "hello world", "image": "busybox" },
+          { "name": "good bye world", "image": "busybox" }
+        ]
+      },
+      {
+        "stageName": "use-env",
+        "steps": [
+          { "name": "display enviornment variables", "image": "busybox" }
+        ]
+      },
+      {
+        "stageName": "use-secret",
+        "steps": [{ "name": "display secret variables", "image": "ubuntu" }]
+      }
+    ]
+  },
+  "df2aa67513a99c875866c8531c2ff41c": {
+    "id": "df2aa67513a99c875866c8531c2ff41c",
+    "pipelinePath": "/tmp/examples/long-run-demo",
+    "pipelineFile": "/tmp/examples/long-run-demo/.drone.yml",
+    "stages": [
+      {
+        "stageName": "sleep-demos",
+        "steps": [
+          { "name": "sleep5", "image": "busybox" },
+          { "name": "an error step", "image": "busybox" }
+        ]
+      }
+    ]
+  },
+  "f7ed9d8ebee50a3c7c81e9f8a5562d4d": {
+    "id": "f7ed9d8ebee50a3c7c81e9f8a5562d4d",
+    "pipelinePath": "/tmp/examples/use-env",
+    "pipelineFile": "/tmp/examples/use-env/.drone.yml",
+    "stages": [
+      {
+        "stageName": "default",
+        "steps": [
+          { "name": "display environment variables", "image": "busybox" }
+        ]
+      }
+    ]
+  }
+}
