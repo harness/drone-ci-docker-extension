@@ -18,6 +18,8 @@ import { PipelinesTableHead } from './PipelinesTableHead';
 import RemovePipelineDialog from './dialogs/RemoveStageDialog';
 
 import { useAppDispatch } from '../app/hooks';
+import { BrowserRouter, Route, Router, Routes } from 'react-router-dom';
+import { StageRunnerView } from './views/StageRunnerView';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const StageTable = () => {

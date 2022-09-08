@@ -1,27 +1,22 @@
 import React, { Fragment, useRef, useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import IconButton from '@mui/material/IconButton';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
 import { md5, pipelineDisplayName, getDockerDesktopClient, extractStepInfo } from '../utils';
-import PlusIcon from '@mui/icons-material/Add';
-import MinusIcon from '@mui/icons-material/Remove';
-import Collapse from '@mui/material/Collapse';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Table from '@mui/material/Table';
-import TableHead from '@mui/material/TableHead';
-import TableBody from '@mui/material/TableBody';
-import { PipelineStep } from './PipelineStep';
 import { PipelineStatus } from './PipelineStatus';
 import { useAppDispatch } from '../app/hooks';
 import { PipelineRowActions } from './PipelineRowActions';
-import { Checkbox, TextareaAutosize } from '@mui/material';
+import { Checkbox, Link, TextareaAutosize } from '@mui/material';
 import { Event, EventStatus } from '../features/types';
 import { updateStep, savePipelines, persistPipeline } from '../features/pipelinesSlice';
 
 export const Stage = (props) => {
   const logRef: any = useRef();
+  //!!!IMPORTANT - pass the location query params
+  const loc = useLocation();
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [eventTS, setEventTS] = useState('');
 
@@ -34,6 +29,12 @@ export const Stage = (props) => {
   const isItemSelected = isSelected(row.id);
 
   const ddClient = getDockerDesktopClient();
+
+  const navigateToView = async (id: string) => {
+    const url = `run/${id}${loc.search}`;
+    console.log('URL %s', url);
+    navigate(url, { replace: true });
+  };
 
   const logHandler = (data: any | undefined, clean?: boolean) => {
     //console.log('>> ', logRef.current);
@@ -184,7 +185,12 @@ export const Stage = (props) => {
             component="th"
             scope="row"
           >
-            {pipelineDisplayName(row.pipelineFile)}
+            <Link
+              href="#"
+              onClick={() => navigateToView(row.id)}
+            >
+              {pipelineDisplayName(row.pipelineFile)}
+            </Link>
           </TableCell>
         </Tooltip>
         <TableCell

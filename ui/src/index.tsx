@@ -5,6 +5,9 @@ import { store } from './app/store';
 import CssBaseline from '@mui/material/CssBaseline';
 import { DockerMuiThemeProvider } from '@docker/docker-mui-theme';
 import { App } from './App';
+import { StageTable } from './components/StageTable';
+import { StageRunnerView } from './components/views/StageRunnerView';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 ReactDOM.render(
   <>
@@ -14,9 +17,24 @@ ReactDOM.render(
       some minimal Docker theming.
     */}
     <DockerMuiThemeProvider>
-      <CssBaseline />
       <Provider store={store}>
-        <App />
+        <BrowserRouter>
+          <Routes>
+            <Route
+              path="/"
+              element={<App />}
+            >
+              <Route
+                index={true}
+                element={<StageTable />}
+              />
+            </Route>
+            <Route
+              path="run/:stageId"
+              element={<StageRunnerView />}
+            />
+          </Routes>
+        </BrowserRouter>
       </Provider>
     </DockerMuiThemeProvider>
   </>,

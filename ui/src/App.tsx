@@ -36,45 +36,43 @@ export function App() {
   }, []);
 
   return (
-    <>
-      <Stack
-        direction="column"
-        alignItems="start"
-        spacing={2}
-        sx={{ mt: 4 }}
+    <Stack
+      direction="column"
+      alignItems="start"
+      spacing={2}
+      sx={{ mt: 4 }}
+    >
+      <Typography variant="h3">Drone Pipelines</Typography>
+      <Typography
+        variant="body1"
+        color="text.secondary"
+        sx={{ mt: 2 }}
       >
-        <Typography variant="h3">Drone Pipelines</Typography>
-        <Typography
-          variant="body1"
-          color="text.secondary"
-          sx={{ mt: 2 }}
-        >
-          Run Continuous Integration & Delivery Pipelines (CI/CD) from within Docker Desktop.
-        </Typography>
+        Run Continuous Integration & Delivery Pipelines (CI/CD) from within Docker Desktop.
+      </Typography>
+      <Grid
+        container
+        spacing={2}
+      >
         <Grid
-          container
-          spacing={2}
+          item
+          xs={4}
         >
-          <Grid
-            item
-            xs={4}
+          <Button
+            variant="contained"
+            onClick={handleImportPipeline}
           >
-            <Button
-              variant="contained"
-              onClick={handleImportPipeline}
-            >
-              Import Pipelines
-            </Button>
-          </Grid>
+            Import Pipelines
+          </Button>
         </Grid>
-        <StageTable />
-        {openImportDialog && (
-          <ImportOrLoadStages
-            open={openImportDialog}
-            onClose={handleImportDialogClose}
-          />
-        )}
-      </Stack>
-    </>
+      </Grid>
+      <StageTable />
+      {openImportDialog && (
+        <ImportOrLoadStages
+          open={openImportDialog}
+          onClose={handleImportDialogClose}
+        />
+      )}
+    </Stack>
   );
 }
