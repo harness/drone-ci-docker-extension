@@ -47,7 +47,8 @@ func main() {
 	router.POST("/stages", h.SaveStages)
 	router.PATCH("/stage/:id/:status", h.UpdateStageStatus)
 	router.PATCH("/step/:id/:status", h.UpdateStepStatus)
-	router.DELETE("/stages", h.DeleteStages)
+	router.DELETE("/stages", h.DeleteAllStages)
+	router.DELETE("/stages/:id", h.DeleteStage)
 	//TODO stream
 	router.GET("/stage/:id/logs", h.StageLogs)
 

@@ -44,26 +44,73 @@ func (h *Handler) GetStages(c echo.Context) error {
 }
 
 //DeleteStages deletes one or more stage ids from the backend
-func (h *Handler) DeleteStages(c echo.Context) error {
+func (h *Handler) DeleteAllStages(c echo.Context) error {
 	log := h.dbc.Log
 	var stages []*db.Stage
 	if err := c.Bind(&stages); err != nil {
 		return err
 	}
+	log.Infof("Delete all stages and steps")
+	ctx := h.dbc.Ctx
+	dbConn := h.dbc.DB
+	err := dbConn.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		_, err := dbConn.NewTruncateTable().
+			Model((*db.Stage)(nil)).
+			ContinueIdentity().
+			Cascade().
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
+		_, err = dbConn.NewTruncateTable().
+			Model((*db.StageStep)(nil)).
+			ContinueIdentity().
+			Cascade().
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 
-	log.Infof("Delete Stages %v", stages)
+	if err != nil {
+		return err
+	}
+	return c.NoContent(http.StatusNoContent)
+}
 
-	if err := h.delete(stages); err != nil {
+func (h *Handler) DeleteStage(c echo.Context) error {
+	log := h.dbc.Log
+	var stageID int
+	if err := echo.PathParamsBinder(c).
+		Int("id", &stageID).
+		BindError(); err != nil {
+		return err
+	}
+
+	log.Infof("Delete Stage %d", stageID)
+
+	if err := h.delete([]*db.Stage{{ID: stageID}}); err != nil {
 		return err
 	}
 
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *Handler) delete(stages []*db.Stage) error {
+func (h *Handler) delete(stages db.Stages) error {
 	ctx := h.dbc.Ctx
 	dbConn := h.dbc.DB
 	return dbConn.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		for _, stage := range stages {
+			_, err := dbConn.NewDelete().
+				Model((*db.StageStep)(nil)).
+				Where("stage_id = ?", stage.ID).
+				Exec(ctx)
+			if err != nil {
+				return err
+			}
+		}
+
 		_, err := dbConn.NewDelete().
 			Model(&stages).
 			WherePK().

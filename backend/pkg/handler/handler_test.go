@@ -28,6 +28,10 @@ var (
 	err error
 )
 
+func init() {
+	os.Remove(getDBFile("test"))
+}
+
 func getDBFile(dbName string) string {
 	cwd, _ := os.Getwd()
 	return path.Join(cwd, "testdata", fmt.Sprintf("%s.db", dbName))
@@ -92,7 +96,49 @@ func TestGetStages(t *testing.T) {
 	}
 }
 
-func TestDeleteStages(t *testing.T) {
+func TestDeleteAllStages(t *testing.T) {
+	if err := loadFixtures(); err != nil {
+		t.Fatal(err)
+	}
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodDelete, "/", nil)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	c.SetPath("stages")
+
+	ctx := context.Background()
+	h := NewHandler(ctx, getDBFile("test"), log)
+
+	if assert.NoError(t, h.DeleteAllStages(c)) {
+		assert.Equal(t, http.StatusNoContent, rec.Code)
+	}
+
+	var stages db.Stages
+	//Verify
+	exists, err := h.dbc.DB.
+		NewSelect().
+		Model(&stages).
+		Exists(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.False(t, exists, "Expecting no stages, but there are")
+
+	var steps db.Steps
+	exists, err = h.dbc.DB.
+		NewSelect().
+		Model(&steps).
+		Exists(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.False(t, exists, "Expecting no steps, but there are")
+}
+
+func TestDeleteStage(t *testing.T) {
 	if err := loadFixtures(); err != nil {
 		t.Fatal(err)
 	}
@@ -102,12 +148,6 @@ func TestDeleteStages(t *testing.T) {
 		dbFile      string
 		want        int
 	}{
-		"multipleIds": {
-			requestBody: `[{"ID":2},{"ID":6}]`,
-			uriPath:     "/stages",
-			dbFile:      "test",
-			want:        0,
-		},
 		"singleId": {
 			requestBody: `[{"ID":6}]`,
 			uriPath:     "/stages",
@@ -119,16 +159,18 @@ func TestDeleteStages(t *testing.T) {
 	for name, tc := range deleteTests {
 		t.Run(name, func(t *testing.T) {
 			e := echo.New()
-			req := httptest.NewRequest(http.MethodDelete, "/", strings.NewReader(tc.requestBody))
+			req := httptest.NewRequest(http.MethodDelete, tc.uriPath, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
 			c.SetPath(tc.uriPath)
+			c.SetParamNames("id")
+			c.SetParamValues(fmt.Sprintf("%d", 6))
 
 			ctx := context.Background()
 			h := NewHandler(ctx, getDBFile(tc.dbFile), log)
 
-			if assert.NoError(t, h.DeleteStages(c)) {
+			if assert.NoError(t, h.DeleteStage(c)) {
 				assert.Equal(t, http.StatusNoContent, rec.Code)
 			}
 
@@ -147,6 +189,17 @@ func TestDeleteStages(t *testing.T) {
 			}
 
 			assert.False(t, exists, "Expecting records to be deleted but it is not")
+			//Verify
+			exists, err = h.dbc.DB.
+				NewSelect().
+				Model(&[]db.StageStep{}).
+				Where("stage_id=6").
+				Exists(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assert.Falsef(t, exists, "Expecting no steps top exists for id %d, but we do have orphaned ones.", 6)
 		})
 	}
 }

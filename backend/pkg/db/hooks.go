@@ -11,7 +11,6 @@ import (
 var _ bun.AfterCreateTableHook = (*Stage)(nil)
 var _ bun.BeforeAppendModelHook = (*Stage)(nil)
 
-// var _ bun.AfterInsertHook = (*Stage)(nil)
 var _ bun.AfterCreateTableHook = (*StageStep)(nil)
 var _ bun.BeforeAppendModelHook = (*StageStep)(nil)
 
@@ -58,12 +57,3 @@ func (m *StageStep) BeforeAppendModel(ctx context.Context, query schema.Query) e
 	}
 	return nil
 }
-
-// AfterInsert implements bun.AfterInsertHook
-// func (m *Stage) AfterInsert(ctx context.Context, query *bun.InsertQuery) error {
-// 	//Ensure that we update the stage_id on to steps
-// 	for _, step := range m.Steps {
-// 		step.StageID = m.ID
-// 	}
-// 	return nil
-// }
