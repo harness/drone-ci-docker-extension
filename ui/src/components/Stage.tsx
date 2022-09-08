@@ -20,7 +20,7 @@ import { Checkbox, TextareaAutosize } from '@mui/material';
 import { Event, EventStatus } from '../features/types';
 import { updateStep, savePipelines, persistPipeline } from '../features/pipelinesSlice';
 
-export const Row = (props) => {
+export const Stage = (props) => {
   const logRef: any = useRef();
   const dispatch = useAppDispatch();
   const [eventTS, setEventTS] = useState('');
@@ -179,23 +179,20 @@ export const Row = (props) => {
             role="checkbox"
           />
         </TableCell>
-        <TableCell>
-          <IconButton
-            aria-label="expand row"
-            size="small"
-            onClick={() => setOpen(!open)}
-          >
-            {open ? <MinusIcon /> : <PlusIcon />}
-          </IconButton>
-        </TableCell>
         <Tooltip title={row.pipelineFile}>
           <TableCell
             component="th"
             scope="row"
           >
-            {pipelineDisplayName(row.pipelinePath, row.stageName)}
+            {pipelineDisplayName(row.pipelineFile)}
           </TableCell>
         </Tooltip>
+        <TableCell
+          component="th"
+          scope="row"
+        >
+          {row.stageName}
+        </TableCell>
         <TableCell
           component="th"
           scope="row"
@@ -219,63 +216,6 @@ export const Row = (props) => {
           />
         </TableCell>
       </TableRow>
-      {row.steps && (
-        <TableRow sx={{ '& > *': { borderTop: 'unset', borderBottom: 'unset' } }}>
-          <TableCell
-            style={{ paddingBottom: 0, paddingTop: 0 }}
-            colSpan={6}
-          >
-            <Collapse
-              in={open}
-              timeout="auto"
-              unmountOnExit
-            >
-              <Box>
-                <Typography
-                  variant="h6"
-                  gutterBottom
-                  component="div"
-                >
-                  Steps
-                </Typography>
-                <Table
-                  size="small"
-                  aria-label="steps"
-                >
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Name</TableCell>
-                      <TableCell>Container</TableCell>
-                      <TableCell>Status</TableCell>
-                      {/* <TableCell>Actions</TableCell> */}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {row.steps &&
-                      row.steps.map((step) => (
-                        <PipelineStep
-                          key={`${row.id}-${md5(step.name)}`}
-                          step={step}
-                        />
-                      ))}
-                  </TableBody>
-                </Table>
-              </Box>
-              <Box>
-                <TextareaAutosize
-                  id={`pipeline-run-${row.id}`}
-                  readOnly={true}
-                  style={{ width: '100%' }}
-                  minRows={10}
-                  ref={logRef}
-                  autoFocus={true}
-                  value={logs}
-                />
-              </Box>
-            </Collapse>
-          </TableCell>
-        </TableRow>
-      )}
     </Fragment>
   );
 };

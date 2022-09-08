@@ -2,9 +2,9 @@ import { IconButton, Stack, Tooltip } from '@mui/material';
 import { vscodeURI } from '../utils';
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 import { useState } from 'react';
-import RemovePipelineDialog from './RemovePipelineDialog';
+import RemovePipelineDialog from './dialogs/RemoveStageDialog';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
-import RunPipelineDialog from './RunPipelineDialog';
+import RunPipelineDialog from './dialogs/RunPipelineDialog';
 
 export const PipelineRowActions = (props: {
   pipelineID: string;

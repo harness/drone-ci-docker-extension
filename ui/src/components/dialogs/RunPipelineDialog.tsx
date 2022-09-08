@@ -22,9 +22,9 @@ import DialogTitle from '@mui/material/DialogTitle';
 import SearchIcon from '@mui/icons-material/Search';
 import InfoIcon from '@mui/icons-material/Info';
 import BackspaceIcon from '@mui/icons-material/Backspace';
-import { getDockerDesktopClient } from '../utils';
-import { useAppDispatch } from '../app/hooks';
-import { resetPipelineStatus } from '../features/pipelinesSlice';
+import { getDockerDesktopClient } from '../../utils';
+import { useAppDispatch } from '../../app/hooks';
+import { resetPipelineStatus } from '../../features/pipelinesSlice';
 
 export default function RunPipelineDialog({ ...props }) {
   const dispatch = useAppDispatch();

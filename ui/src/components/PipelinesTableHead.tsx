@@ -16,8 +16,8 @@ export const PipelinesTableHead = (props) => {
             onChange={onSelectAllClick}
           />
         </TableCell>
-        <TableCell padding="normal" />
-        <TableCell padding="normal">Name</TableCell>
+        <TableCell padding="normal">File</TableCell>
+        <TableCell padding="normal">Stage</TableCell>
         <TableCell padding="normal">Status</TableCell>
         <TableCell padding="normal">Actions</TableCell>
       </TableRow>

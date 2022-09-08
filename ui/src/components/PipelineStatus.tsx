@@ -10,40 +10,44 @@ export const PipelineStatus = (props) => {
   const [statusText, setStatusText] = useState('');
   //console.log('Pipeline Status' + JSON.stringify(status));
 
-  useEffect(() => {
-    dispatch(
-      updateStepCount({
-        pipelineID,
-        status: {
-          done: status.done,
-          error: status.error,
-          running: status.running,
-          total: stepsCount
-        }
-      })
-    );
-  }, []);
+  // useEffect(() => {
+  //   dispatch(
+  //     updateStepCount({
+  //       pipelineID,
+  //       status: {
+  //         done: status.done,
+  //         error: status.error,
+  //         running: status.running,
+  //         total: stepsCount
+  //       }
+  //     })
+  //   );
+  // }, []);
 
   useEffect(() => {
-    if (status?.running > 0 && status?.running != status?.done) {
-      setStatusColor('warning');
-      setStatusText(`${status.running}/${status.total}(running)`);
-    } else if (status?.error > 0) {
-      setStatusColor('error');
-      setStatusText(`${status.error}/${status.total}(errored)`);
-    } else if (status?.done == status.total) {
-      setStatusColor('success');
-      setStatusText(`${status.done}/${status.total}(completed)`);
-    } else {
-      setStatusColor('primary');
-      setStatusText(`0/${status?.total}`);
+    switch (status) {
+      case 1:
+        setStatusColor('success');
+        setStatusText('success');
+        break;
+      case 2:
+        setStatusColor('error');
+        setStatusText('failed');
+        break;
+
+      default:
+        setStatusColor('primary');
+        setStatusText('none');
+        break;
     }
   }, [status]);
 
   return (
     <Typography
-      variant="body1"
+      variant="caption"
       color={statusColor}
+      fontSize="small"
+      fontWeight="bold"
     >
       {statusText}
     </Typography>

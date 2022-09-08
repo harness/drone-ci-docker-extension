@@ -11,11 +11,11 @@ import {
   TablePagination,
   TableRow
 } from '@mui/material';
-import { Row } from './PipelineRow';
-import { dataLoadStatus, removePipelines, selectRows } from '../features/pipelinesSlice';
+import { Stage } from './Stage';
+import { dataLoadStatus, removeStages, selectRows } from '../features/pipelinesSlice';
 import { PipelineTableToolbar } from './Toolbar';
 import { PipelinesTableHead } from './PipelinesTableHead';
-import RemovePipelineDialog from './RemovePipelineDialog';
+import RemovePipelineDialog from './dialogs/RemoveStageDialog';
 
 import { useAppDispatch } from '../app/hooks';
 
@@ -59,9 +59,8 @@ export const PipelinesTable = () => {
 
   const handleRemoveDialogClose = () => {
     setRemoveConfirm(false);
-    //console.log('Pipe L ' + pipelines.length);
     if (pipelines.length > 0) {
-      dispatch(removePipelines(removals));
+      dispatch(removeStages(removals));
     }
     setSelected([]);
     setRemovals([]);
@@ -111,7 +110,7 @@ export const PipelinesTable = () => {
         <TableContainer>
           <Table
             sx={{ minWidth: 750 }}
-            aria-labelledby="Pipleines List"
+            aria-labelledby="Stage List"
             size={dense ? 'small' : 'medium'}
           >
             <PipelinesTableHead
@@ -123,7 +122,7 @@ export const PipelinesTable = () => {
               <TableBody>
                 {pipelines.map((row) => {
                   return (
-                    <Row
+                    <Stage
                       key={row.id}
                       row={row}
                       selected={selected}

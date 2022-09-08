@@ -7,6 +7,12 @@ export enum EventStatus {
   PULL = 'pull'
 }
 
+export const enum Status {
+  NONE = 0,
+  SUCCESS,
+  FAILED
+}
+
 export interface Event {
   status: EventStatus;
   id: string;
@@ -39,6 +45,15 @@ export interface Pipeline {
   steps: Step[];
 }
 
+export interface Stage {
+  id: string;
+  name: string;
+  pipelinePath: string;
+  pipelineFile: string;
+  status: Status;
+  steps: Step[];
+}
+
 export interface StepPayload {
   pipelineID: string;
   step: Step;
@@ -58,5 +73,5 @@ export interface PipelineStatus {
 
 export interface PipelinesState {
   status: 'idle' | 'loading' | 'failed' | 'loaded';
-  rows: Pipeline[];
+  rows: Stage[];
 }

@@ -5,12 +5,12 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 
-import { getDockerDesktopClient } from '../utils';
-import { useAppDispatch } from '../app/hooks';
-import { loadPipelines } from '../features/pipelinesSlice';
-import { Pipeline } from '../features/types';
+import { getDockerDesktopClient } from '../../utils';
+import { useAppDispatch } from '../../app/hooks';
+import { loadStages } from '../../features/pipelinesSlice';
+import { Pipeline, Stage } from '../../features/types';
 
-export default function ImportDialog({ ...props }) {
+export default function ImportOrLoadStages({ ...props }) {
   const ddClient = getDockerDesktopClient();
   const dispatch = useAppDispatch();
 
@@ -20,13 +20,13 @@ export default function ImportDialog({ ...props }) {
     setActionInProgress(true);
 
     try {
-      const response = (await ddClient.extension.vm.service.post('/pipeline', droneFiles)) as Pipeline[];
+      const response = (await ddClient.extension.vm.service.post('/stages', droneFiles)) as Stage[];
 
-      console.log('API Response %s', JSON.stringify(response));
+      //console.log('API Response %s', JSON.stringify(response));
 
       if (response) {
-        dispatch(loadPipelines(response));
-        ddClient.desktopUI.toast.success(`Successfully imported pipelines`);
+        dispatch(loadStages(response));
+        ddClient.desktopUI.toast.success(`Successfully imported stages`);
       }
     } catch (error) {
       console.log(error);
@@ -36,7 +36,7 @@ export default function ImportDialog({ ...props }) {
       props.onClose();
     }
   };
-  const selectDronePipelines = async () => {
+  const selectStageFromDir = async () => {
     const result = await ddClient.desktopUI.dialog.showOpenDialog({
       properties: ['openDirectory'],
       message: 'Select base directory to discover pipelines'
@@ -102,7 +102,7 @@ export default function ImportDialog({ ...props }) {
         </Button>
         <Button
           variant="contained"
-          onClick={selectDronePipelines}
+          onClick={selectStageFromDir}
         >
           Search
         </Button>

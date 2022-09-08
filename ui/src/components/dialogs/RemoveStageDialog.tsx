@@ -10,11 +10,11 @@ import {
   Typography
 } from '@mui/material';
 import React from 'react';
-import { useAppDispatch } from '../app/hooks';
-import { getDockerDesktopClient } from '../utils';
-import { removePipelines } from '../features/pipelinesSlice';
+import { useAppDispatch } from '../../app/hooks';
+import { getDockerDesktopClient } from '../../utils';
+import { removeStages } from '../../features/pipelinesSlice';
 
-export default function RemovePipelineDialog({ ...props }) {
+export default function RemoveStageDialog({ ...props }) {
   const dispatch = useAppDispatch();
   const [actionInProgress, setActionInProgress] = React.useState<boolean>(false);
 
@@ -25,9 +25,9 @@ export default function RemovePipelineDialog({ ...props }) {
     let response;
     try {
       const pipelineIds = props.selectedToRemove;
-      //console.log('Removing pipelines ' + JSON.stringify(pipelineIds));
-      response = await ddClient.extension.vm.service.post('/pipelines/delete', pipelineIds);
-      dispatch(removePipelines(pipelineIds));
+      //console.log('Removing stages ' + JSON.stringify(pipelineIds));
+      response = await ddClient.extension.vm.service.delete('/stages');
+      dispatch(removeStages(pipelineIds));
     } catch (err) {
       ddClient.desktopUI.toast.error(`Error removing pipelines ${err?.message}`);
     } finally {

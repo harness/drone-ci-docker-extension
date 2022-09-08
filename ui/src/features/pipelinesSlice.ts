@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, current, PayloadAction } from '@reduxjs/toolkit';
 import { AppThunk, RootState } from '../app/store';
 import { getDockerDesktopClient } from '../utils';
-import { Pipeline, PipelinesState, PipelineStatus, StepCountPayload, StepPayload } from './types';
+import { Pipeline, PipelinesState, PipelineStatus, Stage, Status, StepCountPayload, StepPayload } from './types';
 import * as _ from 'lodash';
 
 const initialState: PipelinesState = {
@@ -36,8 +36,8 @@ function computePipelineStatus(state, pipelineId): PipelineStatus {
   }
 }
 
-export const importPipelines = createAsyncThunk('pipelines/loadPipelines', async () => {
-  const response = (await ddClient.extension.vm.service.get('/pipelines')) as Pipeline[];
+export const importPipelines = createAsyncThunk('pipelines/loadStages', async () => {
+  const response = (await ddClient.extension.vm.service.get('/stages')) as Stage[];
   //console.log('Loading pipelines from backend %s', response.length);
   return response;
 });
@@ -76,7 +76,7 @@ export const pipelinesSlice = createSlice({
   name: 'pipelines',
   initialState,
   reducers: {
-    loadPipelines: (state, action: PayloadAction<Pipeline[]>) => {
+    loadStages: (state, action: PayloadAction<Stage[]>) => {
       state.status = 'loaded';
       const newRows = rowsFromPayload(action.payload);
       // console.log('Existing Rows ', JSON.stringify(state.rows));
@@ -112,10 +112,10 @@ export const pipelinesSlice = createSlice({
       const { pipelineID, status } = action.payload;
       const idx = _.findIndex(state.rows, { id: pipelineID });
       if (idx != -1) {
-        state.rows[idx].status.total = status.total;
-        state.rows[idx].status.done = status.done;
-        state.rows[idx].status.error = status.error;
-        state.rows[idx].status.running = status.running;
+        // state.rows[idx].status.total = status.total;
+        // state.rows[idx].status.done = status.done;
+        // state.rows[idx].status.error = status.error;
+        // state.rows[idx].status.running = status.running;
       }
     },
     pipelineStatus: (state, action: PayloadAction<string>) => {
@@ -123,22 +123,22 @@ export const pipelinesSlice = createSlice({
       const pipelineID = action.payload;
       updatePipelineStatus(state, pipelineID);
     },
-    removePipelines: (state, action: PayloadAction<string[]>) => {
-      const pipelineIds = action.payload;
+    removeStages: (state, action: PayloadAction<string[]>) => {
+      const stageIds = action.payload;
       // console.log('Action::removePipelines::Payload' + JSON.stringify(pipelineIds));
-      state.rows = _.remove(state.rows, (o) => !_.includes(pipelineIds, o.id));
+      state.rows = _.remove(state.rows, (o) => !_.includes(stageIds, o.id));
     },
     resetPipelineStatus: (state, action: PayloadAction<StepCountPayload>) => {
       const { pipelineID, status } = action.payload;
       const idx = _.findIndex(state.rows, { id: pipelineID });
       if (idx != -1) {
-        state.rows[idx].status.total = status.total;
-        state.rows[idx].status.error = status.error;
-        state.rows[idx].status.running = status.running;
-        state.rows[idx].status.done = status.done;
+        // state.rows[idx].status.total = status.total;
+        // state.rows[idx].status.error = status.error;
+        // state.rows[idx].status.running = status.running;
+        // state.rows[idx].status.done = status.done;
         //reset step statuses
         state.rows[idx].steps.forEach((step) => {
-          step.status = 'reset';
+          step.status = '0';
         });
       }
       updatePipelineStatus(state, pipelineID);
@@ -168,11 +168,11 @@ export const pipelinesSlice = createSlice({
 });
 
 export const {
-  loadPipelines,
+  loadStages,
   pipelineStatus,
   updateStep,
   deleteSteps,
-  removePipelines,
+  removeStages,
   updateStepCount,
   resetPipelineStatus
 } = pipelinesSlice.actions;
@@ -188,17 +188,29 @@ function updatePipelineStatus(state, pipelineId: string) {
   }
 }
 
-function rowsFromPayload(payload: Pipeline[]) {
+function rowsFromPayload(payload: Stage[]) {
   //console.log('Received Payload ' + JSON.stringify(payload));
   const rows = [];
   payload.map((v) => {
+    let status: Status;
+    switch (v?.status) {
+      case 1:
+        status = Status.SUCCESS;
+        break;
+      case 2:
+        status = Status.FAILED;
+        break;
+      default:
+        status = Status.NONE;
+        break;
+    }
     rows.push({
       id: v.id,
       pipelinePath: v.pipelinePath,
-      stageName: v.stageName?.replace(/[\n\r]/g, ''),
+      stageName: v.name?.replace(/[\n\r]/g, ''),
       pipelineFile: v.pipelineFile,
       steps: v?.steps,
-      status: v?.status
+      status
     });
   });
   return rows;

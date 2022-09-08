@@ -55,14 +55,6 @@ func (h *Handler) DeleteAllStages(c echo.Context) error {
 	dbConn := h.dbc.DB
 	err := dbConn.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		_, err := dbConn.NewTruncateTable().
-			Model((*db.Stage)(nil)).
-			ContinueIdentity().
-			Cascade().
-			Exec(ctx)
-		if err != nil {
-			return err
-		}
-		_, err = dbConn.NewTruncateTable().
 			Model((*db.StageStep)(nil)).
 			ContinueIdentity().
 			Cascade().
@@ -70,6 +62,15 @@ func (h *Handler) DeleteAllStages(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+		_, err = dbConn.NewTruncateTable().
+			Model((*db.Stage)(nil)).
+			ContinueIdentity().
+			Cascade().
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	})
 

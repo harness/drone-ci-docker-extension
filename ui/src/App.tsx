@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Button, Grid, Stack, Typography } from '@mui/material';
-import ImportDialog from './components/ImportPipelineDialog';
-import { PipelinesTable } from './components/PipelinesTable';
+import ImportOrLoadStages from './components/dialogs/ImportOrLoadStages';
+import { StageTable } from './components/StageTable';
 import { getDockerDesktopClient } from './utils';
 import { dataLoadStatus, importPipelines } from './features/pipelinesSlice';
 import { useAppDispatch } from './app/hooks';
@@ -67,9 +67,9 @@ export function App() {
             </Button>
           </Grid>
         </Grid>
-        <PipelinesTable />
+        <StageTable />
         {openImportDialog && (
-          <ImportDialog
+          <ImportOrLoadStages
             open={openImportDialog}
             onClose={handleImportDialogClose}
           />

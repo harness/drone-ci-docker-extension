@@ -1,7 +1,7 @@
 import { createDockerDesktopClient } from '@docker/extension-api-client';
 import { DockerDesktopClient } from '@docker/extension-api-client-types/dist/v1';
 import { Md5 } from 'ts-md5/dist/md5';
-import { Step } from './features/types';
+import { PipelineStatus, Step } from './features/types';
 
 let client: DockerDesktopClient;
 
@@ -19,9 +19,11 @@ export function pipelineFQN(pipelinePath: string, stageName: string): string {
   return `${pipelinePath.replaceAll('/', '-')}~~${stageName}`;
 }
 
-export function pipelineDisplayName(pipelinePath: string, stageName: string): string {
-  const paths = pipelinePath.split('/');
-  return `${paths[paths.length - 1]}/${stageName}`;
+export function pipelineDisplayName(pipelineFile: string): string {
+  const paths = pipelineFile.split('/');
+  const pipelineDirLastPath = [paths[paths.length - 2]];
+  const piplineFileLastPath = [paths[paths.length - 1]];
+  return `${pipelineDirLastPath}/${piplineFileLastPath}`;
 }
 
 export function vscodeURI(pipelinePath: string): string {
