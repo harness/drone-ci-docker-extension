@@ -10,6 +10,8 @@ import (
 
 var _ bun.AfterCreateTableHook = (*Stage)(nil)
 var _ bun.BeforeAppendModelHook = (*Stage)(nil)
+
+// var _ bun.AfterInsertHook = (*Stage)(nil)
 var _ bun.AfterCreateTableHook = (*StageStep)(nil)
 var _ bun.BeforeAppendModelHook = (*StageStep)(nil)
 
@@ -18,7 +20,7 @@ func (*Stage) AfterCreateTable(ctx context.Context, query *bun.CreateTableQuery)
 		Model((*Stage)(nil)).
 		Index("pipeline_stage_idx").
 		Unique().
-		Column("stage_name", "pipeline_file").
+		Column("name", "pipeline_file").
 		IfNotExists().
 		Exec(ctx)
 	return err
@@ -56,3 +58,12 @@ func (m *StageStep) BeforeAppendModel(ctx context.Context, query schema.Query) e
 	}
 	return nil
 }
+
+// AfterInsert implements bun.AfterInsertHook
+// func (m *Stage) AfterInsert(ctx context.Context, query *bun.InsertQuery) error {
+// 	//Ensure that we update the stage_id on to steps
+// 	for _, step := range m.Steps {
+// 		step.StageID = m.ID
+// 	}
+// 	return nil
+// }

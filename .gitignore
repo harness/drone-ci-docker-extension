@@ -10,3 +10,4 @@ data
 !ui/.env
 !bin
 backend/demo.db
+test.db

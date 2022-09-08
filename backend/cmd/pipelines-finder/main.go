@@ -8,29 +8,18 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
+	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/db"
 	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/ignore"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
-type Step struct {
-	Name  string `yaml:"name" json:"name"`
-	Image string `yaml:"image" json:"image"`
-}
-
-type Stage struct {
-	Kind         string `yaml:"kind" json:"-"`
-	PipelinePath string `yaml:"pipelinePath,omitempty" json:"pipelinePath,omitempty"`
-	PipelineFile string `yaml:"pipelineFile,omitempty" json:"pipelineFile,omitempty"`
-	StageName    string `yaml:"name" json:"stageName"`
-	Steps        []Step `yaml:"steps" json:"steps"`
-}
-
 func main() {
 	var directory string
-	var stages []*Stage
+	var stages db.Stages
 
 	flag.StringVar(&directory, "path", "", "Root Path to discover drone pipelines")
 	flag.Parse()
@@ -80,9 +69,10 @@ func main() {
 
 			decoder := yaml.NewDecoder(file)
 			for {
-				stage := new(Stage)
+				stage := new(db.Stage)
 				stage.PipelineFile = path
 				stage.PipelinePath = filepath.Dir(path)
+				stage.Logs = []byte("")
 				err := decoder.Decode(stage)
 				if stage == nil {
 					continue
@@ -103,7 +93,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	sort.Sort(stages)
 	b, err := json.Marshal(stages)
 	if err != nil {
 		log.Fatal(err)

@@ -8,6 +8,7 @@ require (
 )
 
 require (
+	github.com/google/go-cmp v0.5.8
 	github.com/stretchr/testify v1.8.0
 	github.com/uptrace/bun v1.1.8
 	github.com/uptrace/bun/dbfixture v1.1.8

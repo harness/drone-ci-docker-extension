@@ -46,10 +46,13 @@ func main() {
 	ctx := context.Background()
 
 	h := handler.NewHandler(ctx, dbFile, log)
-	router.GET("/pipelines", h.GetPipelines)
-	router.POST("/pipeline", h.SavePipelines)
-	router.POST("/pipelines/delete", h.DeletePipelines)
-	router.DELETE("/pipeline/:id", h.DeletePipeline)
+	router.GET("/stages", h.GetStages)
+	router.POST("/stages", h.SaveStages)
+	router.PATCH("/stage/:id/:status", h.UpdateStageStatus)
+	router.PATCH("/step/:id/:status", h.UpdateStepStatus)
+	router.DELETE("/stages", h.DeleteStages)
+	//TODO stream
+	router.GET("/stage/:id/logs", h.StageLogs)
 
 	log.Fatal(router.Start(startURL))
 }

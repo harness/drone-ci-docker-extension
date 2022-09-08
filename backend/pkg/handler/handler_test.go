@@ -3,14 +3,18 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path"
-	"reflect"
+	"sort"
+	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/db"
 	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/utils"
 	echo "github.com/labstack/echo/v4"
@@ -24,29 +28,19 @@ var (
 	err error
 )
 
-func getDBFile() string {
+func getDBFile(dbName string) string {
 	cwd, _ := os.Getwd()
-	return path.Join(cwd, "testdata", "test.db")
+	return path.Join(cwd, "testdata", fmt.Sprintf("%s.db", dbName))
 }
 
-func getRecordsJSONFile() ([]byte, error) {
-	cwd, _ := os.Getwd()
-	return ioutil.ReadFile(path.Join(cwd, "testdata", "db.json"))
-}
-
-func getDataFile() string {
-	cwd, _ := os.Getwd()
-	return path.Join(cwd, "testdata", "fixtures.yaml")
-}
-
-func prepareDataFile() error {
+func loadFixtures() error {
 	log, err = utils.LogSetup(os.Stdout, "debug")
 
 	if err != nil {
 		return err
 	}
 
-	dbc := db.New(context.TODO(), log, getDBFile())
+	dbc := db.New(context.TODO(), log, getDBFile("test"))
 
 	dbc.Init()
 
@@ -60,235 +54,374 @@ func prepareDataFile() error {
 	return nil
 }
 
-func TestGetPipelines(t *testing.T) {
-	if err := prepareDataFile(); err != nil {
+func TestGetStages(t *testing.T) {
+	if err := loadFixtures(); err != nil {
 		t.Fatal(err)
 	}
 
-	expectedRecordsJSON, err := getRecordsJSONFile()
+	cwd, _ := os.Getwd()
+	b, err := ioutil.ReadFile(path.Join(cwd, "testdata", "want.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	var want db.Stages
+	err = json.Unmarshal(b, &want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sort.Sort(want)
+
 	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/pipelines", nil)
+	req := httptest.NewRequest(http.MethodGet, "/stages", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	h := NewHandler(context.Background(), getDBFile(), log)
-	if assert.NoError(t, h.GetPipelines(c)) {
+	h := NewHandler(context.Background(), getDBFile("test"), log)
+	if c := e.NewContext(req, rec); assert.NoError(t, h.GetStages(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
-		var actual []*db.Stage
+		var got db.Stages
 		b := rec.Body.Bytes()
-		json.Unmarshal(b, &actual)
-		assert.Equal(t, len(actual), 7)
+		json.Unmarshal(b, &got)
+		assert.Equal(t, len(got), 7)
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.True(t, reflect.DeepEqual(expectedRecordsJSON, b))
+		//make sure we sort the values
+		sort.Sort(got)
+		//Verify Stage
+		if diff := cmp.Diff(want, got, cmpopts.IgnoreFields(db.Stage{}, "CreatedAt", "ModifiedAt", "Steps", "Logs")); diff != "" {
+			t.Errorf("TestGetStages() mismatch (-want +got):\n%s", diff)
+		}
 	}
 }
 
-// func TestDeletePipelines(t *testing.T) {
-// 	if err := prepareDataFile(); err != nil {
-// 		t.Fatal(err)
-// 	}
+func TestDeleteStages(t *testing.T) {
+	if err := loadFixtures(); err != nil {
+		t.Fatal(err)
+	}
+	deleteTests := map[string]struct {
+		requestBody string
+		uriPath     string
+		dbFile      string
+		want        int
+	}{
+		"multipleIds": {
+			requestBody: `[{"ID":2},{"ID":6}]`,
+			uriPath:     "/stages",
+			dbFile:      "test",
+			want:        0,
+		},
+		"singleId": {
+			requestBody: `[{"ID":6}]`,
+			uriPath:     "/stages",
+			dbFile:      "test",
+			want:        0,
+		},
+	}
 
-// 	pipelineIdsJSON := `["563f1cdfe5970775b835d97d75ef6397","f6d03b00771697d8b78e816104c38bae"]`
-// 	e := echo.New()
-// 	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(pipelineIdsJSON))
-// 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-// 	rec := httptest.NewRecorder()
-// 	c := e.NewContext(req, rec)
-// 	c.SetPath("/pipelines/delete")
+	for name, tc := range deleteTests {
+		t.Run(name, func(t *testing.T) {
+			e := echo.New()
+			req := httptest.NewRequest(http.MethodDelete, "/", strings.NewReader(tc.requestBody))
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+			c.SetPath(tc.uriPath)
 
-// 	dataFile := getDataFile("db.json")
+			ctx := context.Background()
+			h := NewHandler(ctx, getDBFile(tc.dbFile), log)
 
-// 	h, err := NewHandler(dataFile)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
+			if assert.NoError(t, h.DeleteStages(c)) {
+				assert.Equal(t, http.StatusNoContent, rec.Code)
+			}
 
-// 	if assert.NoError(t, h.DeletePipelines(c)) {
-// 		assert.Equal(t, http.StatusOK, rec.Code)
-// 		var ids []string
-// 		json.Unmarshal(rec.Body.Bytes(), &ids)
-// 		assert.NotNil(t, ids)
-// 		assert.Equal(t, len(ids), 2)
-// 		assert.True(t, reflect.DeepEqual(ids, []string{"563f1cdfe5970775b835d97d75ef6397", "f6d03b00771697d8b78e816104c38bae"}))
-// 	}
-// 	os.Remove(dataFile)
-// }
+			var stages db.Stages
+			if err := json.Unmarshal([]byte(tc.requestBody), &stages); err != nil {
+				t.Fatal(err)
+			}
+			//Verify
+			count, err := h.dbc.DB.
+				NewSelect().
+				Model(&stages).
+				WherePK().
+				ScanAndCount(ctx)
+			if err != nil && err.Error() != "sql: no rows in result set" {
+				t.Fatal(err)
+			}
 
-// func TestDeletePipeline(t *testing.T) {
-// 	if err := prepareDataFile(); err != nil {
-// 		t.Fatal(err)
-// 	}
+			assert.True(t, count == tc.want, "Expecting records to be deleted but it is not")
+		})
+	}
+}
 
-// 	e := echo.New()
-// 	req := httptest.NewRequest(http.MethodDelete, "/", nil)
-// 	rec := httptest.NewRecorder()
-// 	c := e.NewContext(req, rec)
-// 	c.SetPath("/pipeline/:id")
-// 	c.SetParamNames("id")
-// 	c.SetParamValues("f6d03b00771697d8b78e816104c38bae")
-// 	dataFile := getDataFile("db.json")
+func TestSaveStage(t *testing.T) {
+	dbFile := "test_save_stage"
+	os.Remove(getDBFile(dbFile))
 
-// 	h, err := NewHandler(dataFile)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
+	log, err = utils.LogSetup(os.Stdout, "debug")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-// 	if assert.NoError(t, h.DeletePipeline(c)) {
-// 		assert.Equal(t, http.StatusNoContent, rec.Code)
-// 		dp := DronePipeline{}
-// 		b, err := ioutil.ReadFile(dataFile)
+	saveTests := map[string]struct {
+		requestBody string
+		uriPath     string
+		dbFile      string
+		wantSteps   db.Steps
+	}{
+		"insert": {
+			requestBody: `[
+				{
+				  "id": 5,
+				  "stageName": "GoLang Build",
+				  "pipelinePath": "/tmp/test-golang-project",
+				  "pipelineFile": "/tmp/test-golang-project/.drone.yml",
+				  "steps": [
+					{
+					  "name": "build",
+					  "image": "golang",
+					  "status": 1
+					},
+					{
+					  "name": "test",
+					  "image": "golang",
+					  "status": 1
+					}
+				  ],
+				  "logs": "",
+				  "status": 1
+				}
+			  ]`,
+			uriPath: "/stages",
+			dbFile:  dbFile,
+			wantSteps: []*db.StageStep{
+				{
+					ID:      1,
+					Name:    "build",
+					Image:   "golang",
+					Status:  db.Success,
+					StageID: 5,
+				}, {
+					ID:      2,
+					Name:    "test",
+					Image:   "golang",
+					Status:  db.Success,
+					StageID: 5,
+				},
+			},
+		},
+		"upsert": {
+			requestBody: `[
+				{
+				  "id": 5,
+				  "stageName": "GoLang Build",
+				  "pipelinePath": "/tmp/test-golang-project",
+				  "pipelineFile": "/tmp/test-golang-project/.drone.yml",
+				  "steps": [
+					{
+					  "name": "build",
+					  "image": "golang",
+					  "status": 1
+					},
+					{
+					  "name": "test",
+					  "image": "golang",
+					  "status": 1
+					},
+					{
+						"name": "package",
+						"image": "plugins/docker",
+						"status": 1
+					  }
+				  ],
+				  "logs": "",
+				  "status": 1
+				}
+			  ]`,
+			uriPath: "/stages",
+			dbFile:  dbFile,
+			wantSteps: []*db.StageStep{
+				{
+					ID:      1,
+					Name:    "build",
+					Image:   "golang",
+					Status:  db.Success,
+					StageID: 5,
+				},
+				{
+					ID:      2,
+					Name:    "test",
+					Image:   "golang",
+					Status:  db.Success,
+					StageID: 5,
+				},
+				{
+					ID:      3,
+					Name:    "package",
+					Image:   "plugins/docker",
+					Status:  db.Success,
+					StageID: 5,
+				},
+			},
+		},
+	}
 
-// 		if err != nil {
-// 			t.Fatal(err)
-// 		}
-// 		json.Unmarshal(b, &dp)
-// 		assert.NotNil(t, dp)
-// 		ok := h.hasElement("f6d03b00771697d8b78e816104c38bae")
-// 		assert.False(t, ok)
-// 	}
-// 	os.Remove(dataFile)
-// }
+	for name, tc := range saveTests {
+		t.Run(name, func(t *testing.T) {
+			e := echo.New()
+			var want, got db.Stages
+			err := json.Unmarshal([]byte(tc.requestBody), &want)
+			if err != nil {
+				t.Fatal(err)
+			}
+			req := httptest.NewRequest(http.MethodPost, tc.uriPath, strings.NewReader(tc.requestBody))
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			ctx := context.TODO()
+			h := NewHandler(ctx, getDBFile(dbFile), log)
+			if c := e.NewContext(req, rec); assert.NoError(t, h.SaveStages(c)) {
+				assert.Equal(t, http.StatusCreated, rec.Code)
+				dbConn := h.dbc.DB
+				err := dbConn.NewSelect().
+					Model(&got).
+					Relation("Steps").
+					Scan(ctx)
+				if err != nil {
+					t.Fatal(err)
+				}
+				assert.True(t, want.Len() == got.Len(), "Expecting at least one record with stage with id 5 but got none")
 
-// func TestSavePipeline(t *testing.T) {
-// 	dataFile := getDataFile("db.json")
-// 	if err := prepareDataFile(); err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	e := echo.New()
-// 	newPipelineJSON := `[
-// 		{
-// 		"id": "2766b8e028dfd7ee1fea1b2b74355a90",
-// 		"stageName":"GoLang Build",
-// 		"pipelinePath":"/tmp/test-golang-project",
-// 		"pipelineFile": "/tmp/test-golang-project/.drone.yml"
-// 		}
-// 	]`
-// 	req := httptest.NewRequest(http.MethodPost, "/pipeline", strings.NewReader(newPipelineJSON))
-// 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-// 	rec := httptest.NewRecorder()
-// 	c := e.NewContext(req, rec)
-// 	h, err := NewHandler(dataFile)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
+				//Verify Stage
+				if diff := cmp.Diff(want, got, cmpopts.IgnoreFields(db.Stage{}, "CreatedAt", "ModifiedAt", "Steps", "Logs")); diff != "" {
+					t.Errorf("MakeGatewayInfo() mismatch (-want +got):\n%s", diff)
+				}
 
-// 	if assert.NoError(t, h.SavePipelines(c)) {
-// 		assert.Equal(t, http.StatusCreated, rec.Code)
-// 		var dps []*DronePipeline
-// 		json.Unmarshal(rec.Body.Bytes(), &dps)
-// 		assert.NotNil(t, dps)
-// 		assert.Equal(t, len(dps), 1)
-// 		assert.True(t, reflect.DeepEqual(dps, []*DronePipeline{
-// 			{ID: "2766b8e028dfd7ee1fea1b2b74355a90", StageName: "GoLang Build", Path: "/tmp/test-golang-project", PipelineFile: "/tmp/test-golang-project/.drone.yml"},
-// 		}))
-// 	}
-// 	os.Remove(dataFile)
-// }
+				aStage := got[0]
+				//Verify Steps
+				assert.Truef(t, aStage.Steps.Len() == tc.wantSteps.Len(), "Expecting stage to have %d steps but got %d", tc.wantSteps.Len(), aStage.Steps.Len())
+				if diff := cmp.Diff(tc.wantSteps, aStage.Steps, cmpopts.IgnoreFields(db.StageStep{}, "CreatedAt", "ModifiedAt")); diff != "" {
+					t.Errorf("TestSaveStage() mismatch (-want +got):\n%s", diff)
+				}
+			}
+		})
+	}
 
-// func TestUpdatePipeline(t *testing.T) {
-// 	dataFile := getDataFile("db.json")
-// 	if err := prepareDataFile(); err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	e := echo.New()
-// 	newPipelineJSON := `[
-// 		{
-// 			"id": "2766b8e028dfd7ee1fea1b2b74355a90",
-// 			"stageName": "GoLang Build",
-// 			"pipelinePath": "/tmp/test-golang-project",
-// 			"pipelineFile": "/tmp/test-golang-project/.drone.yml",
-// 			"steps": [
-// 			  {
-// 				"name": "step-one",
-// 				"image": "busybox",
-// 				"status": "done"
-// 			  },
-// 			  {
-// 				"name": "step-two",
-// 				"image": "alpine",
-// 				"status": "error"
-// 			  }
-// 			],
-// 			"status": {
-// 				"total": 2,
-// 				"error": 1,
-// 				"done": 1
-// 			}
-// 		  }
-// 	]`
-// 	req := httptest.NewRequest(http.MethodPost, "/pipeline", strings.NewReader(newPipelineJSON))
-// 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-// 	rec := httptest.NewRecorder()
-// 	c := e.NewContext(req, rec)
-// 	h, err := NewHandler(dataFile)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
+	os.Remove(getDBFile(dbFile))
+}
 
-// 	if assert.NoError(t, h.SavePipelines(c)) {
-// 		assert.Equal(t, http.StatusCreated, rec.Code)
-// 		var dps []*DronePipeline
-// 		json.Unmarshal(rec.Body.Bytes(), &dps)
-// 		assert.NotNil(t, dps)
-// 		assert.Equal(t, len(dps), 1)
+func TestUpdateStageStatus(t *testing.T) {
+	if err := loadFixtures(); err != nil {
+		t.Fatal(err)
+	}
+	statusTests := map[string]struct {
+		stageID int
+		uriPath string
+		dbFile  string
+		want    db.Status
+	}{
+		"success": {
+			stageID: 5,
+			uriPath: "/stage/:id/:status",
+			dbFile:  "test",
+			want:    db.Success,
+		},
+		"failed": {
+			stageID: 4,
+			uriPath: "/stage/:id/:status",
+			dbFile:  "test",
+			want:    db.Failed,
+		},
+		"default": {
+			stageID: 7,
+			uriPath: "/stage/:id/:status",
+			dbFile:  "test",
+			want:    db.None,
+		},
+	}
 
-// 		dp := dps[0]
-// 		assert.Equal(t, "2766b8e028dfd7ee1fea1b2b74355a90", dp.ID)
-// 		assert.Equal(t, "GoLang Build", dp.StageName)
-// 		assert.Equal(t, "/tmp/test-golang-project", dp.Path)
-// 		assert.Equal(t, "/tmp/test-golang-project/.drone.yml", dp.PipelineFile)
-// 		assert.NotNil(t, dp.Status)
-// 		assert.Equal(t, 2, len(dp.Steps))
-// 		assert.Equal(t, 2, dp.Status.Total)
-// 		assert.Equal(t, 1, dp.Status.Done)
-// 		assert.Equal(t, 1, dp.Status.Error)
-// 	}
-// 	os.Remove(dataFile)
-// }
+	for name, tc := range statusTests {
+		t.Run(name, func(t *testing.T) {
+			e := echo.New()
+			req := httptest.NewRequest(http.MethodPatch, tc.uriPath, nil)
+			rec := httptest.NewRecorder()
+			ctx := context.TODO()
+			h := NewHandler(ctx, getDBFile(tc.dbFile), log)
+			c := e.NewContext(req, rec)
+			c.SetPath(tc.uriPath)
+			c.SetParamNames("id", "status")
+			c.SetParamValues(fmt.Sprintf("%d", tc.stageID), fmt.Sprintf("%d", tc.want))
+			if assert.NoError(t, h.UpdateStageStatus(c)) {
+				assert.Equal(t, http.StatusNoContent, rec.Code)
+				dbConn := h.dbc.DB
+				stage := &db.Stage{ID: tc.stageID}
+				err := dbConn.NewSelect().
+					Model(stage).
+					WherePK().
+					Scan(ctx)
+				if err != nil {
+					t.Fatal(err)
+				}
+				got := stage.Status
+				assert.Equalf(t, tc.want, got, `Expecting status to be "%s" but got "%s"`, tc.want, got)
+			}
+		})
+	}
+}
 
-// func TestSavePipelines(t *testing.T) {
-// 	dataFile := getDataFile("db.json")
-// 	if err := prepareDataFile(); err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	e := echo.New()
-// 	expected := []*DronePipeline{
-// 		{ID: "2766b8e028dfd7ee1fea1b2b74355a90", StageName: "GoLang Build", Path: "/tmp/test-golang-project", PipelineFile: "/tmp/test-golang-project/.drone.yml", Steps: []PipelineStep{}, Status: PipelineStatus{}},
-// 		{ID: "563f1cdfe5970775b835d97d75ef6397", StageName: "Java Build", Path: "/tmp/test-java-project", PipelineFile: "/tmp/test-java-project/.drone.yml", Steps: []PipelineStep{}, Status: PipelineStatus{}},
-// 	}
-// 	newPipelinesJSON := `[
-// 	{
-// 	"id": "2766b8e028dfd7ee1fea1b2b74355a90",
-// 	"stageName":"GoLang Build",
-// 	"pipelinePath":"/tmp/test-golang-project",
-// 	"pipelineFile": "/tmp/test-golang-project/.drone.yml"
-// 	},
-// 	{
-// 	"id":"563f1cdfe5970775b835d97d75ef6397",
-// 	"stageName":"Java Build",
-// 	"pipelinePath":"/tmp/test-java-project",
-// 	"pipelineFile":"/tmp/test-java-project/.drone.yml"}
-// 	]`
-// 	req := httptest.NewRequest(http.MethodPost, "/pipeline", strings.NewReader(newPipelinesJSON))
-// 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-// 	rec := httptest.NewRecorder()
-// 	c := e.NewContext(req, rec)
-// 	h, err := NewHandler(dataFile)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	if assert.NoError(t, h.SavePipelines(c)) {
-// 		assert.Equal(t, http.StatusCreated, rec.Code)
-// 		var actual []*DronePipeline
-// 		json.Unmarshal(rec.Body.Bytes(), &actual)
-// 		assert.NotNil(t, actual)
-// 		assert.Equal(t, len(actual), 2)
-// 		assert.True(t, reflect.DeepEqual(actual, expected))
-// 	}
-// 	os.Remove(dataFile)
-// }
+func TestUpdateStepStatus(t *testing.T) {
+	if err := loadFixtures(); err != nil {
+		t.Fatal(err)
+	}
+	statusTests := map[string]struct {
+		stepID  int
+		uriPath string
+		dbFile  string
+		want    db.Status
+	}{
+		"success": {
+			stepID:  5,
+			uriPath: "/step/:id/:status",
+			dbFile:  "test",
+			want:    db.Success,
+		},
+		"failed": {
+			stepID:  4,
+			uriPath: "/step/:id/:status",
+			dbFile:  "test",
+			want:    db.Failed,
+		},
+		"default": {
+			stepID:  7,
+			uriPath: "/step/:id/:status",
+			dbFile:  "test",
+			want:    db.None,
+		},
+	}
+
+	for name, tc := range statusTests {
+		t.Run(name, func(t *testing.T) {
+			e := echo.New()
+			req := httptest.NewRequest(http.MethodPatch, tc.uriPath, nil)
+			rec := httptest.NewRecorder()
+			ctx := context.TODO()
+			h := NewHandler(ctx, getDBFile(tc.dbFile), log)
+			c := e.NewContext(req, rec)
+			c.SetPath(tc.uriPath)
+			c.SetParamNames("id", "status")
+			c.SetParamValues(fmt.Sprintf("%d", tc.stepID), fmt.Sprintf("%d", tc.want))
+			if assert.NoError(t, h.UpdateStageStatus(c)) {
+				assert.Equal(t, http.StatusNoContent, rec.Code)
+				dbConn := h.dbc.DB
+				step := &db.Stage{ID: tc.stepID}
+				err := dbConn.NewSelect().
+					Model(step).
+					WherePK().
+					Scan(ctx)
+				if err != nil {
+					t.Fatal(err)
+				}
+				got := step.Status
+				assert.Equalf(t, tc.want, got, `Expecting status to be "%s" but got "%s"`, tc.want, got)
+			}
+		})
+	}
+}
