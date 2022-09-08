@@ -139,16 +139,16 @@ func TestDeleteStages(t *testing.T) {
 				t.Fatal(err)
 			}
 			//Verify
-			count, err := h.dbc.DB.
+			exists, err := h.dbc.DB.
 				NewSelect().
 				Model(&stages).
 				WherePK().
-				ScanAndCount(ctx)
-			if err != nil && err.Error() != "sql: no rows in result set" {
+				Exists(ctx)
+			if err != nil {
 				t.Fatal(err)
 			}
 
-			assert.True(t, count == tc.want, "Expecting records to be deleted but it is not")
+			assert.False(t, exists, "Expecting records to be deleted but it is not")
 		})
 	}
 }

@@ -193,44 +193,51 @@ func (h *Handler) UpdateStepStatus(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-// func (h *Handler) indexOf(id string) int {
-// 	for i, e := range h.db {
-// 		if e.ID == id {
-// 			return i
-// 		}
-// 	}
-// 	return -1
-// }
+func (h *Handler) CheckIfStageExists(c echo.Context) bool {
+	log := h.dbc.Log
+	ctx := h.dbc.Ctx
+	dbConn := h.dbc.DB
+	var stageID int
+	err := echo.PathParamsBinder(c).
+		Int("id", &stageID).
+		BindError()
+	if err != nil {
+		return false
+	}
 
-// func (h *Handler) hasElement(id string) bool {
-// 	for _, e := range h.db {
-// 		if e.ID == id {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
+	exists, err := dbConn.
+		NewSelect().
+		Model(&db.Stage{ID: stageID}).
+		WherePK().
+		Exists(ctx)
+	if err != nil {
+		log.Errorf("Error while checking stage %d exists %#v", stageID, err)
+		return false
+	}
 
-// func (h *Handler) persistDB() error {
-// 	b, err := json.Marshal(h.db)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if err := ioutil.WriteFile(h.dbFile, b, 0644); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
+	return exists
+}
 
-// func (h *Handler) delete(id string) error {
-// 	if ok := h.hasElement(id); ok {
-// 		i := h.indexOf(id)
-// 		if i != -1 {
-// 			h.db = append(h.db[:i], h.db[i+1:]...)
-// 			if err := h.persistDB(); err != nil {
-// 				return err
-// 			}
-// 		}
-// 	}
-// 	return nil
-// }
+func (h *Handler) CheckIfStepExists(c echo.Context) bool {
+	log := h.dbc.Log
+	ctx := h.dbc.Ctx
+	dbConn := h.dbc.DB
+	var stepID int
+	err := echo.PathParamsBinder(c).
+		Int("id", &stepID).
+		BindError()
+	if err != nil {
+		return false
+	}
+
+	exists, err := dbConn.
+		NewSelect().
+		Model(&db.StageStep{ID: stepID}).
+		WherePK().
+		Exists(ctx)
+	if err != nil {
+		log.Errorf("Error while checking step %d exists %#v", stepID, err)
+		return false
+	}
+	return exists
+}
