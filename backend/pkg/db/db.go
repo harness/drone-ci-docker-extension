@@ -4,8 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"sync"
 
+	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/sqlitedialect"
@@ -22,18 +24,46 @@ type Config struct {
 	DB     *bun.DB
 }
 
-//New creates a new instance of Config to create and initialize new database
-func New(ctx context.Context, log *logrus.Logger, dbFile string) *Config {
-	db := &Config{
-		Ctx:    ctx,
-		Log:    log,
-		DBFile: dbFile,
-	}
+type Option func(*Config)
 
-	return db
+func WithContext(ctx context.Context) Option {
+	return func(c *Config) {
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		c.Ctx = ctx
+	}
 }
 
-//Init initializes the database
+func WithLogger(log *logrus.Logger) Option {
+	return func(c *Config) {
+		if log == nil {
+			log = utils.LogSetup(os.Stdout, "warn")
+		}
+		c.Log = log
+	}
+}
+
+func WithDBFile(dbFile string) Option {
+	return func(c *Config) {
+		if dbFile == "" {
+			dbFile = "/data/db"
+		}
+		c.DBFile = dbFile
+	}
+}
+
+//New creates a new instance of Config to create and initialize new database
+func New(options ...Option) *Config {
+	cfg := &Config{}
+	for _, o := range options {
+		o(cfg)
+	}
+
+	return cfg
+}
+
+//Init initializes the database with the given configuration
 func (c *Config) Init() *bun.DB {
 	c.dbOnce.Do(func() {
 		log := c.Log

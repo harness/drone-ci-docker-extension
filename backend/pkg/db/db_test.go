@@ -12,28 +12,21 @@ import (
 )
 
 func TestInitDB(t *testing.T) {
-	var (
-		dbc  = new(Config)
-		dbfx *dbfixture.Fixture
-	)
-	log, err := utils.LogSetup(os.Stdout, "debug")
-	if err != nil {
-		t.Fatal(err)
-	}
-	dbc = &Config{
-		Ctx:    context.TODO(),
-		Log:    log,
-		DBFile: "testdata/test.db",
-	}
+	log := utils.LogSetup(os.Stdout, "debug")
+	dbc := New(
+		WithContext(context.TODO()),
+		WithDBFile("testdata/test.db"),
+		WithLogger(log))
+
 	dbc.Init()
 
-	err = dbc.DB.Ping()
+	err := dbc.DB.Ping()
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	dbfx = dbfixture.New(dbc.DB, dbfixture.WithRecreateTables())
+	dbfx := dbfixture.New(dbc.DB, dbfixture.WithRecreateTables())
 	if err := dbfx.Load(dbc.Ctx, os.DirFS("."), "testdata/fixtures.yaml"); err != nil {
 		t.Fatal(err)
 	}

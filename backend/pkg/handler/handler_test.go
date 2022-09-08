@@ -34,13 +34,11 @@ func getDBFile(dbName string) string {
 }
 
 func loadFixtures() error {
-	log, err = utils.LogSetup(os.Stdout, "debug")
-
-	if err != nil {
-		return err
-	}
-
-	dbc := db.New(context.TODO(), log, getDBFile("test"))
+	log = utils.LogSetup(os.Stdout, "debug")
+	dbc := db.New(
+		db.WithContext(context.TODO()),
+		db.WithLogger(log),
+		db.WithDBFile(getDBFile("test")))
 
 	dbc.Init()
 
@@ -157,10 +155,7 @@ func TestSaveStage(t *testing.T) {
 	dbFile := "test_save_stage"
 	os.Remove(getDBFile(dbFile))
 
-	log, err = utils.LogSetup(os.Stdout, "debug")
-	if err != nil {
-		t.Fatal(err)
-	}
+	log := utils.LogSetup(os.Stdout, "debug")
 
 	saveTests := map[string]struct {
 		requestBody string

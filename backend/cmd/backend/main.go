@@ -25,10 +25,7 @@ func main() {
 
 	os.RemoveAll(socketPath)
 
-	log, err = utils.LogSetup(os.Stdout, v)
-	if err != nil {
-		panic(err)
-	}
+	log = utils.LogSetup(os.Stdout, v)
 
 	log.Infof("Starting listening on %s\n", socketPath)
 	router := echo.New()

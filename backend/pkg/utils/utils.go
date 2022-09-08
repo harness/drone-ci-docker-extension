@@ -4,14 +4,17 @@ import (
 	"io"
 	"os"
 
+	"github.com/labstack/gommon/log"
 	"github.com/sirupsen/logrus"
 )
 
 //LogSetup sets up the logging for the application
-func LogSetup(out io.Writer, level string) (*logrus.Logger, error) {
+func LogSetup(out io.Writer, level string) *logrus.Logger {
 	lvl, err := logrus.ParseLevel(level)
+
 	if err != nil {
-		return nil, err
+		log.Warnf("Unable to use the %s level, %#v. Defaulting to warning.")
+		lvl = logrus.WarnLevel
 	}
 
 	log := &logrus.Logger{
@@ -24,7 +27,7 @@ func LogSetup(out io.Writer, level string) (*logrus.Logger, error) {
 		Level:        lvl,
 	}
 
-	return log, nil
+	return log
 }
 
 //LookupEnvOrString looks up an environment variable if not found

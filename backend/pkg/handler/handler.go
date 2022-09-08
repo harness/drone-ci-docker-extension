@@ -12,7 +12,11 @@ import (
 )
 
 func NewHandler(ctx context.Context, dbFile string, log *logrus.Logger) *Handler {
-	dbc := db.New(ctx, log, dbFile)
+	dbc := db.New(
+		db.WithContext(ctx),
+		db.WithLogger(log),
+		db.WithDBFile(dbFile),
+	)
 	dbc.Init()
 
 	return &Handler{
@@ -20,6 +24,7 @@ func NewHandler(ctx context.Context, dbFile string, log *logrus.Logger) *Handler
 	}
 }
 
+//GetStages selects all the available stages from the backend. The selected stages are sorted in ascending using column `pipeline_file`
 func (h *Handler) GetStages(c echo.Context) error {
 	log := h.dbc.Log
 	log.Info("Get Pipelines")
@@ -38,6 +43,7 @@ func (h *Handler) GetStages(c echo.Context) error {
 	return c.JSON(http.StatusOK, stages)
 }
 
+//DeleteStages deletes one or more stage ids from the backend
 func (h *Handler) DeleteStages(c echo.Context) error {
 	log := h.dbc.Log
 	var stages []*db.Stage
@@ -69,6 +75,7 @@ func (h *Handler) delete(stages []*db.Stage) error {
 	})
 }
 
+//SaveStages saves one or more stage ids to the backend
 func (h *Handler) SaveStages(c echo.Context) error {
 	log := h.dbc.Log
 	ctx := h.dbc.Ctx
@@ -116,6 +123,8 @@ func (h *Handler) SaveStages(c echo.Context) error {
 	return c.JSON(http.StatusCreated, stages)
 }
 
+// StageLogs retrieves logs associated with the stage. It is streaming operation
+// that continuously reads from file system file
 func (h *Handler) StageLogs(c echo.Context) error {
 	log := h.dbc.Log
 	var stageID int
@@ -129,6 +138,11 @@ func (h *Handler) StageLogs(c echo.Context) error {
 	return nil
 }
 
+// UpdateStageStatus is used to update the stage status. Stage status could be
+// one of the following:
+// 0  - None
+// 1  - Success
+// 2  - Failed
 func (h *Handler) UpdateStageStatus(c echo.Context) error {
 	log := h.dbc.Log
 	ctx := h.dbc.Ctx
@@ -160,6 +174,12 @@ func (h *Handler) UpdateStageStatus(c echo.Context) error {
 
 	return c.NoContent(http.StatusNoContent)
 }
+
+// UpdateStepStatus is used to update the step status. Step status could be
+// one of the following:
+// 0  - None
+// 1  - Success
+// 2  - Failed
 
 func (h *Handler) UpdateStepStatus(c echo.Context) error {
 	log := h.dbc.Log
@@ -193,6 +213,7 @@ func (h *Handler) UpdateStepStatus(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+// CheckIfStageExists checks if the Stage exists in the backend
 func (h *Handler) CheckIfStageExists(c echo.Context) bool {
 	log := h.dbc.Log
 	ctx := h.dbc.Ctx
@@ -218,6 +239,7 @@ func (h *Handler) CheckIfStageExists(c echo.Context) bool {
 	return exists
 }
 
+// CheckIfStepExists checks if the Stage exists in the backend
 func (h *Handler) CheckIfStepExists(c echo.Context) bool {
 	log := h.dbc.Log
 	ctx := h.dbc.Ctx
