@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Button, Grid, Stack, Typography } from '@mui/material';
 import ImportOrLoadStages from './components/dialogs/ImportOrLoadStages';
-import { StageTable } from './components/StageTable';
 import { getDockerDesktopClient } from './utils';
 import { dataLoadStatus, importPipelines } from './features/pipelinesSlice';
 import { useAppDispatch } from './app/hooks';
+import { Stages } from './components/Stages';
 export function App() {
   const [openImportDialog, setOpenImportDialog] = useState<boolean>(false);
   const pipelinesStatus = useSelector(dataLoadStatus);
@@ -66,7 +66,7 @@ export function App() {
           </Button>
         </Grid>
       </Grid>
-      <StageTable />
+      <Stages />
       {openImportDialog && (
         <ImportOrLoadStages
           open={openImportDialog}

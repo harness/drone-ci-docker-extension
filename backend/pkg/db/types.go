@@ -39,7 +39,7 @@ type Stage struct {
 	PipelinePath string    `bun:",notnull" json:"pipelinePath"`
 	Name         string    `bun:",notnull" json:"name"`
 	Status       Status    `bun:",notnull" json:"status"`
-	Steps        Steps     `bun:"rel:has-many,join:id=stage_id"`
+	Steps        Steps     `bun:"rel:has-many,join:id=stage_id" json:"steps"`
 	Logs         []byte    `json:"logs"`
 	CreatedAt    time.Time `bun:",nullzero,notnull,default:current_timestamp" json:"-"`
 	ModifiedAt   time.Time `json:"-"`
@@ -53,7 +53,7 @@ type StageStep struct {
 	Name       string    `bun:",notnull" json:"name"`
 	Image      string    `bun:",notnull" json:"image"`
 	Status     Status    `bun:",notnull" json:"status"`
-	StageID    int       `bun:",notnull" json:"-"`
+	StageID    int       `bun:",notnull" json:"stageId"`
 	CreatedAt  time.Time `bun:",nullzero,notnull,default:current_timestamp" json:"-"`
 	ModifiedAt time.Time `json:"-"`
 }

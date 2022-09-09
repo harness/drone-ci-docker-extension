@@ -27,7 +27,7 @@ func NewHandler(ctx context.Context, dbFile string, log *logrus.Logger) *Handler
 //GetStages selects all the available stages from the backend. The selected stages are sorted in ascending using column `pipeline_file`
 func (h *Handler) GetStages(c echo.Context) error {
 	log := h.dbc.Log
-	log.Info("Get Pipelines")
+	log.Info("Get Stages")
 	stages := make(db.Stages, 0)
 	db := h.dbc.DB
 
@@ -41,6 +41,62 @@ func (h *Handler) GetStages(c echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusOK, stages)
+}
+
+//GetStagesByPipelineFile selects selects stages associated with a PipelineFile
+func (h *Handler) GetStagesByPipelineFile(c echo.Context) error {
+	log := h.dbc.Log
+	var pipelineFile string
+	if err := echo.PathParamsBinder(c).
+		String("pipelineFile", &pipelineFile).
+		BindError(); err != nil {
+		return err
+	}
+	log.Infof("Get Stage by %s", pipelineFile)
+
+	var stages db.Stages
+	db := h.dbc.DB
+
+	err := db.NewSelect().
+		Model(&stages).
+		Relation("Steps").
+		Where("pipeline_file = ?", pipelineFile).
+		Scan(h.dbc.Ctx)
+
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, stages)
+}
+
+//GetStage selects selects a stage by id from the backend.
+func (h *Handler) GetStage(c echo.Context) error {
+	log := h.dbc.Log
+	var stageID int
+	if err := echo.PathParamsBinder(c).
+		Int("id", &stageID).
+		BindError(); err != nil {
+		return err
+	}
+	log.Infof("Get Stage %d", stageID)
+
+	stage := &db.Stage{
+		ID: stageID,
+	}
+	db := h.dbc.DB
+
+	err := db.NewSelect().
+		Model(stage).
+		Relation("Steps").
+		WherePK().
+		Scan(h.dbc.Ctx)
+
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, stage)
 }
 
 //DeleteStages deletes one or more stage ids from the backend

@@ -17,7 +17,6 @@ export const PipelinesTableHead = (props) => {
           />
         </TableCell>
         <TableCell padding="normal">File</TableCell>
-        <TableCell padding="normal">Stage</TableCell>
         <TableCell padding="normal">Status</TableCell>
         <TableCell padding="normal">Actions</TableCell>
       </TableRow>

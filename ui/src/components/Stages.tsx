@@ -20,7 +20,7 @@ import RemovePipelineDialog from './dialogs/RemoveStageDialog';
 import { useAppDispatch } from '../app/hooks';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const PipelinesTable = () => {
+export const Stages = () => {
   const dispatch = useAppDispatch();
   const pipelinesStatus = useSelector(dataLoadStatus);
   const pipelines = useSelector(selectRows);
@@ -50,7 +50,7 @@ export const PipelinesTable = () => {
 
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      const newSelecteds = pipelines?.map((n) => n.id);
+      const newSelecteds = pipelines?.map((n) => n.pipelineFile);
       setSelected(newSelecteds);
       return;
     }
@@ -123,10 +123,9 @@ export const PipelinesTable = () => {
                 {pipelines.map((row) => {
                   return (
                     <Stage
-                      key={row.id}
+                      key={row.pipelineFile}
                       row={row}
                       selected={selected}
-                      pipelineStatus={row.status}
                       onClick={handleClick}
                     />
                   );

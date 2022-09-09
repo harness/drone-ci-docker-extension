@@ -1,25 +1,64 @@
-import { Fragment, useState } from 'react';
-import { BrowserRouter as Router, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Fragment, useState, useMemo, useEffect } from 'react';
+import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
 import { vscodeURI } from '../../utils';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import RemovePipelineDialog from '../dialogs/RemoveStageDialog';
 import PlayCircleOutlineOutlinedIcon from '@mui/icons-material/PlayCircleOutlineOutlined';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RunPipelineDialog from '../dialogs/RunPipelineDialog';
-import { Box, Container, Divider, Grid, IconButton, Paper, Stack, Tooltip, Typography } from '@mui/material';
+import { useSelector } from 'react-redux';
+import {
+  Box,
+  Chip,
+  Container,
+  Divider,
+  Grid,
+  IconButton,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  ListSubheader,
+  Paper,
+  Stack,
+  Tooltip,
+  Typography
+} from '@mui/material';
+import { LazyLog, ScrollFollow } from 'react-lazylog';
+import { selectRows } from '../../features/pipelinesSlice';
+import { Stage } from '../../features/types';
+import { StepStatus } from '../StepStatus';
+
+function useQuery(loc) {
+  const { search } = loc;
+  return useMemo(() => new URLSearchParams(search), [search]);
+}
 
 export const StageRunnerView = (props) => {
   const navigate = useNavigate();
   const [value, setValue] = useState(0);
-  const params = useParams();
+  const [logFollow, setFollow] = useState(true);
   const loc = useLocation();
-  const stageID = parseInt(params.stageId);
-  console.log('Stage ID %s', stageID);
-  console.log('Loc %s', loc.search);
+  const query = useQuery(loc);
+  const pipelines = useSelector(selectRows);
 
-  const { pipelineID, pipelineFile, workspacePath, logHandler, openHandler, stepCount } = props;
+  const pipelineFile = query.get('id');
+  const [workspacePath, setWorkspacePath] = useState('');
+  const [stages, setStages] = useState(new Array<Stage>());
+
   const [removeConfirm, setRemoveConfirm] = useState(false);
   const [openRunPipeline, setOpenRunPipeline] = useState(false);
+
+  useEffect(() => {
+    const paths = pipelineFile.split('/');
+    let wsPath = '';
+    for (let i = 0; i < paths.length - 1; i++) {
+      wsPath = wsPath + paths[i];
+    }
+    //console.log('Workspace Path %s', wsPath);
+    setWorkspacePath(wsPath);
+    setStages(pipelines.find((p) => p.pipelineFile === pipelineFile).stages);
+  }, []);
 
   /* Handlers */
   const handleDeletePipelines = () => {
@@ -39,8 +78,8 @@ export const StageRunnerView = (props) => {
   };
 
   const navigateToHome = async () => {
-    const url = `/?extensionName=kameshsampath_drone-desktop-docker-extension&hasBackend=true`;
-    console.log('URL %s', url);
+    const url = `/?extension_name=${query.get('extension_name')}&hasBackend=${query.get('hasBackend')}`;
+    //console.log('View Return URL %s', url);
     navigate(url, { replace: true });
   };
 
@@ -72,7 +111,7 @@ export const StageRunnerView = (props) => {
                 fontSize="large"
               />
             </IconButton>
-            Pipeline File{pipelineFile}
+            {pipelineFile}
           </Grid>
           <Grid
             item
@@ -81,21 +120,6 @@ export const StageRunnerView = (props) => {
               alignContent: 'flex-end'
             }}
           >
-            <Tooltip title="Open in VS Code">
-              <IconButton
-                aria-label="edit in vscode"
-                color="primary"
-                href={vscodeURI(workspacePath)}
-                sx={{
-                  marginRight: '4px'
-                }}
-              >
-                <img
-                  src={process.env.PUBLIC_URL + '/images/vscode.png'}
-                  width="24px"
-                />
-              </IconButton>
-            </Tooltip>
             <Tooltip title="Run Pipeline">
               <IconButton
                 onClick={handleRunPipeline}
@@ -108,6 +132,21 @@ export const StageRunnerView = (props) => {
                   sx={{
                     fontSize: '24px'
                   }}
+                />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Open in VS Code">
+              <IconButton
+                aria-label="edit in vscode"
+                color="primary"
+                href={vscodeURI(workspacePath)}
+                sx={{
+                  marginRight: '4px'
+                }}
+              >
+                <img
+                  src={process.env.PUBLIC_URL + '/images/vscode.png'}
+                  width="20px"
                 />
               </IconButton>
             </Tooltip>
@@ -129,7 +168,7 @@ export const StageRunnerView = (props) => {
             {removeConfirm && (
               <RemovePipelineDialog
                 open={removeConfirm}
-                selectedToRemove={[pipelineID]}
+                selectedToRemove={[pipelineFile]}
                 onClose={handleRemoveDialogClose}
               />
             )}
@@ -137,12 +176,9 @@ export const StageRunnerView = (props) => {
               <RunPipelineDialog
                 open={openRunPipeline}
                 onClose={handleRunPipelineDialogClose}
-                pipelineID={pipelineID}
+                pipelineID={pipelineFile}
                 pipelineFile={pipelineFile}
                 workspacePath={workspacePath}
-                logHandler={logHandler}
-                openHandler={openHandler}
-                stepCount={stepCount}
               />
             )}
           </Grid>
@@ -174,19 +210,74 @@ export const StageRunnerView = (props) => {
           <Grid
             item
             xs={4}
+            sx={{
+              padding: '2',
+              margin: 2
+            }}
           >
-            <Typography variant="h1">Jai Guru</Typography>
+            <Stack
+              spacing={4}
+              direction="column"
+            >
+              <Typography variant="h3">Stages</Typography>
+              {stages.map((s) => {
+                // {
+                //   console.log('Stage %s', JSON.stringify(s));
+                // }
+                return (
+                  <>
+                    <Stack>
+                      <Typography variant="button">{s.name}</Typography>
+                      <List
+                        component="div"
+                        disablePadding
+                      >
+                        {s.steps &&
+                          s.steps.map((step) => {
+                            return (
+                              <ListItemButton
+                                sx={{ pl: 4 }}
+                                key={step.id}
+                              >
+                                <ListItemIcon>
+                                  <StepStatus status={step.status} />
+                                </ListItemIcon>
+                                <ListItemText primary={step.name} />
+                              </ListItemButton>
+                            );
+                          })}
+                      </List>
+                    </Stack>
+                    <Divider
+                      orientation="horizontal"
+                      sx={{
+                        width: '100vw'
+                      }}
+                      flexItem
+                    />
+                  </>
+                );
+              })}
+            </Stack>
           </Grid>
           <Divider
             orientation="vertical"
+            sx={{
+              height: '100vh'
+            }}
             flexItem
           />
-          <Grid
-            item
-            xs={6}
-          >
-            <Typography variant="h1">Logs</Typography>
-          </Grid>
+          <ScrollFollow
+            startFollowing={logFollow}
+            render={(follow, onScroll) => (
+              <LazyLog
+                url="http://example.log"
+                stream
+                follow={follow}
+                onScroll={onScroll}
+              />
+            )}
+          />
         </Grid>
       </Stack>
     </>

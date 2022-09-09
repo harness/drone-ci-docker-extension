@@ -9,6 +9,7 @@ import { getDockerDesktopClient } from '../../utils';
 import { useAppDispatch } from '../../app/hooks';
 import { loadStages } from '../../features/pipelinesSlice';
 import { Pipeline, Stage } from '../../features/types';
+import * as _ from 'lodash';
 
 export default function ImportOrLoadStages({ ...props }) {
   const ddClient = getDockerDesktopClient();
@@ -24,8 +25,20 @@ export default function ImportOrLoadStages({ ...props }) {
 
       //console.log('API Response %s', JSON.stringify(response));
 
-      if (response) {
-        dispatch(loadStages(response));
+      //Group Stages
+      const groupedStages = _.groupBy(response, 'pipelineFile');
+      console.log('Grouped Stages %s', JSON.stringify(groupedStages));
+
+      const pipelines = new Array<Pipeline>();
+      for (const [key, value] of Object.entries(groupedStages)) {
+        pipelines.push({
+          pipelineFile: key,
+          stages: value
+        } as Pipeline);
+      }
+
+      if (pipelines.length > 0) {
+        dispatch(loadStages(pipelines));
         ddClient.desktopUI.toast.success(`Successfully imported stages`);
       }
     } catch (error) {
@@ -47,10 +60,10 @@ export default function ImportOrLoadStages({ ...props }) {
 
     try {
       const cmd = await ddClient.extension.host.cli.exec('pipelines-finder', ['-path', result.filePaths[0]]);
-      console.log(' Pipeline find %s', JSON.stringify(cmd.stdout));
+      //console.log(' Pipeline find %s', JSON.stringify(cmd.stdout));
       if (cmd.stdout) {
         const droneFiles = JSON.parse(cmd.stdout);
-        console.log('Drone files %s', droneFiles.length);
+        //console.log('Drone files %s', droneFiles.length);
         savePipelines(droneFiles);
       }
     } catch (err) {

@@ -96,6 +96,123 @@ func TestGetStages(t *testing.T) {
 	}
 }
 
+func TestGetStagesByPipelineFile(t *testing.T) {
+	if err := loadFixtures(); err != nil {
+		t.Fatal(err)
+	}
+
+	cwd, _ := os.Getwd()
+	b, err := ioutil.ReadFile(path.Join(cwd, "testdata", "want_stages.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var want db.Stages
+	err = json.Unmarshal(b, &want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sort.Sort(want)
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	h := NewHandler(context.Background(), getDBFile("test"), log)
+	c := e.NewContext(req, rec)
+	c.SetPath("/stages/:pipelineFile")
+	c.SetParamNames("pipelineFile")
+	c.SetParamValues("/tmp/examples/multi-stage/.drone.yml")
+	if assert.NoError(t, h.GetStagesByPipelineFile(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		var got db.Stages
+		b := rec.Body.Bytes()
+		json.Unmarshal(b, &got)
+		assert.Equal(t, len(got), 3)
+		if err != nil {
+			t.Fatal(err)
+		}
+		//make sure we sort the values
+		sort.Sort(got)
+		//Verify Stage
+		if diff := cmp.Diff(want, got, cmpopts.IgnoreFields(db.Stage{}, "CreatedAt", "ModifiedAt", "Steps", "Logs")); diff != "" {
+			t.Errorf("TestGetStages() mismatch (-want +got):\n%s", diff)
+		}
+	}
+}
+
+func TestGetStage(t *testing.T) {
+	if err := loadFixtures(); err != nil {
+		t.Fatal(err)
+	}
+	getTests := map[string]struct {
+		stageID int
+		uriPath string
+		dbFile  string
+		want    db.Stage
+	}{
+		"default": {
+			stageID: 6,
+			uriPath: "/stage/:id",
+			dbFile:  "test",
+			want: db.Stage{
+				ID:           6,
+				Name:         "default",
+				PipelineFile: "/tmp/examples/use-env/.drone.yml",
+				PipelinePath: "/tmp/examples/use-env",
+				Status:       0,
+				Logs:         nil,
+				Steps: []*db.StageStep{
+					{
+						ID:      11,
+						Name:    "display environment variables",
+						Image:   "busybox",
+						StageID: 6,
+						Status:  0,
+					},
+				},
+			},
+		},
+	}
+
+	for name, tc := range getTests {
+		t.Run(name, func(t *testing.T) {
+			e := echo.New()
+			req := httptest.NewRequest(http.MethodGet, tc.uriPath, nil)
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+			c.SetPath(tc.uriPath)
+			c.SetParamNames("id")
+			c.SetParamValues(fmt.Sprintf("%d", tc.stageID))
+
+			ctx := context.Background()
+			h := NewHandler(ctx, getDBFile(tc.dbFile), log)
+
+			if assert.NoError(t, h.GetStage(c)) {
+				assert.Equal(t, http.StatusOK, rec.Code)
+			}
+
+			assert.Equal(t, http.StatusOK, rec.Code)
+			var got db.Stage
+			b := rec.Body.Bytes()
+			json.Unmarshal(b, &got)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			//Verify Stage
+			if diff := cmp.Diff(tc.want, got, cmpopts.IgnoreFields(db.Stage{}, "CreatedAt", "ModifiedAt", "Steps", "Logs")); diff != "" {
+				t.Errorf("TestGetStage() mismatch (-want +got):\n%s", diff)
+			}
+
+			//Verify Steps
+			if diff := cmp.Diff(tc.want.Steps, got.Steps, cmpopts.IgnoreFields(db.StageStep{}, "CreatedAt", "ModifiedAt")); diff != "" {
+				t.Errorf("TestGetStage() steps mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestDeleteAllStages(t *testing.T) {
 	if err := loadFixtures(); err != nil {
 		t.Fatal(err)

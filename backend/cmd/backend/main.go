@@ -44,6 +44,8 @@ func main() {
 
 	h := handler.NewHandler(ctx, dbFile, log)
 	router.GET("/stages", h.GetStages)
+	router.GET("/stage/:id", h.GetStage)
+	router.GET("/stage/:pipelineFile", h.GetStagesByPipelineFile)
 	router.POST("/stages", h.SaveStages)
 	router.PATCH("/stage/:id/:status", h.UpdateStageStatus)
 	router.PATCH("/step/:id/:status", h.UpdateStepStatus)

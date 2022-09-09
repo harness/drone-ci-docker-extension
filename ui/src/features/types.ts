@@ -29,6 +29,7 @@ export interface Event {
 export interface Step {
   stepContainerId: string;
   pipelineFQN: string;
+  id?: string;
   name: string;
   image: string;
   status: string;
@@ -37,12 +38,8 @@ export interface Step {
 //Pipeline defines the single Pipeline row that is displayed
 //in the UI
 export interface Pipeline {
-  id: string;
-  stageName: string;
-  pipelinePath: string;
   pipelineFile: string;
-  status: PipelineStatus;
-  steps: Step[];
+  stages: Stage[];
 }
 
 export interface Stage {
@@ -73,5 +70,5 @@ export interface PipelineStatus {
 
 export interface PipelinesState {
   status: 'idle' | 'loading' | 'failed' | 'loaded';
-  rows: Stage[];
+  rows: Pipeline[];
 }

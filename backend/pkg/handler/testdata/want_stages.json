@@ -1,0 +1,46 @@
+[
+  {
+    "id": 3,
+    "pipelineFile": "/tmp/examples/multi-stage/.drone.yml",
+    "pipelinePath": "/tmp/examples/multi-stage",
+    "name": "default",
+    "status": 0,
+    "Steps": [
+      { "id": 7, "name": "hello world", "image": "busybox", "status": 0 },
+      { "id": 8, "name": "good bye world", "image": "busybox", "status": 0 }
+    ],
+    "logs": ""
+  },
+  {
+    "id": 4,
+    "pipelineFile": "/tmp/examples/multi-stage/.drone.yml",
+    "pipelinePath": "/tmp/examples/multi-stage",
+    "name": "use-env",
+    "status": 0,
+    "Steps": [
+      {
+        "id": 9,
+        "name": "display enviornment variables",
+        "image": "busybox",
+        "status": 0
+      }
+    ],
+    "logs": ""
+  },
+  {
+    "id": 5,
+    "pipelineFile": "/tmp/examples/multi-stage/.drone.yml",
+    "pipelinePath": "/tmp/examples/multi-stage",
+    "name": "use-secret",
+    "status": 0,
+    "Steps": [
+      {
+        "id": 10,
+        "name": "display secret variables",
+        "image": "ubuntu",
+        "status": 0
+      }
+    ],
+    "logs": ""
+  }
+]

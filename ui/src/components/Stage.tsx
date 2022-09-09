@@ -19,6 +19,7 @@ export const Stage = (props) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [eventTS, setEventTS] = useState('');
+  const [runViewURL, setRunViewURL] = useState('');
 
   const { labelId, row, pipelineStatus, selected, onClick } = props;
   const [open, setOpen] = useState(false);
@@ -26,14 +27,16 @@ export const Stage = (props) => {
 
   const isSelected = (id: string) => selected.indexOf(id) !== -1;
 
-  const isItemSelected = isSelected(row.id);
+  const isItemSelected = isSelected(row.pipelineFile);
 
   const ddClient = getDockerDesktopClient();
 
-  const navigateToView = async (id: string) => {
-    const url = `run/${id}${loc.search}`;
-    console.log('URL %s', url);
-    navigate(url, { replace: true });
+  useEffect(() => {
+    setRunViewURL(encodeURI(`run/${loc.search}&id=${row.pipelineFile}`));
+  }, [row.pipelineFile]);
+
+  const navigateToView = () => {
+    navigate(runViewURL, { replace: true });
   };
 
   const logHandler = (data: any | undefined, clean?: boolean) => {
@@ -111,7 +114,7 @@ export const Stage = (props) => {
               break;
             }
             case EventStatus.START: {
-              const pipelineID = row.id;
+              const pipelineID = row.pipelineFile;
               const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, 'start');
               if (stageName) {
                 dispatch(
@@ -127,7 +130,7 @@ export const Stage = (props) => {
             case EventStatus.STOP:
             case EventStatus.DIE:
             case EventStatus.KILL: {
-              const pipelineID = row.id;
+              const pipelineID = row.pipelineFile;
               const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, 'dummy');
               //console.log('STOP/DIE/KILL %s', JSON.stringify(event));
               const exitCode = parseInt(event.Actor.Attributes['exitCode']);
@@ -164,7 +167,7 @@ export const Stage = (props) => {
       };
       writeCurrTstamp();
     };
-  }, [row.id]);
+  }, [row.pipelineFile]);
 
   return (
     <Fragment>
@@ -176,7 +179,7 @@ export const Stage = (props) => {
             inputProps={{
               'aria-labelledby': labelId
             }}
-            onClick={(event) => onClick(event, row.id)}
+            onClick={(event) => onClick(event, row.pipelineFile)}
             role="checkbox"
           />
         </TableCell>
@@ -187,24 +190,19 @@ export const Stage = (props) => {
           >
             <Link
               href="#"
-              onClick={() => navigateToView(row.id)}
+              onClick={() => navigateToView()}
             >
               {pipelineDisplayName(row.pipelineFile)}
             </Link>
           </TableCell>
         </Tooltip>
-        <TableCell
-          component="th"
-          scope="row"
-        >
-          {row.stageName}
-        </TableCell>
+
         <TableCell
           component="th"
           scope="row"
         >
           <PipelineStatus
-            pipelineID={row.id}
+            pipelineID={row.pipelineFile}
             stepsCount={row.steps?.length}
             status={pipelineStatus}
             pipelineFile={row.pipelineFile}
@@ -212,7 +210,7 @@ export const Stage = (props) => {
         </TableCell>
         <TableCell>
           <PipelineRowActions
-            pipelineID={row.id}
+            pipelineID={row.pipelineFile}
             pipelineFile={row.pipelineFile}
             stageName={row.stageName}
             workspacePath={row.pipelinePath}

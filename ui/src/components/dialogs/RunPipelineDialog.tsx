@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import {
   Button,
   FormControlLabel,
@@ -24,13 +25,20 @@ import InfoIcon from '@mui/icons-material/Info';
 import BackspaceIcon from '@mui/icons-material/Backspace';
 import { getDockerDesktopClient } from '../../utils';
 import { useAppDispatch } from '../../app/hooks';
-import { resetPipelineStatus } from '../../features/pipelinesSlice';
+import { resetPipelineStatus, selectRows } from '../../features/pipelinesSlice';
+import * as _ from 'lodash';
+import { Pipeline } from '../../features/types';
 
 export default function RunPipelineDialog({ ...props }) {
   const dispatch = useAppDispatch();
+  const pipelines = useSelector(selectRows);
+
   const ddClient = getDockerDesktopClient();
   const { pipelineID, pipelineFile, workspacePath, logHandler, openHandler, stepCount } = props;
   const [pipelineSteps, setPipelineSteps] = useState<string[]>([]);
+  const [pipeline, setPipeline] = useState<Pipeline>();
+  const [pipelineStages, setPipelineStages] = useState<string[]>([]);
+  const [includeStages, setIncludeStages] = React.useState<string[]>([]);
   const [includeSteps, setIncludeSteps] = React.useState<string[]>([]);
   const [dockerNetworks, setDockerNetworks] = React.useState<string[]>([]);
   const [dockerNetwork, setDockerNetwork] = React.useState<string>('none');
@@ -62,15 +70,25 @@ export default function RunPipelineDialog({ ...props }) {
   }, []);
 
   useEffect(() => {
-    const queryPipelineSteps = async () => {
-      const cmd = await ddClient.extension.host.cli.exec('yq', ["'.steps.[]|.name'", pipelineFile]);
-      if (cmd.stdout) {
-        const stepNames = cmd.stdout?.trim().split('\n');
-        //console.log('Pipeline Steps %s', JSON.stringify(stepNames));
-        setPipelineSteps(stepNames);
-      }
-    };
-    queryPipelineSteps();
+    const pipeline = pipelines.find((p) => p.pipelineFile === pipelineFile);
+    setPipeline(pipeline);
+    setPipelineStages(_.map(pipeline.stages, 'name'));
+    // const queryPipelineStagesAndSteps = async () => {
+    //   let cmd = await ddClient.extension.host.cli.exec('yq', ["'.steps.[]|.name'", pipelineFile]);
+    //   if (cmd.stdout) {
+    //     const stepNames = cmd.stdout?.trim().split('\n');
+    //     //console.log('Pipeline Steps %s', JSON.stringify(stepNames));
+    //     setPipelineSteps(stepNames);
+    //   }
+
+    //   cmd = await ddClient.extension.host.cli.exec('yq', ['ea', '-o=json', "'[.name]'", pipelineFile]);
+    //   if (cmd.stdout) {
+    //     const stageNames = JSON.parse(cmd.stdout?.trim());
+    //     //console.log('Pipeline Steps %s', JSON.stringify(stepNames));
+    //     setPipelineStages(stageNames);
+    //   }
+    // };
+    // queryPipelineStagesAndSteps();
   }, [pipelineFile]);
 
   const selectSecretFile = async () => {
@@ -101,6 +119,27 @@ export default function RunPipelineDialog({ ...props }) {
       setEnvFile(result.filePaths[0]);
       return;
     }
+  };
+
+  const handleIncludeStages = (event: SelectChangeEvent<typeof includeStages>) => {
+    const {
+      target: { value }
+    } = event;
+    setIncludeStages(
+      // On autofill we get a stringified value.
+      typeof value === 'string' ? value.split(',') : value
+    );
+    //Clear existing steps
+    setPipelineSteps([]);
+    const steps = [];
+    const tempStages = [].concat(value);
+    tempStages.forEach((e) => {
+      const stage = pipeline.stages.find((s) => s.name === e);
+      if (stage) {
+        steps.push(..._.map(stage.steps, 'name'));
+        setPipelineSteps(steps);
+      }
+    });
   };
 
   const handleIncludeSteps = (event: SelectChangeEvent<typeof includeSteps>) => {
@@ -217,10 +256,42 @@ export default function RunPipelineDialog({ ...props }) {
             direction="row"
             alignItems="baseline"
           >
+            <InputLabel id="lbl-included-stages">Select stages to run</InputLabel>
+            <IconButton
+              aria-label="show help for include stages"
+              onClick={() => openHelp('https://docs.drone.io/quickstart/cli/#run-specific-pipelines')}
+            >
+              <InfoIcon />
+            </IconButton>
+          </Stack>
+          <FormControl sx={{ width: '100%' }}>
+            <Select
+              multiple={false}
+              value={includeStages}
+              placeholder="select stages to run"
+              renderValue={(selected) => selected.join(', ')}
+              onChange={handleIncludeStages}
+              MenuProps={MenuProps}
+            >
+              {pipelineStages.map((s) => (
+                <MenuItem
+                  key={s}
+                  value={s}
+                >
+                  <Checkbox checked={includeStages.indexOf(s) > -1} />
+                  <ListItemText primary={s} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Stack
+            direction="row"
+            alignItems="baseline"
+          >
             <InputLabel id="lbl-included-steps">Select steps to run</InputLabel>
             <IconButton
               aria-label="show help for include steps"
-              onClick={() => openHelp('https://docs.drone.io/quickstart/cli/#run-specific-pipelines')}
+              onClick={() => openHelp('https://docs.drone.io/quickstart/cli/#run-specific-steps')}
             >
               <InfoIcon />
             </IconButton>
