@@ -82,8 +82,8 @@ steps:
       BROWSER: none
     commands:
       - cd ui
-      - yarn ci
-      - yarn build
+      - npm ci
+      - npm build
   - name: Publish Dev Build amd64
     image: plugins/docker
     pull: if-not-exists

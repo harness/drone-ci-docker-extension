@@ -34,7 +34,7 @@ export default function RunPipelineDialog({ ...props }) {
   const pipelines = useSelector(selectRows);
 
   const ddClient = getDockerDesktopClient();
-  const { pipelineID, pipelineFile, workspacePath, logHandler, openHandler, stepCount } = props;
+  const { pipelineID, pipelineFile, workspacePath, logHandler, stepCount } = props;
   const [pipelineSteps, setPipelineSteps] = useState<string[]>([]);
   const [pipeline, setPipeline] = useState<Pipeline>();
   const [pipelineStages, setPipelineStages] = useState<string[]>([]);
@@ -73,22 +73,6 @@ export default function RunPipelineDialog({ ...props }) {
     const pipeline = pipelines.find((p) => p.pipelineFile === pipelineFile);
     setPipeline(pipeline);
     setPipelineStages(_.map(pipeline.stages, 'name'));
-    // const queryPipelineStagesAndSteps = async () => {
-    //   let cmd = await ddClient.extension.host.cli.exec('yq', ["'.steps.[]|.name'", pipelineFile]);
-    //   if (cmd.stdout) {
-    //     const stepNames = cmd.stdout?.trim().split('\n');
-    //     //console.log('Pipeline Steps %s', JSON.stringify(stepNames));
-    //     setPipelineSteps(stepNames);
-    //   }
-
-    //   cmd = await ddClient.extension.host.cli.exec('yq', ['ea', '-o=json', "'[.name]'", pipelineFile]);
-    //   if (cmd.stdout) {
-    //     const stageNames = JSON.parse(cmd.stdout?.trim());
-    //     //console.log('Pipeline Steps %s', JSON.stringify(stepNames));
-    //     setPipelineStages(stageNames);
-    //   }
-    // };
-    // queryPipelineStagesAndSteps();
   }, [pipelineFile]);
 
   const selectSecretFile = async () => {
@@ -163,7 +147,6 @@ export default function RunPipelineDialog({ ...props }) {
 
   const runPipeline = async () => {
     console.log('Running pipeline ', pipelineFile);
-    openHandler(true);
     logHandler(undefined, true);
 
     const pipelineExecArgs = new Array<string>();
@@ -203,7 +186,7 @@ export default function RunPipelineDialog({ ...props }) {
     //The pipeline file to use
     pipelineExecArgs.push(pipelineFile);
 
-    //console.log('Pipeline Exec Args %s', JSON.stringify(pipelineExecArgs));
+    console.log('Pipeline Exec Args %s', JSON.stringify(pipelineExecArgs));
     dispatch(resetPipelineStatus({ pipelineID, status: { error: 0, done: 0, running: 0, total: stepCount } }));
     await ddClient.extension.host.cli.exec('run-drone', pipelineExecArgs, {
       stream: {

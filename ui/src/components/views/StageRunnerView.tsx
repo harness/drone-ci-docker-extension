@@ -9,8 +9,6 @@ import RunPipelineDialog from '../dialogs/RunPipelineDialog';
 import { useSelector } from 'react-redux';
 import {
   Box,
-  Chip,
-  Container,
   Divider,
   Grid,
   IconButton,
@@ -18,17 +16,15 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  ListSubheader,
-  Paper,
   Stack,
   Tooltip,
   Typography
 } from '@mui/material';
-import { LazyLog, ScrollFollow } from 'react-lazylog';
 import { selectRows } from '../../features/pipelinesSlice';
 import { Stage } from '../../features/types';
 import { StepStatus } from '../StepStatus';
-
+import { LazyLog, ScrollFollow } from 'react-lazylog';
+import { width } from '@mui/system';
 function useQuery(loc) {
   const { search } = loc;
   return useMemo(() => new URLSearchParams(search), [search]);
@@ -36,7 +32,7 @@ function useQuery(loc) {
 
 export const StageRunnerView = (props) => {
   const navigate = useNavigate();
-  const [value, setValue] = useState(0);
+  const [logs, setLogs] = useState('\n');
   const [logFollow, setFollow] = useState(true);
   const loc = useLocation();
   const query = useQuery(loc);
@@ -61,6 +57,7 @@ export const StageRunnerView = (props) => {
   }, []);
 
   /* Handlers */
+
   const handleDeletePipelines = () => {
     setRemoveConfirm(true);
   };
@@ -75,6 +72,18 @@ export const StageRunnerView = (props) => {
 
   const handleRunPipelineDialogClose = () => {
     setOpenRunPipeline(false);
+  };
+
+  const logHandler = (data: any | undefined, clean?: boolean) => {
+    if (data) {
+      const out = data.stdout;
+      const err = data.stderr;
+      if (out) {
+        setLogs((oldLog) => oldLog + `\n${out}`);
+      } else if (err) {
+        setLogs((oldLog) => oldLog + `\n${err}`);
+      }
+    }
   };
 
   const navigateToHome = async () => {
@@ -179,6 +188,7 @@ export const StageRunnerView = (props) => {
                 pipelineID={pipelineFile}
                 pipelineFile={pipelineFile}
                 workspacePath={workspacePath}
+                logHandler={logHandler}
               />
             )}
           </Grid>
@@ -188,98 +198,72 @@ export const StageRunnerView = (props) => {
         orientation="horizontal"
         flexItem
       />
-      <Stack
-        direction="row"
-        height="100vh"
+      <Grid
+        container
+        spacing={2}
+        columns={16}
         sx={{
-          display: 'flex',
-          border: (theme) => `1px solid ${theme.palette.divider}`,
-          borderRadius: 1,
-          alignItems: 'flex-start',
-          bgcolor: 'background.paper',
-          color: 'text.secondary',
-          '& hr': {
-            mx: 0.5
-          }
+          height: '100vh',
+          width: '100vw'
         }}
       >
         <Grid
-          container
-          sx={{ width: '100vw' }}
+          item
+          xs={4}
         >
-          <Grid
-            item
-            xs={4}
-            sx={{
-              padding: '2',
-              margin: 2
-            }}
-          >
-            <Stack
-              spacing={4}
-              direction="column"
-            >
-              <Typography variant="h3">Stages</Typography>
-              {stages.map((s) => {
-                // {
-                //   console.log('Stage %s', JSON.stringify(s));
-                // }
-                return (
-                  <>
-                    <Stack>
-                      <Typography variant="button">{s.name}</Typography>
-                      <List
-                        component="div"
-                        disablePadding
-                      >
-                        {s.steps &&
-                          s.steps.map((step) => {
-                            return (
-                              <ListItemButton
-                                sx={{ pl: 4 }}
-                                key={step.id}
-                              >
-                                <ListItemIcon>
-                                  <StepStatus status={step.status} />
-                                </ListItemIcon>
-                                <ListItemText primary={step.name} />
-                              </ListItemButton>
-                            );
-                          })}
-                      </List>
-                    </Stack>
-                    <Divider
-                      orientation="horizontal"
-                      sx={{
-                        width: '100vw'
-                      }}
-                      flexItem
-                    />
-                  </>
-                );
-              })}
-            </Stack>
-          </Grid>
-          <Divider
-            orientation="vertical"
-            sx={{
-              height: '100vh'
-            }}
-            flexItem
-          />
+          <Stack direction="column">
+            <Typography variant="h3">Stages</Typography>
+            {stages.map((s) => {
+              return (
+                <>
+                  <Stack>
+                    <Typography variant="button">{s.name}</Typography>
+                    <List
+                      component="div"
+                      disablePadding
+                    >
+                      {s.steps &&
+                        s.steps.map((step) => {
+                          return (
+                            <ListItemButton
+                              sx={{ pl: 4 }}
+                              key={step.id}
+                            >
+                              <ListItemIcon>
+                                <StepStatus status={step.status} />
+                              </ListItemIcon>
+                              <ListItemText primary={step.name} />
+                            </ListItemButton>
+                          );
+                        })}
+                    </List>
+                  </Stack>
+                  <Divider
+                    orientation="horizontal"
+                    flexItem
+                  />
+                </>
+              );
+            })}
+          </Stack>
+        </Grid>
+        <Grid
+          item
+          xs={12}
+        >
           <ScrollFollow
-            startFollowing={logFollow}
-            render={(follow, onScroll) => (
+            startFollowing={true}
+            render={({ follow, onScroll }) => (
               <LazyLog
-                url="http://example.log"
-                stream
+                text={logs}
                 follow={follow}
                 onScroll={onScroll}
+                enableSearch={true}
               />
             )}
           />
         </Grid>
-      </Stack>
+      </Grid>
     </>
   );
 };
