@@ -18,7 +18,8 @@ steps:
       - goreleaser build --snapshot --rm-dist --debug
 
   - name: ui-build
-    image: node:17.7-alpine3.14
+    image: node:17.7-buster
+    pull: if-not-exists
     environment:
       # this is required by Docker Extension to load
       # static files from extension path on the Host
@@ -26,8 +27,9 @@ steps:
       BROWSER: none
     commands:
       - cd ui
-      - yarn ci
-      - yarn build
+      - curl -f https://get.pnpm.io/v6.16.js | node - add --global pnpm@7
+      - pnpm install
+      - pnpm build
 
   - name: Publish Dev Build arm64
     image: plugins/docker
@@ -73,7 +75,7 @@ steps:
       - goreleaser build --snapshot --rm-dist --debug
 
   - name: ui-build
-    image: node:17.7-alpine3.14
+    image: node:17.7-buster
     environment:
       CI: false
       # this is required by Docker Extension to load
@@ -82,8 +84,9 @@ steps:
       BROWSER: none
     commands:
       - cd ui
-      - npm ci
-      - npm build
+      - curl -f https://get.pnpm.io/v6.16.js | node - add --global pnpm@7
+      - pnpm install
+      - pnpm build
   - name: Publish Dev Build amd64
     image: plugins/docker
     pull: if-not-exists

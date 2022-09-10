@@ -11,3 +11,4 @@ data
 !bin
 backend/demo.db
 test.db
+ui/.pnpm-store
