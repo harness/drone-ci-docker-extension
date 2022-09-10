@@ -1,6 +1,5 @@
 import React, { Fragment, useRef, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import IconButton from '@mui/material/IconButton';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
@@ -8,11 +7,11 @@ import { md5, pipelineDisplayName, getDockerDesktopClient, extractStepInfo } fro
 import { PipelineStatus } from './PipelineStatus';
 import { useAppDispatch } from '../app/hooks';
 import { PipelineRowActions } from './PipelineRowActions';
-import { Checkbox, Link, TextareaAutosize } from '@mui/material';
-import { Event, EventStatus } from '../features/types';
-import { updateStep, savePipelines, persistPipeline } from '../features/pipelinesSlice';
+import { Checkbox, Link } from '@mui/material';
+import { Event, EventStatus, Status } from '../features/types';
+import { updateStep, persistPipeline } from '../features/pipelinesSlice';
 
-export const Stage = (props) => {
+export const Pipeline = (props) => {
   const logRef: any = useRef();
   //!!!IMPORTANT - pass the location query params
   const loc = useLocation();
@@ -32,7 +31,7 @@ export const Stage = (props) => {
   const ddClient = getDockerDesktopClient();
 
   useEffect(() => {
-    setRunViewURL(encodeURI(`run/${loc.search}&id=${row.pipelineFile}`));
+    setRunViewURL(encodeURI(`run/${loc.search}&file=${row.pipelineFile}`));
   }, [row.pipelineFile]);
 
   const navigateToView = () => {
@@ -102,7 +101,7 @@ export const Stage = (props) => {
           if (!event) {
             return;
           }
-          //console.log('Running Pipeline %s', row.pipelineFile);
+          console.log('Running Pipeline %s', row.pipelineFile);
           //console.log('Event %s', JSON.stringify(event));
           const eventActorID = event.Actor['ID'];
           const stageName = event.Actor.Attributes['io.drone.stage.name'];
@@ -115,11 +114,12 @@ export const Stage = (props) => {
             }
             case EventStatus.START: {
               const pipelineID = row.pipelineFile;
-              const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, 'start');
+              const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, Status.RUNNING);
               if (stageName) {
                 dispatch(
                   updateStep({
                     pipelineID,
+                    stageName: stageName,
                     step: stepInfo
                   })
                 );
@@ -129,20 +129,21 @@ export const Stage = (props) => {
 
             case EventStatus.STOP:
             case EventStatus.DIE:
-            case EventStatus.KILL: {
+            case EventStatus.DESTROY: {
               const pipelineID = row.pipelineFile;
-              const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, 'dummy');
+              const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, Status.NONE);
               //console.log('STOP/DIE/KILL %s', JSON.stringify(event));
               const exitCode = parseInt(event.Actor.Attributes['exitCode']);
               if (stageName) {
                 if (exitCode === 0) {
-                  stepInfo.status = 'done';
+                  stepInfo.status = Status.SUCCESS;
                 } else {
-                  stepInfo.status = 'error';
+                  stepInfo.status = Status.ERROR | Status.FAILED;
                 }
                 dispatch(
                   updateStep({
                     pipelineID,
+                    stageName: stageName,
                     step: stepInfo
                   })
                 );

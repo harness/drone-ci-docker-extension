@@ -5,7 +5,7 @@ import ImportOrLoadStages from './components/dialogs/ImportOrLoadStages';
 import { getDockerDesktopClient } from './utils';
 import { dataLoadStatus, importPipelines } from './features/pipelinesSlice';
 import { useAppDispatch } from './app/hooks';
-import { Stages } from './components/Stages';
+import { Pipelines } from './components/Pipelines';
 export function App() {
   const [openImportDialog, setOpenImportDialog] = useState<boolean>(false);
   const pipelinesStatus = useSelector(dataLoadStatus);
@@ -66,7 +66,7 @@ export function App() {
           </Button>
         </Grid>
       </Grid>
-      <Stages />
+      <Pipelines />
       {openImportDialog && (
         <ImportOrLoadStages
           open={openImportDialog}

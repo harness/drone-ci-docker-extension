@@ -25,13 +25,13 @@ import InfoIcon from '@mui/icons-material/Info';
 import BackspaceIcon from '@mui/icons-material/Backspace';
 import { getDockerDesktopClient } from '../../utils';
 import { useAppDispatch } from '../../app/hooks';
-import { resetPipelineStatus, selectRows } from '../../features/pipelinesSlice';
+import { resetPipelineStatus, selectRows, selectPipelines } from '../../features/pipelinesSlice';
 import * as _ from 'lodash';
 import { Pipeline } from '../../features/types';
 
 export default function RunPipelineDialog({ ...props }) {
   const dispatch = useAppDispatch();
-  const pipelines = useSelector(selectRows);
+  const pipelines = useSelector(selectPipelines);
 
   const ddClient = getDockerDesktopClient();
   const { pipelineID, pipelineFile, workspacePath, logHandler, stepCount } = props;
@@ -41,7 +41,7 @@ export default function RunPipelineDialog({ ...props }) {
   const [includeStages, setIncludeStages] = React.useState<string[]>([]);
   const [includeSteps, setIncludeSteps] = React.useState<string[]>([]);
   const [dockerNetworks, setDockerNetworks] = React.useState<string[]>([]);
-  const [dockerNetwork, setDockerNetwork] = React.useState<string>('none');
+  const [dockerNetwork, setDockerNetwork] = React.useState<string>('');
   const [secretFile, setSecretFile] = React.useState<string>('');
   const [envFile, setEnvFile] = React.useState<string>('');
   const [trusted, setTrusted] = useState(false);
@@ -72,7 +72,13 @@ export default function RunPipelineDialog({ ...props }) {
   useEffect(() => {
     const pipeline = pipelines.find((p) => p.pipelineFile === pipelineFile);
     setPipeline(pipeline);
-    setPipelineStages(_.map(pipeline.stages, 'name'));
+    const stageNames = _.map(pipeline.stages, 'name') as string[];
+    setPipelineStages(stageNames);
+    if (stageNames && stageNames.length == 1) {
+      const stage = pipeline.stages[0];
+      setIncludeStages(stageNames);
+      setPipelineSteps(_.map(stage.steps, 'name') as string[]);
+    }
   }, [pipelineFile]);
 
   const selectSecretFile = async () => {

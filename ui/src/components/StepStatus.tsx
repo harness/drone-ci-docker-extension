@@ -1,44 +1,21 @@
 import PendingIcon from '@mui/icons-material/Pending';
 import { Typography } from '@mui/material';
-export const StepStatus = (props: { status: string }) => {
+import { Status } from '../features/types';
+import RunCircleIcon from '@mui/icons-material/RunCircle';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ErrorIcon from '@mui/icons-material/Error';
+export const StepStatus = (props: { status: Status }) => {
   const { status } = props;
 
   switch (status) {
-    case 'start':
-      return (
-        <Typography
-          variant="button"
-          display="block"
-          gutterBottom
-          color="green"
-        >
-          Running
-        </Typography>
-      );
-    case 'error':
-      return (
-        <Typography
-          variant="button"
-          display="block"
-          gutterBottom
-          color="red"
-        >
-          Error
-        </Typography>
-      );
-    case 'done':
-      return (
-        <Typography
-          variant="button"
-          display="block"
-          fontSize="small"
-          gutterBottom
-          color="green"
-        >
-          Success
-        </Typography>
-      );
+    case Status.RUNNING:
+      return <RunCircleIcon color="warning" />;
+    case Status.FAILED:
+    case Status.ERROR:
+      return <ErrorIcon color="error" />;
+    case Status.SUCCESS:
+      return <CheckCircleIcon color="success" />;
     default:
-      return <PendingIcon color="action">Done</PendingIcon>;
+      return <PendingIcon color="action">None</PendingIcon>;
   }
 };

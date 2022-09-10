@@ -1,7 +1,6 @@
 import { Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useAppDispatch } from '../app/hooks';
-import { updateStepCount } from '../features/pipelinesSlice';
 
 export const PipelineStatus = (props) => {
   const dispatch = useAppDispatch();
@@ -9,20 +8,6 @@ export const PipelineStatus = (props) => {
   const [statusColor, setStatusColor] = useState('info');
   const [statusText, setStatusText] = useState('');
   //console.log('Pipeline Status' + JSON.stringify(status));
-
-  // useEffect(() => {
-  //   dispatch(
-  //     updateStepCount({
-  //       pipelineID,
-  //       status: {
-  //         done: status.done,
-  //         error: status.error,
-  //         running: status.running,
-  //         total: stepsCount
-  //       }
-  //     })
-  //   );
-  // }, []);
 
   useEffect(() => {
     switch (status) {

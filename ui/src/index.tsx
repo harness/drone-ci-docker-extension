@@ -2,10 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { store } from './app/store';
-import CssBaseline from '@mui/material/CssBaseline';
 import { DockerMuiThemeProvider } from '@docker/docker-mui-theme';
 import { App } from './App';
-import { Stages } from './components/Stages';
+import { Pipelines } from './components/Pipelines';
 import { StageRunnerView } from './components/views/StageRunnerView';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
@@ -26,7 +25,7 @@ ReactDOM.render(
             >
               <Route
                 index={true}
-                element={<Stages />}
+                element={<Pipelines />}
               />
             </Route>
             <Route

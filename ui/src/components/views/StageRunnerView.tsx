@@ -1,4 +1,4 @@
-import { Fragment, useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
 import { vscodeURI } from '../../utils';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
@@ -8,7 +8,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import RunPipelineDialog from '../dialogs/RunPipelineDialog';
 import { useSelector } from 'react-redux';
 import {
-  Box,
   Divider,
   Grid,
   IconButton,
@@ -20,11 +19,14 @@ import {
   Tooltip,
   Typography
 } from '@mui/material';
-import { selectRows } from '../../features/pipelinesSlice';
-import { Stage } from '../../features/types';
+import { selectStagesByPipeline, updateStep, persistPipeline } from '../../features/pipelinesSlice';
+import { Stage, Event, EventStatus, Status } from '../../features/types';
 import { StepStatus } from '../StepStatus';
 import { LazyLog, ScrollFollow } from 'react-lazylog';
-import { width } from '@mui/system';
+import { getDockerDesktopClient, extractStepInfo } from '../../utils';
+import { useAppDispatch } from '../../app/hooks';
+import { RootState } from '../../app/store';
+
 function useQuery(loc) {
   const { search } = loc;
   return useMemo(() => new URLSearchParams(search), [search]);
@@ -33,17 +35,21 @@ function useQuery(loc) {
 export const StageRunnerView = (props) => {
   const navigate = useNavigate();
   const [logs, setLogs] = useState('\n');
+  const dispatch = useAppDispatch();
+  const [eventTS, setEventTS] = useState('');
   const [logFollow, setFollow] = useState(true);
   const loc = useLocation();
   const query = useQuery(loc);
-  const pipelines = useSelector(selectRows);
 
-  const pipelineFile = query.get('id');
+  const pipelineFile = query.get('file');
+  const stages = useSelector((state: RootState) => selectStagesByPipeline(state, pipelineFile));
+
   const [workspacePath, setWorkspacePath] = useState('');
-  const [stages, setStages] = useState(new Array<Stage>());
 
   const [removeConfirm, setRemoveConfirm] = useState(false);
   const [openRunPipeline, setOpenRunPipeline] = useState(false);
+
+  const ddClient = getDockerDesktopClient();
 
   useEffect(() => {
     const paths = pipelineFile.split('/');
@@ -53,8 +59,121 @@ export const StageRunnerView = (props) => {
     }
     //console.log('Workspace Path %s', wsPath);
     setWorkspacePath(wsPath);
-    setStages(pipelines.find((p) => p.pipelineFile === pipelineFile).stages);
-  }, []);
+  }, [pipelineFile]);
+
+  useEffect(() => {
+    const loadEventTS = async () => {
+      const out = await getDockerDesktopClient().extension.vm.cli.exec('bash', [
+        '-c',
+        "'[ -f /data/currts ] && cat /data/currts || date +%s > /data/currts'"
+      ]);
+      if (out.stdout) {
+        setEventTS(out.stdout);
+      }
+    };
+    loadEventTS().catch(console.error);
+
+    const args = [
+      '--filter',
+      'type=container',
+      '--filter',
+      'event=start',
+      '--filter',
+      'event=stop',
+      '--filter',
+      'event=kill',
+      '--filter',
+      'event=die',
+      '--filter',
+      'event=destroy',
+      '--filter',
+      'type=image',
+      '--filter',
+      'event=pull',
+      '--format',
+      '{{json .}}'
+    ];
+
+    if (props.eventTS) {
+      args.push('--since', props.eventTS.trimEnd());
+    }
+
+    const process = ddClient.docker.cli.exec('events', args, {
+      stream: {
+        splitOutputLines: true,
+        async onOutput(data) {
+          const event = JSON.parse(data.stdout ?? data.stderr) as Event;
+          if (!event) {
+            return;
+          }
+          //console.log('Running Pipeline %s', pipelineFile);
+          console.log('Event %s', JSON.stringify(event));
+          const eventActorID = event.Actor['ID'];
+          const stageName = event.Actor.Attributes['io.drone.stage.name'];
+          const pipelineDir = event.Actor.Attributes['io.drone.desktop.pipeline.dir'];
+          switch (event.status) {
+            case EventStatus.PULL: {
+              //TODO update the status with image pull
+              console.log('Pulling Image %s', eventActorID);
+              break;
+            }
+            case EventStatus.START: {
+              const pipelineID = pipelineFile;
+              const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, Status.RUNNING);
+              if (stageName) {
+                dispatch(
+                  updateStep({
+                    pipelineID,
+                    stageName,
+                    step: stepInfo
+                  })
+                );
+              }
+              break;
+            }
+
+            case EventStatus.STOP:
+            case EventStatus.DIE:
+            case EventStatus.DESTROY: {
+              const pipelineID = pipelineFile;
+              const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, Status.NONE);
+              console.log('DESTROY %s', JSON.stringify(event));
+              const exitCode = parseInt(event.Actor.Attributes['exitCode']);
+              if (stageName) {
+                if (exitCode === 0) {
+                  stepInfo.status = Status.SUCCESS;
+                } else {
+                  stepInfo.status = Status.FAILED;
+                }
+                dispatch(
+                  updateStep({
+                    pipelineID,
+                    stageName,
+                    step: stepInfo
+                  })
+                );
+                dispatch(persistPipeline(pipelineID));
+              }
+              break;
+            }
+            default: {
+              //not handled EventStatus.DESTROY
+              break;
+            }
+          }
+        }
+      }
+    });
+
+    return () => {
+      process.close();
+      //Write the current tstamp to a file so that we can track the events later
+      const writeCurrTstamp = async () => {
+        await getDockerDesktopClient().extension.vm.cli.exec('bash', ['-c', '"date +%s > /data/currts"']);
+      };
+      writeCurrTstamp();
+    };
+  }, [pipelineFile, stages]);
 
   /* Handlers */
 
@@ -75,6 +194,10 @@ export const StageRunnerView = (props) => {
   };
 
   const logHandler = (data: any | undefined, clean?: boolean) => {
+    if (clean) {
+      setLogs('');
+      return true;
+    }
     if (data) {
       const out = data.stdout;
       const err = data.stderr;
@@ -221,6 +344,7 @@ export const StageRunnerView = (props) => {
                     <List
                       component="div"
                       disablePadding
+                      key={s.id}
                     >
                       {s.steps &&
                         s.steps.map((step) => {

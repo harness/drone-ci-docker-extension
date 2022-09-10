@@ -10,7 +10,9 @@ export enum EventStatus {
 export const enum Status {
   NONE = 0,
   SUCCESS,
-  FAILED
+  FAILED,
+  RUNNING,
+  ERROR
 }
 
 export interface Event {
@@ -28,11 +30,12 @@ export interface Event {
 //in the UI
 export interface Step {
   stepContainerId: string;
-  pipelineFQN: string;
+  //TODO remove
+  pipelineFQN?: string;
   id?: string;
   name: string;
   image: string;
-  status: string;
+  status: Status;
 }
 
 //Pipeline defines the single Pipeline row that is displayed
@@ -53,6 +56,7 @@ export interface Stage {
 
 export interface StepPayload {
   pipelineID: string;
+  stageName: string;
   step: Step;
 }
 

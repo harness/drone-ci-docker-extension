@@ -1,7 +1,7 @@
 import { createDockerDesktopClient } from '@docker/extension-api-client';
 import { DockerDesktopClient } from '@docker/extension-api-client-types/dist/v1';
 import { Md5 } from 'ts-md5/dist/md5';
-import { PipelineStatus, Step } from './features/types';
+import { PipelineStatus, Status, Step } from './features/types';
 
 let client: DockerDesktopClient;
 
@@ -43,7 +43,7 @@ export async function getStepsCount(pipelinePath: string): Promise<number> {
   return 0;
 }
 
-export function extractStepInfo(event: any, eventActorID: string, pipelineDir: string, status: string): Step {
+export function extractStepInfo(event: any, eventActorID: string, pipelineDir: string, status: Status): Step {
   const stageName = event.Actor.Attributes['io.drone.stage.name'];
   return {
     stepContainerId: eventActorID,

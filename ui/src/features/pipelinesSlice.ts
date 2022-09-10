@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice, current, PayloadAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSelector, createSlice, current, PayloadAction } from '@reduxjs/toolkit';
 import { AppThunk, RootState } from '../app/store';
 import { getDockerDesktopClient } from '../utils';
 import { Pipeline, PipelinesState, PipelineStatus, Stage, Status, StepCountPayload, StepPayload } from './types';
@@ -11,21 +11,32 @@ const initialState: PipelinesState = {
 
 const ddClient = getDockerDesktopClient();
 
-export const selectRows = (state: RootState) => state.pipelines.rows;
+//export const selectRows = (state: RootState) => state.pipelines.rows;
+export const selectRows = (state: RootState) => state.pipelines;
 export const dataLoadStatus = (state: RootState) => state.pipelines.status;
+export const selectPipelines = createSelector([selectRows], (pipelines) => pipelines.rows);
+export const selectPipelineByID = createSelector(
+  [selectPipelines, (state, pipelineID) => pipelineID],
+  (pipelines, pipelineID) => pipelines.find((p) => p.pipelineFile === pipelineID)
+);
+export const selectStagesByPipeline = createSelector(
+  [selectPipelines, (state, pipelineFile) => pipelineFile],
+  (pipelines, pipelineFile) => pipelines.find((p) => p.pipelineFile === pipelineFile).stages
+);
+//TODO remove
+// export const selectPipelineStages = (state: RootState, pipelineFile: string) =>
+//   state.pipelines.rows.find((o) => o.pipelineFile === pipelineFile).stages;
 
 function computePipelineStatus(state, pipelineId): PipelineStatus {
   const pipeline = _.find(state.rows, { id: pipelineId });
-
-  //console.log('Pipeline ' + JSON.stringify(pipeline));
   if (pipeline) {
     const steps = pipeline.steps;
 
-    const runningSteps = _.filter(steps, (s) => s.status?.toLowerCase() === 'start');
+    const runningSteps = _.filter(steps, (s) => s.status === Status.RUNNING);
 
-    const erroredSteps = _.filter(steps, (s) => s.status?.toLowerCase() === 'error');
+    const erroredSteps = _.filter(steps, (s) => s.status === Status.ERROR);
 
-    const allDoneSteps = _.filter(steps, (s) => s.status?.toLowerCase() === 'done');
+    const allDoneSteps = _.filter(steps, (s) => s.status === Status.SUCCESS);
 
     return {
       total: steps?.length,
@@ -38,7 +49,7 @@ function computePipelineStatus(state, pipelineId): PipelineStatus {
 
 export const importPipelines = createAsyncThunk('pipelines/loadStages', async () => {
   const response = (await ddClient.extension.vm.service.get('/stages')) as Stage[];
-  console.log('Loading pipelines from backend %s', response.length);
+  //console.log('Loading pipelines from backend %s', response.length);
   const groupedStages = _.groupBy(response, 'pipelineFile');
   const pipelines = new Array<Pipeline>();
   for (const [key, value] of Object.entries(groupedStages)) {
@@ -50,20 +61,25 @@ export const importPipelines = createAsyncThunk('pipelines/loadStages', async ()
   return pipelines;
 });
 
-export const persistPipeline = createAsyncThunk('pipelines/persistPipeline', async (pipelineID: string) => {
-  const idx = _.findIndex(selectRows, { id: pipelineID });
-  if (idx != -1) {
-    const pipeline = selectRows[idx];
-    console.log('Persisting Pipeline %s', JSON.stringify(pipeline));
-    // try {
-    //   const response = await ddClient.extension.vm.service.post('/pipeline', pipeline);
-    //   console.log('Saved pipelines' + JSON.stringify(response));
-    // } catch (err) {
-    //   console.error('Error Saving' + JSON.stringify(err));
-    //   ddClient.desktopUI.toast.error(`Error saving pipelines ${err.message}`);
-    // }
+export const persistPipeline = createAsyncThunk(
+  'pipelines/persistPipeline',
+  async (pipelineID: string, { getState }) => {
+    const state = getState() as RootState;
+    const pipelines = state.pipelines.rows;
+    const idx = _.findIndex(pipelines, { pipelineFile: pipelineID });
+    if (idx != -1) {
+      const pipeline = selectRows[idx];
+      console.log('Persisting Pipeline %s', JSON.stringify(pipeline));
+      // try {
+      //   const response = await ddClient.extension.vm.service.post('/pipeline', pipeline);
+      //   console.log('Saved pipelines' + JSON.stringify(response));
+      // } catch (err) {
+      //   console.error('Error Saving' + JSON.stringify(err));
+      //   ddClient.desktopUI.toast.error(`Error saving pipelines ${err.message}`);
+      // }
+    }
   }
-});
+);
 
 export const savePipelines = (): AppThunk => async (_dispatch, getState) => {
   const currState = getState().pipelines;
@@ -93,43 +109,31 @@ export const pipelinesSlice = createSlice({
     },
     updateStep: (state, action: PayloadAction<StepPayload>) => {
       //console.log('Action::' + action.type + '::' + JSON.stringify(action.payload));
-      // const { pipelineID, step } = action.payload;
-      // const idx = _.findIndex(state.rows, { id: pipelineID });
-      // if (idx != -1) {
-      //   // console.log(' Update Found::' + idx + '::' + JSON.stringify(state.rows[idx]));
-      //   const oldSteps = state.rows[idx].steps;
-      //   const stepIdx = _.findIndex(oldSteps, { name: step.name });
-      //   //console.log('Update Found Step::' + stepIdx + '::' + JSON.stringify(oldSteps));
-      //   if (stepIdx != -1) {
-      //     oldSteps[stepIdx] = step;
-      //     state.rows[idx].steps = oldSteps;
-      //     updatePipelineStatus(state, pipelineID);
-      //   }
-      // }
-    },
-    deleteSteps: (state, action: PayloadAction<StepPayload>) => {
-      // //console.log("Action::" + action.type + "::" + action.payload);
-      // const { pipelineID, step } = action.payload;
-      // const idx = _.findIndex(state.rows, { id: pipelineID });
-      // if (idx != -1) {
-      //   const j = _.findIndex(state.rows[idx].steps, { name: step.name });
-      //   state.rows[idx].steps.splice(j, 1);
-      // }
-    },
-    updateStepCount: (state, action: PayloadAction<StepCountPayload>) => {
-      const { pipelineID, status } = action.payload;
-      const idx = _.findIndex(state.rows, { id: pipelineID });
-      if (idx != -1) {
-        // state.rows[idx].status.total = status.total;
-        // state.rows[idx].status.done = status.done;
-        // state.rows[idx].status.error = status.error;
-        // state.rows[idx].status.running = status.running;
+      const { pipelineID, stageName, step } = action.payload;
+      const pipelineIdx = state.rows.findIndex((o) => o.pipelineFile === pipelineID);
+      const pipeline = _.find(state.rows, { pipelineFile: pipelineID }) as Pipeline;
+      //console.log('Update Pipeline %s', JSON.stringify(pipeline));
+      if (pipeline) {
+        const stageIdx = _.findIndex(pipeline.stages, { name: stageName });
+        const stage = pipeline.stages[stageIdx];
+        //console.log('Update Stage %s', JSON.stringify(stage));
+        if (stage) {
+          //console.log('Updating...');
+          //update stage steps
+          const stepIdx = stage.steps.findIndex((s) => s.name === step.name);
+          stage.steps = [...stage.steps.slice(0, stepIdx), step, ...stage.steps.slice(stepIdx + 1)];
+          //update stages
+          pipeline.stages = [...pipeline.stages.slice(0, stageIdx), stage, ...pipeline.stages.slice(stageIdx + 1)];
+          //console.log('Updated Pipeline %s', JSON.stringify(pipeline));
+          //update pipeline in the core state
+          state.rows = [...state.rows.slice(0, pipelineIdx), pipeline, ...state.rows.slice(0, pipelineIdx + 1)];
+          //     updatePipelineStatus(state, pipelineID);
+        }
       }
     },
+
     pipelineStatus: (state, action: PayloadAction<string>) => {
-      //console.log("Action::pipelineStatus::Payload" + action.payload);
-      const pipelineID = action.payload;
-      updatePipelineStatus(state, pipelineID);
+      console.log('Action::pipelineStatus::Payload' + action.payload);
     },
     removeStages: (state, action: PayloadAction<string[]>) => {
       const pipelineIds = action.payload;
@@ -137,19 +141,7 @@ export const pipelinesSlice = createSlice({
       state.rows = _.remove(state.rows, (o) => !_.includes(pipelineIds, o.pipelineFile));
     },
     resetPipelineStatus: (state, action: PayloadAction<StepCountPayload>) => {
-      const { pipelineID, status } = action.payload;
-      const idx = _.findIndex(state.rows, { id: pipelineID });
-      if (idx != -1) {
-        // state.rows[idx].status.total = status.total;
-        // state.rows[idx].status.error = status.error;
-        // state.rows[idx].status.running = status.running;
-        // state.rows[idx].status.done = status.done;
-        //reset step statuses
-        // state.rows[idx].steps.forEach((step) => {
-        //   step.status = '0';
-        // });
-      }
-      updatePipelineStatus(state, pipelineID);
+      console.log('resetPipelineStatus');
     }
   },
   extraReducers: (builder) => {
@@ -175,29 +167,10 @@ export const pipelinesSlice = createSlice({
   }
 });
 
-export const {
-  loadStages,
-  pipelineStatus,
-  updateStep,
-  deleteSteps,
-  removeStages,
-  updateStepCount,
-  resetPipelineStatus
-} = pipelinesSlice.actions;
-
-function updatePipelineStatus(state, pipelineId: string) {
-  const status = computePipelineStatus(state, pipelineId);
-  //console.log('Update Pipeline Status..' + JSON.stringify(status));
-  const idx = _.findIndex(state.rows, { id: pipelineId });
-  if (idx != -1) {
-    state.rows[idx].status.error = status.error;
-    state.rows[idx].status.running = status.running;
-    state.rows[idx].status.done = status.done;
-  }
-}
+export const { loadStages, pipelineStatus, updateStep, removeStages, resetPipelineStatus } = pipelinesSlice.actions;
 
 function rowsFromPayload(payload: Pipeline[]) {
-  console.log('Received Payload ' + JSON.stringify(payload));
+  //console.log('Received Payload ' + JSON.stringify(payload));
   const rows = new Array<Pipeline>();
   payload.map((v) => {
     rows.push({

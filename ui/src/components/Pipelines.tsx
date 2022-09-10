@@ -1,52 +1,29 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import {
-  Backdrop,
-  CircularProgress,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TablePagination,
-  TableRow
-} from '@mui/material';
-import { Stage } from './Stage';
-import { dataLoadStatus, removeStages, selectRows } from '../features/pipelinesSlice';
+import { Backdrop, CircularProgress, Paper, Table, TableBody, TableContainer } from '@mui/material';
+import { Pipeline as Row } from './Pipeline';
+import { dataLoadStatus, pipelineStatus, removeStages, selectRows, selectPipelines } from '../features/pipelinesSlice';
 import { PipelineTableToolbar } from './Toolbar';
 import { PipelinesTableHead } from './PipelinesTableHead';
 import RemovePipelineDialog from './dialogs/RemoveStageDialog';
 
 import { useAppDispatch } from '../app/hooks';
+import * as _ from 'lodash';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const Stages = () => {
+export const Pipelines = () => {
   const dispatch = useAppDispatch();
   const pipelinesStatus = useSelector(dataLoadStatus);
-  const pipelines = useSelector(selectRows);
+  const pipelines = useSelector(selectPipelines);
 
   const [selected, setSelected] = useState<readonly string[]>([]);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(25);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [dense, setDense] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [removeConfirm, setRemoveConfirm] = useState(false);
   const [removals, setRemovals] = useState([]);
 
-  // Avoid a layout jump when reaching the last page with empty rows.
-  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - pipelines?.length) : 0;
-
   /* Handlers */
-
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
 
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
@@ -69,7 +46,6 @@ export const Stages = () => {
   const removeSelectedPipelines = () => {
     const toRemove = [];
     toRemove.push(...selected);
-    //console.log('Remove all: ' + toRemove);
     setRemovals(toRemove);
   };
 
@@ -122,36 +98,18 @@ export const Stages = () => {
               <TableBody>
                 {pipelines.map((row) => {
                   return (
-                    <Stage
-                      key={row.pipelineFile}
+                    <Row
+                      key={_.sumBy(row.stages, 'id')}
                       row={row}
                       selected={selected}
                       onClick={handleClick}
                     />
                   );
                 })}
-                {emptyRows > 0 && (
-                  <TableRow
-                    style={{
-                      height: (dense ? 33 : 53) * emptyRows
-                    }}
-                  >
-                    <TableCell colSpan={4} />
-                  </TableRow>
-                )}
               </TableBody>
             )}
           </Table>
         </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 15, 25]}
-          component="div"
-          count={pipelines.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
         <RemovePipelineDialog
           open={removals.length > 0}
           selectedToRemove={removals}
