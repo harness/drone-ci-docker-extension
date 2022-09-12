@@ -27,7 +27,7 @@ export default function ImportOrLoadStages({ ...props }) {
 
       //Group Stages
       const groupedStages = _.groupBy(response, 'pipelineFile');
-      console.log('Grouped Stages %s', JSON.stringify(groupedStages));
+      //console.log('Grouped Stages %s', JSON.stringify(groupedStages));
 
       const pipelines = new Array<Pipeline>();
       for (const [key, value] of Object.entries(groupedStages)) {
