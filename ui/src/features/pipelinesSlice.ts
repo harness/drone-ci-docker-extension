@@ -21,7 +21,7 @@ export const selectPipelineByID = createSelector(
 );
 export const selectStagesByPipeline = createSelector(
   [selectPipelines, (state, pipelineFile) => pipelineFile],
-  (pipelines, pipelineFile) => pipelines.find((p) => p.pipelineFile === pipelineFile).stages
+  (pipelines, pipelineFile) => pipelines.find((p) => p.pipelineFile === pipelineFile)?.stages
 );
 //TODO remove
 // export const selectPipelineStages = (state: RootState, pipelineFile: string) =>
@@ -136,9 +136,9 @@ export const pipelinesSlice = createSlice({
       console.log('Action::pipelineStatus::Payload' + action.payload);
     },
     removeStages: (state, action: PayloadAction<string[]>) => {
-      const pipelineIds = action.payload;
-      // console.log('Action::removePipelines::Payload' + JSON.stringify(pipelineIds));
-      state.rows = _.remove(state.rows, (o) => !_.includes(pipelineIds, o.pipelineFile));
+      const pipelineFiles = action.payload;
+      console.log('Action::removePipelines::Payload' + JSON.stringify(pipelineFiles));
+      state.rows = _.remove(state.rows, (o) => !_.includes(pipelineFiles, o.pipelineFile));
     },
     resetPipelineStatus: (state, action: PayloadAction<StepCountPayload>) => {
       console.log('resetPipelineStatus');

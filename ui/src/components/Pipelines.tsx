@@ -5,7 +5,7 @@ import { Pipeline as Row } from './Pipeline';
 import { dataLoadStatus, pipelineStatus, removeStages, selectRows, selectPipelines } from '../features/pipelinesSlice';
 import { PipelineTableToolbar } from './Toolbar';
 import { PipelinesTableHead } from './PipelinesTableHead';
-import RemovePipelineDialog from './dialogs/RemoveStageDialog';
+import RemovePipelineDialog from './dialogs/RemovePipelineDialog';
 
 import { useAppDispatch } from '../app/hooks';
 import * as _ from 'lodash';

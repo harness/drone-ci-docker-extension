@@ -136,6 +136,38 @@ func (h *Handler) DeleteAllStages(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+//DeletePipeline delete all the stages and its steps of a defined PipelineFile
+func (h *Handler) DeletePipeline(c echo.Context) error {
+	log := h.dbc.Log
+	var pipelineFile string
+	if err := echo.PathParamsBinder(c).
+		String("pipelineFile", &pipelineFile).
+		BindError(); err != nil {
+		return err
+	}
+	log.Infof("Delete Pipeline %s", pipelineFile)
+
+	var stages db.Stages
+	db := h.dbc.DB
+
+	err := db.NewSelect().
+		Model(&stages).
+		Column("id").
+		Where("pipeline_file = ?", pipelineFile).
+		Scan(h.dbc.Ctx)
+
+	if err != nil {
+		return err
+	}
+
+	err = h.delete(stages)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusNoContent, stages)
+}
+
 func (h *Handler) DeleteStage(c echo.Context) error {
 	log := h.dbc.Log
 	var stageID int

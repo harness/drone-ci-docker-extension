@@ -43,6 +43,8 @@ export interface Step {
 export interface Pipeline {
   pipelineFile: string;
   stages: Stage[];
+  logs?: string;
+  status?: Status;
 }
 
 export interface Stage {

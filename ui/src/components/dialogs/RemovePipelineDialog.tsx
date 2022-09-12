@@ -1,3 +1,5 @@
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Backdrop,
   Button,
@@ -9,12 +11,11 @@ import {
   Grid,
   Typography
 } from '@mui/material';
-import React from 'react';
 import { useAppDispatch } from '../../app/hooks';
 import { getDockerDesktopClient } from '../../utils';
 import { removeStages } from '../../features/pipelinesSlice';
 
-export default function RemoveStageDialog({ ...props }) {
+export default function RemovePipelineDialog({ ...props }) {
   const dispatch = useAppDispatch();
   const [actionInProgress, setActionInProgress] = React.useState<boolean>(false);
 
@@ -24,10 +25,12 @@ export default function RemoveStageDialog({ ...props }) {
     setActionInProgress(true);
     let response;
     try {
-      const pipelineIds = props.selectedToRemove;
-      //console.log('Removing stages ' + JSON.stringify(pipelineIds));
-      response = await ddClient.extension.vm.service.delete('/stages');
-      dispatch(removeStages(pipelineIds));
+      const pipelineFiles = props.selectedToRemove;
+      console.log('Removing Pipelines ' + JSON.stringify(pipelineFiles));
+      if (pipelineFiles && pipelineFiles.length === 1) {
+        response = await ddClient.extension.vm.service.delete(`/pipeline/${pipelineFiles[0]}`);
+        dispatch(removeStages(pipelineFiles));
+      }
     } catch (err) {
       ddClient.desktopUI.toast.error(`Error removing pipelines ${err?.message}`);
     } finally {

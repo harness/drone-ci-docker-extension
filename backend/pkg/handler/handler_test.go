@@ -260,16 +260,31 @@ func TestDeleteStage(t *testing.T) {
 		t.Fatal(err)
 	}
 	deleteTests := map[string]struct {
-		requestBody string
-		uriPath     string
-		dbFile      string
-		want        int
+		requestBody    string
+		uriPath        string
+		dbFile         string
+		pathParam      string
+		pathParamValue string
+		whereQuery     string
+		want           int
 	}{
 		"singleId": {
-			requestBody: `[{"ID":6}]`,
-			uriPath:     "/stages",
-			dbFile:      "test",
-			want:        0,
+			requestBody:    `[{"ID":6}]`,
+			uriPath:        "/stages/:id",
+			dbFile:         "test",
+			pathParam:      "id",
+			pathParamValue: "6",
+			whereQuery:     "stage_id=6",
+			want:           0,
+		},
+		"byPipelineFile": {
+			requestBody:    `[{"ID":2}]`,
+			uriPath:        "/stages/:pipelineFile",
+			dbFile:         "test",
+			pathParam:      "pipelineFile",
+			pathParamValue: "/tmp/examples/long-run-demo/.drone.yml",
+			whereQuery:     "stage_id=2",
+			want:           0,
 		},
 	}
 
@@ -281,14 +296,20 @@ func TestDeleteStage(t *testing.T) {
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
 			c.SetPath(tc.uriPath)
-			c.SetParamNames("id")
-			c.SetParamValues(fmt.Sprintf("%d", 6))
+			c.SetParamNames(tc.pathParam)
+			c.SetParamValues(tc.pathParamValue)
 
 			ctx := context.Background()
 			h := NewHandler(ctx, getDBFile(tc.dbFile), log)
 
-			if assert.NoError(t, h.DeleteStage(c)) {
-				assert.Equal(t, http.StatusNoContent, rec.Code)
+			if name == "singleId" {
+				if assert.NoError(t, h.DeleteStage(c)) {
+					assert.Equal(t, http.StatusNoContent, rec.Code)
+				}
+			} else {
+				if assert.NoError(t, h.DeletePipeline(c)) {
+					assert.Equal(t, http.StatusNoContent, rec.Code)
+				}
 			}
 
 			var stages db.Stages
@@ -310,7 +331,7 @@ func TestDeleteStage(t *testing.T) {
 			exists, err = h.dbc.DB.
 				NewSelect().
 				Model(&[]db.StageStep{}).
-				Where("stage_id=6").
+				Where(tc.whereQuery).
 				Exists(ctx)
 			if err != nil {
 				t.Fatal(err)

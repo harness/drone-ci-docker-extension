@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
 import { vscodeURI } from '../../utils';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
-import RemovePipelineDialog from '../dialogs/RemoveStageDialog';
+import RemovePipelineDialog from '../dialogs/RemovePipelineDialog';
 import PlayCircleOutlineOutlinedIcon from '@mui/icons-material/PlayCircleOutlineOutlined';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RunPipelineDialog from '../dialogs/RunPipelineDialog';
@@ -62,7 +62,6 @@ export const StageRunnerView = (props) => {
   }, [pipelineFile]);
 
   useEffect(() => {
-    console.log('useEffect');
     const loadEventTS = async () => {
       const out = await getDockerDesktopClient().extension.vm.cli.exec('bash', [
         '-c',
@@ -172,14 +171,16 @@ export const StageRunnerView = (props) => {
     };
   }, [pipelineFile]);
 
+  const navigateToHome = async () => {
+    setRemoveConfirm(false);
+    const url = `/?extension_name=${query.get('extension_name')}&hasBackend=${query.get('hasBackend')}`;
+    //console.log('View Return URL %s', url);
+    navigate(url, { replace: true });
+  };
   /* Handlers */
 
   const handleDeletePipelines = () => {
     setRemoveConfirm(true);
-  };
-
-  const handleRemoveDialogClose = () => {
-    setRemoveConfirm(false);
   };
 
   const handleRunPipeline = () => {
@@ -204,12 +205,6 @@ export const StageRunnerView = (props) => {
         setLogs((oldLog) => oldLog + `\n${err}`);
       }
     }
-  };
-
-  const navigateToHome = async () => {
-    const url = `/?extension_name=${query.get('extension_name')}&hasBackend=${query.get('hasBackend')}`;
-    //console.log('View Return URL %s', url);
-    navigate(url, { replace: true });
   };
 
   return (
@@ -298,7 +293,7 @@ export const StageRunnerView = (props) => {
               <RemovePipelineDialog
                 open={removeConfirm}
                 selectedToRemove={[pipelineFile]}
-                onClose={handleRemoveDialogClose}
+                onClose={navigateToHome}
               />
             )}
             {openRunPipeline && (
@@ -333,39 +328,40 @@ export const StageRunnerView = (props) => {
         >
           <Stack direction="column">
             <Typography variant="h3">Stages</Typography>
-            {stages.map((s) => {
-              return (
-                <>
-                  <Stack>
-                    <Typography variant="button">{s.name}</Typography>
-                    <List
-                      component="div"
-                      disablePadding
-                      key={s.id}
-                    >
-                      {s.steps &&
-                        s.steps.map((step) => {
-                          return (
-                            <ListItemButton
-                              sx={{ pl: 4 }}
-                              key={step.id}
-                            >
-                              <ListItemIcon>
-                                <StepStatus status={step.status} />
-                              </ListItemIcon>
-                              <ListItemText primary={step.name} />
-                            </ListItemButton>
-                          );
-                        })}
-                    </List>
-                  </Stack>
-                  <Divider
-                    orientation="horizontal"
-                    flexItem
-                  />
-                </>
-              );
-            })}
+            {stages &&
+              stages.map((s) => {
+                return (
+                  <>
+                    <Stack>
+                      <Typography variant="button">{s.name}</Typography>
+                      <List
+                        component="div"
+                        disablePadding
+                        key={s.id}
+                      >
+                        {s.steps &&
+                          s.steps.map((step) => {
+                            return (
+                              <ListItemButton
+                                sx={{ pl: 4 }}
+                                key={step.id}
+                              >
+                                <ListItemIcon>
+                                  <StepStatus status={step.status} />
+                                </ListItemIcon>
+                                <ListItemText primary={step.name} />
+                              </ListItemButton>
+                            );
+                          })}
+                      </List>
+                    </Stack>
+                    <Divider
+                      orientation="horizontal"
+                      flexItem
+                    />
+                  </>
+                );
+              })}
           </Stack>
         </Grid>
         <Grid

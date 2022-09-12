@@ -13,7 +13,6 @@ import (
 )
 
 func main() {
-
 	var log *logrus.Logger
 	var err error
 	var socketPath, v, dbFile string
@@ -51,6 +50,7 @@ func main() {
 	router.PATCH("/step/:id/:status", h.UpdateStepStatus)
 	router.DELETE("/stages", h.DeleteAllStages)
 	router.DELETE("/stages/:id", h.DeleteStage)
+	router.DELETE("/pipeline/:pipelineFile", h.DeletePipeline)
 	//TODO stream
 	router.GET("/stage/:id/logs", h.StageLogs)
 
