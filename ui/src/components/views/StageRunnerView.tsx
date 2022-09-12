@@ -31,7 +31,6 @@ import { useAppDispatch } from '../../app/hooks';
 import { RootState } from '../../app/store';
 import React from 'react';
 import _ from 'lodash';
-import { Label } from '@mui/icons-material';
 
 function useQuery(loc) {
   const { search } = loc;
@@ -112,18 +111,12 @@ export const StageRunnerView = (props) => {
           const stageName = event.Actor.Attributes['io.drone.stage.name'];
           const pipelineDir = event.Actor.Attributes['io.drone.desktop.pipeline.dir'];
           switch (event.status) {
-            case EventStatus.PULL: {
-              //TODO update the status with image pull
-              //console.log('Pulling Image %s', eventActorID);
-              break;
-            }
             case EventStatus.START: {
-              const pipelineID = pipelineFile;
               const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, Status.RUNNING);
               if (stageName) {
                 dispatch(
                   updateStep({
-                    pipelineID,
+                    pipelineID: pipelineFile,
                     stageName,
                     step: stepInfo
                   })
@@ -133,7 +126,6 @@ export const StageRunnerView = (props) => {
             }
 
             case EventStatus.DIE: {
-              const pipelineID = pipelineFile;
               const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, Status.NONE);
               //console.log('DIE %s', JSON.stringify(event));
               const exitCode = parseInt(event.Actor.Attributes['exitCode']);
@@ -141,16 +133,22 @@ export const StageRunnerView = (props) => {
                 if (exitCode === 0) {
                   stepInfo.status = Status.SUCCESS;
                 } else {
-                  stepInfo.status = Status.FAILED;
+                  stepInfo.status = Status.ERROR;
                 }
                 dispatch(
                   updateStep({
-                    pipelineID,
+                    pipelineID: pipelineFile,
                     stageName,
                     step: stepInfo
                   })
                 );
-                dispatch(persistPipeline(pipelineID));
+                dispatch(
+                  persistPipeline({
+                    pipelineID: pipelineFile,
+                    stageName,
+                    step: stepInfo
+                  })
+                );
               }
               break;
             }

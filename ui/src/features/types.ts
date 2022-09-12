@@ -10,7 +10,6 @@ export enum EventStatus {
 export const enum Status {
   NONE = 0,
   SUCCESS,
-  FAILED,
   RUNNING,
   ERROR
 }

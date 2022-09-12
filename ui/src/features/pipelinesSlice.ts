@@ -22,6 +22,21 @@ export const selectStagesByPipeline = createSelector(
   [selectPipelines, (state, pipelineFile) => pipelineFile],
   (pipelines, pipelineFile) => pipelines.find((p) => p.pipelineFile === pipelineFile)?.stages
 );
+export const selectPipelineStatus = createSelector(
+  [selectPipelines, (state, pipelineFile) => pipelineFile],
+  (pipelines, pipelineFile) => {
+    const pipeline = pipelines.find((p) => p.pipelineFile === pipelineFile);
+    //Combined status of all stage statuses
+    let status: Status;
+    const stages = pipeline.stages;
+    stages.forEach((stage) => {
+      const steps = stage.steps;
+      status = steps.reduce((result, item) => result | item.status, Status.NONE);
+    });
+    return status;
+  }
+);
+
 //TODO remove
 // export const selectPipelineStages = (state: RootState, pipelineFile: string) =>
 //   state.pipelines.rows.find((o) => o.pipelineFile === pipelineFile).stages;
@@ -62,20 +77,21 @@ export const importPipelines = createAsyncThunk('pipelines/loadStages', async ()
 
 export const persistPipeline = createAsyncThunk(
   'pipelines/persistPipeline',
-  async (pipelineID: string, { getState }) => {
+  async (payload: StepPayload, { getState }) => {
     const state = getState() as RootState;
     const pipelines = state.pipelines.rows;
-    const idx = _.findIndex(pipelines, { pipelineFile: pipelineID });
+    const idx = _.findIndex(pipelines, { pipelineFile: payload.pipelineID });
     if (idx != -1) {
-      const pipeline = selectRows[idx];
+      const pipeline = pipelines[idx];
       console.log('Persisting Pipeline %s', JSON.stringify(pipeline));
-      // try {
-      //   const response = await ddClient.extension.vm.service.post('/pipeline', pipeline);
-      //   console.log('Saved pipelines' + JSON.stringify(response));
-      // } catch (err) {
-      //   console.error('Error Saving' + JSON.stringify(err));
-      //   ddClient.desktopUI.toast.error(`Error saving pipelines ${err.message}`);
-      // }
+      try {
+        const stages = pipeline.stages;
+        const response = await ddClient.extension.vm.service.post('/stages', stages);
+        console.log('Saved stages to DB' + JSON.stringify(response));
+      } catch (err) {
+        console.error('Error Saving' + JSON.stringify(err));
+        ddClient.desktopUI.toast.error(`Error saving pipelines ${err.message}`);
+      }
     }
   }
 );
@@ -123,10 +139,12 @@ export const pipelinesSlice = createSlice({
           stage.steps = [...stage.steps.slice(0, stepIdx), step, ...stage.steps.slice(stepIdx + 1)];
           //update stages
           pipeline.stages = [...pipeline.stages.slice(0, stageIdx), stage, ...pipeline.stages.slice(stageIdx + 1)];
+          //console.log('Updated Pipelines status %s', step.status);
+          stage.status = stage.status | step.status;
+          pipeline.status = pipeline.status | step.status;
           //update pipeline in the core state
           state.rows = [...state.rows.slice(0, pipelineIdx), pipeline, ...state.rows.slice(pipelineIdx + 1)];
           //console.log('Updated Pipelines size %s', state.rows.length);
-          //     updatePipelineStatus(state, pipelineID);
         }
       }
     },

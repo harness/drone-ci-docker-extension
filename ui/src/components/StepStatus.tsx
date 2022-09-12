@@ -10,7 +10,6 @@ export const StepStatus = (props: { status: Status }) => {
   switch (status) {
     case Status.RUNNING:
       return <RunCircleIcon color="warning" />;
-    case Status.FAILED:
     case Status.ERROR:
       return <ErrorIcon color="error" />;
     case Status.SUCCESS:

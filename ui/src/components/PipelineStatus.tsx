@@ -1,31 +1,38 @@
 import { Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { useAppDispatch } from '../app/hooks';
+import { useSelector } from 'react-redux';
+import { RootState } from '../app/store';
+import { selectPipelineStatus } from '../features/pipelinesSlice';
+import { Status } from '../features/types';
 
 export const PipelineStatus = (props) => {
-  const dispatch = useAppDispatch();
-  const { status, pipelineFile } = props;
+  const { pipelineFile } = props;
+  const pipelineStatus = useSelector((state: RootState) => selectPipelineStatus(state, pipelineFile));
   const [statusColor, setStatusColor] = useState('info');
   const [statusText, setStatusText] = useState('');
-  //console.log('Pipeline Status' + JSON.stringify(status));
 
   useEffect(() => {
-    switch (status) {
+    //console.log('pipelineFile %s Status %s', pipelineFile, pipelineStatus);
+
+    switch (pipelineStatus) {
       case 1:
-        setStatusColor('success');
+        setStatusColor('green');
         setStatusText('success');
         break;
       case 2:
-        setStatusColor('error');
-        setStatusText('failed');
+        setStatusColor('blue');
+        setStatusText('running');
         break;
-
+      case 3:
+        setStatusColor('red');
+        setStatusText('error');
+        break;
       default:
         setStatusColor('primary');
         setStatusText('none');
         break;
     }
-  }, [status]);
+  }, []);
 
   return (
     <Typography

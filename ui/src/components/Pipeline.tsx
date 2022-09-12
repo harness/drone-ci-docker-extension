@@ -127,9 +127,7 @@ export const Pipeline = (props) => {
               break;
             }
 
-            case EventStatus.STOP:
-            case EventStatus.DIE:
-            case EventStatus.DESTROY: {
+            case EventStatus.DIE: {
               const pipelineID = pipelineFile;
               const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, Status.NONE);
               //console.log('STOP/DIE/KILL %s', JSON.stringify(event));
@@ -138,7 +136,7 @@ export const Pipeline = (props) => {
                 if (exitCode === 0) {
                   stepInfo.status = Status.SUCCESS;
                 } else {
-                  stepInfo.status = Status.ERROR | Status.FAILED;
+                  stepInfo.status = Status.ERROR;
                 }
                 dispatch(
                   updateStep({
