@@ -26,10 +26,15 @@ export default function RemovePipelineDialog({ ...props }) {
     let response;
     try {
       const pipelineFiles = props.selectedToRemove;
-      console.log('Removing Pipelines ' + JSON.stringify(pipelineFiles));
+      //console.log('Removing Pipelines ' + JSON.stringify(pipelineFiles));
       if (pipelineFiles && pipelineFiles.length === 1) {
         response = await ddClient.extension.vm.service.delete(`/pipeline/${pipelineFiles[0]}`);
         dispatch(removeStages(pipelineFiles));
+      } else if (pipelineFiles && pipelineFiles.length > 1) {
+        pipelineFiles.forEach(async (pf) => {
+          //console.log('Remove  pipeline %s', pf);
+          response = await ddClient.extension.vm.service.delete(`/pipeline/${pf}`);
+        });
       }
     } catch (err) {
       ddClient.desktopUI.toast.error(`Error removing pipelines ${err?.message}`);

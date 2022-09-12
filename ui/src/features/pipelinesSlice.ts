@@ -137,7 +137,7 @@ export const pipelinesSlice = createSlice({
     },
     removeStages: (state, action: PayloadAction<string[]>) => {
       const pipelineFiles = action.payload;
-      console.log('Action::removePipelines::Payload' + JSON.stringify(pipelineFiles));
+      // console.log('Action::removePipelines::Payload' + JSON.stringify(pipelineFiles));
       state.rows = _.remove(state.rows, (o) => !_.includes(pipelineFiles, o.pipelineFile));
     },
     resetPipelineStatus: (state, action: PayloadAction<StepCountPayload>) => {
