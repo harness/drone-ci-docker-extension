@@ -62,6 +62,7 @@ export const StageRunnerView = (props) => {
   }, [pipelineFile]);
 
   useEffect(() => {
+    console.log('useEffect');
     const loadEventTS = async () => {
       const out = await getDockerDesktopClient().extension.vm.cli.exec('bash', [
         '-c',
@@ -79,17 +80,15 @@ export const StageRunnerView = (props) => {
       '--filter',
       'event=start',
       '--filter',
-      'event=stop',
-      '--filter',
-      'event=kill',
-      '--filter',
       'event=die',
       '--filter',
-      'event=destroy',
+      'scope=local',
       '--filter',
-      'type=image',
+      'label=io.drone.desktop.pipeline.dir',
       '--filter',
-      'event=pull',
+      'label=io.drone.stage.name',
+      '--format',
+      'label=io.drone.step.name',
       '--format',
       '{{json .}}'
     ];
@@ -132,12 +131,10 @@ export const StageRunnerView = (props) => {
               break;
             }
 
-            case EventStatus.STOP:
-            case EventStatus.DIE:
-            case EventStatus.DESTROY: {
+            case EventStatus.DIE: {
               const pipelineID = pipelineFile;
               const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, Status.NONE);
-              console.log('DESTROY %s', JSON.stringify(event));
+              console.log('DIE %s', JSON.stringify(event));
               const exitCode = parseInt(event.Actor.Attributes['exitCode']);
               if (stageName) {
                 if (exitCode === 0) {
@@ -173,7 +170,7 @@ export const StageRunnerView = (props) => {
       };
       writeCurrTstamp();
     };
-  }, [pipelineFile, stages]);
+  }, [pipelineFile]);
 
   /* Handlers */
 
