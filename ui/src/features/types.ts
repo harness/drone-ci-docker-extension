@@ -30,8 +30,6 @@ export interface Event {
 //in the UI
 export interface Step {
   stepContainerId: string;
-  //TODO remove
-  pipelineFQN?: string;
   id?: string;
   name: string;
   image: string;

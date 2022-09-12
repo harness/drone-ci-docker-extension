@@ -11,7 +11,6 @@ const initialState: PipelinesState = {
 
 const ddClient = getDockerDesktopClient();
 
-//export const selectRows = (state: RootState) => state.pipelines.rows;
 export const selectRows = (state: RootState) => state.pipelines;
 export const dataLoadStatus = (state: RootState) => state.pipelines.status;
 export const selectPipelines = createSelector([selectRows], (pipelines) => pipelines.rows);
@@ -124,9 +123,9 @@ export const pipelinesSlice = createSlice({
           stage.steps = [...stage.steps.slice(0, stepIdx), step, ...stage.steps.slice(stepIdx + 1)];
           //update stages
           pipeline.stages = [...pipeline.stages.slice(0, stageIdx), stage, ...pipeline.stages.slice(stageIdx + 1)];
-          //console.log('Updated Pipeline %s', JSON.stringify(pipeline));
           //update pipeline in the core state
-          state.rows = [...state.rows.slice(0, pipelineIdx), pipeline, ...state.rows.slice(0, pipelineIdx + 1)];
+          state.rows = [...state.rows.slice(0, pipelineIdx), pipeline, ...state.rows.slice(pipelineIdx + 1)];
+          //console.log('Updated Pipelines size %s', state.rows.length);
           //     updatePipelineStatus(state, pipelineID);
         }
       }

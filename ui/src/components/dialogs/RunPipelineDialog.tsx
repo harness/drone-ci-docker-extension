@@ -24,17 +24,15 @@ import SearchIcon from '@mui/icons-material/Search';
 import InfoIcon from '@mui/icons-material/Info';
 import BackspaceIcon from '@mui/icons-material/Backspace';
 import { getDockerDesktopClient } from '../../utils';
-import { useAppDispatch } from '../../app/hooks';
-import { resetPipelineStatus, selectRows, selectPipelines } from '../../features/pipelinesSlice';
+import { resetPipelineStatus, selectPipelines } from '../../features/pipelinesSlice';
 import * as _ from 'lodash';
 import { Pipeline } from '../../features/types';
 
 export default function RunPipelineDialog({ ...props }) {
-  const dispatch = useAppDispatch();
   const pipelines = useSelector(selectPipelines);
 
   const ddClient = getDockerDesktopClient();
-  const { pipelineID, pipelineFile, workspacePath, logHandler, stepCount } = props;
+  const { pipelineFile, workspacePath, logHandler } = props;
   const [pipelineSteps, setPipelineSteps] = useState<string[]>([]);
   const [pipeline, setPipeline] = useState<Pipeline>();
   const [pipelineStages, setPipelineStages] = useState<string[]>([]);
@@ -193,7 +191,7 @@ export default function RunPipelineDialog({ ...props }) {
     pipelineExecArgs.push(pipelineFile);
 
     console.log('Pipeline Exec Args %s', JSON.stringify(pipelineExecArgs));
-    dispatch(resetPipelineStatus({ pipelineID, status: { error: 0, done: 0, running: 0, total: stepCount } }));
+    // dispatch(resetPipelineStatus({ pipelineID, status: { error: 0, done: 0, running: 0, total: stepCount } }));
     await ddClient.extension.host.cli.exec('run-drone', pipelineExecArgs, {
       stream: {
         splitOutputLines: true,

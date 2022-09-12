@@ -1,7 +1,7 @@
 import { createDockerDesktopClient } from '@docker/extension-api-client';
 import { DockerDesktopClient } from '@docker/extension-api-client-types/dist/v1';
 import { Md5 } from 'ts-md5/dist/md5';
-import { PipelineStatus, Status, Step } from './features/types';
+import { Status, Step } from './features/types';
 
 let client: DockerDesktopClient;
 
@@ -26,6 +26,12 @@ export function pipelineDisplayName(pipelineFile: string): string {
   return `${pipelineDirLastPath}/${piplineFileLastPath}`;
 }
 
+export function pipelinePath(pipelineFile: string): string {
+  const paths = pipelineFile.split('/');
+  const pipelineFileDirs = paths.slice(0, paths.length - 1);
+  return pipelineFileDirs.join('/');
+}
+
 export function vscodeURI(pipelinePath: string): string {
   return `vscode://file${pipelinePath}?windowId=_blank`;
 }
@@ -47,7 +53,6 @@ export function extractStepInfo(event: any, eventActorID: string, pipelineDir: s
   const stageName = event.Actor.Attributes['io.drone.stage.name'];
   return {
     stepContainerId: eventActorID,
-    pipelineFQN: pipelineFQN(pipelineDir, stageName),
     name: event.Actor.Attributes['io.drone.step.name'],
     image: event.Actor.Attributes['image'],
     status: status

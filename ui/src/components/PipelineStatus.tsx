@@ -4,7 +4,7 @@ import { useAppDispatch } from '../app/hooks';
 
 export const PipelineStatus = (props) => {
   const dispatch = useAppDispatch();
-  const { status, pipelineID, stepsCount } = props;
+  const { status, pipelineFile } = props;
   const [statusColor, setStatusColor] = useState('info');
   const [statusText, setStatusText] = useState('');
   //console.log('Pipeline Status' + JSON.stringify(status));

@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Backdrop, CircularProgress, Paper, Table, TableBody, TableContainer } from '@mui/material';
 import { Pipeline as Row } from './Pipeline';
-import { dataLoadStatus, pipelineStatus, removeStages, selectRows, selectPipelines } from '../features/pipelinesSlice';
+import { dataLoadStatus, selectPipelines, removeStages } from '../features/pipelinesSlice';
 import { PipelineTableToolbar } from './Toolbar';
 import { PipelinesTableHead } from './PipelinesTableHead';
 import RemovePipelineDialog from './dialogs/RemovePipelineDialog';
 
 import { useAppDispatch } from '../app/hooks';
 import * as _ from 'lodash';
+import React from 'react';
+import { Pipeline } from '../features/types';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const Pipelines = () => {
@@ -66,6 +68,29 @@ export const Pipelines = () => {
     setSelected(newSelected);
   };
 
+  const PipelineRow = ({ pipelineFile }) => {
+    return (
+      <Row
+        labelId={pipelineFile}
+        pipelineFile={pipelineFile}
+        selected={selected}
+        onClick={handleClick}
+      />
+    );
+  };
+  const MemoizedPipelineRow = React.memo(PipelineRow);
+
+  const PipelineRows = pipelines.map((row) => {
+    const id = _.sumBy(row.stages, 'id');
+    // console.log('Row  ID %s : %s', id, row.pipelineFile);
+    return (
+      <MemoizedPipelineRow
+        key={id}
+        pipelineFile={row.pipelineFile}
+      />
+    );
+  });
+
   /* End of Handlers */
   return (
     <>
@@ -94,20 +119,7 @@ export const Pipelines = () => {
               rowCount={pipelines?.length}
               onSelectAllClick={handleSelectAll}
             />
-            {pipelinesStatus === 'loaded' && (
-              <TableBody>
-                {pipelines.map((row) => {
-                  return (
-                    <Row
-                      key={_.sumBy(row.stages, 'id')}
-                      row={row}
-                      selected={selected}
-                      onClick={handleClick}
-                    />
-                  );
-                })}
-              </TableBody>
-            )}
+            {pipelinesStatus === 'loaded' && <TableBody>{PipelineRows}</TableBody>}
           </Table>
         </TableContainer>
         <RemovePipelineDialog

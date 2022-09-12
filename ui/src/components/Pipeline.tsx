@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
-import { md5, pipelineDisplayName, getDockerDesktopClient, extractStepInfo } from '../utils';
+import { md5, pipelineDisplayName, getDockerDesktopClient, extractStepInfo, pipelinePath } from '../utils';
 import { PipelineStatus } from './PipelineStatus';
 import { useAppDispatch } from '../app/hooks';
 import { PipelineRowActions } from './PipelineRowActions';
@@ -20,19 +20,19 @@ export const Pipeline = (props) => {
   const [eventTS, setEventTS] = useState('');
   const [runViewURL, setRunViewURL] = useState('');
 
-  const { labelId, row, pipelineStatus, selected, onClick } = props;
+  const { labelId, pipelineFile, selected, onClick } = props;
   const [open, setOpen] = useState(false);
   const [logs, setLogs] = useState('');
 
   const isSelected = (id: string) => selected.indexOf(id) !== -1;
 
-  const isItemSelected = isSelected(row.pipelineFile);
+  const isItemSelected = isSelected(pipelineFile);
 
   const ddClient = getDockerDesktopClient();
 
   useEffect(() => {
-    setRunViewURL(encodeURI(`run/${loc.search}&file=${row.pipelineFile}`));
-  }, [row.pipelineFile]);
+    setRunViewURL(encodeURI(`run/${loc.search}&file=${pipelineFile}`));
+  }, [pipelineFile]);
 
   const navigateToView = () => {
     navigate(runViewURL, { replace: true });
@@ -101,7 +101,7 @@ export const Pipeline = (props) => {
           if (!event) {
             return;
           }
-          console.log('Running Pipeline %s', row.pipelineFile);
+          console.log('Running Pipeline %s', pipelineFile);
           //console.log('Event %s', JSON.stringify(event));
           const eventActorID = event.Actor['ID'];
           const stageName = event.Actor.Attributes['io.drone.stage.name'];
@@ -113,7 +113,7 @@ export const Pipeline = (props) => {
               break;
             }
             case EventStatus.START: {
-              const pipelineID = row.pipelineFile;
+              const pipelineID = pipelineFile;
               const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, Status.RUNNING);
               if (stageName) {
                 dispatch(
@@ -130,7 +130,7 @@ export const Pipeline = (props) => {
             case EventStatus.STOP:
             case EventStatus.DIE:
             case EventStatus.DESTROY: {
-              const pipelineID = row.pipelineFile;
+              const pipelineID = pipelineFile;
               const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, Status.NONE);
               //console.log('STOP/DIE/KILL %s', JSON.stringify(event));
               const exitCode = parseInt(event.Actor.Attributes['exitCode']);
@@ -168,7 +168,7 @@ export const Pipeline = (props) => {
       };
       writeCurrTstamp();
     };
-  }, [row.pipelineFile]);
+  }, [pipelineFile]);
 
   return (
     <Fragment>
@@ -180,11 +180,11 @@ export const Pipeline = (props) => {
             inputProps={{
               'aria-labelledby': labelId
             }}
-            onClick={(event) => onClick(event, row.pipelineFile)}
+            onClick={(event) => onClick(event, pipelineFile)}
             role="checkbox"
           />
         </TableCell>
-        <Tooltip title={row.pipelineFile}>
+        <Tooltip title={pipelineFile}>
           <TableCell
             component="th"
             scope="row"
@@ -193,7 +193,7 @@ export const Pipeline = (props) => {
               href="#"
               onClick={() => navigateToView()}
             >
-              {pipelineDisplayName(row.pipelineFile)}
+              {pipelineDisplayName(pipelineFile)}
             </Link>
           </TableCell>
         </Tooltip>
@@ -202,22 +202,14 @@ export const Pipeline = (props) => {
           component="th"
           scope="row"
         >
-          <PipelineStatus
-            pipelineID={row.pipelineFile}
-            stepsCount={row.steps?.length}
-            status={pipelineStatus}
-            pipelineFile={row.pipelineFile}
-          />
+          <PipelineStatus pipelineFile={pipelineFile} />
         </TableCell>
         <TableCell>
           <PipelineRowActions
-            pipelineID={row.pipelineFile}
-            pipelineFile={row.pipelineFile}
-            stageName={row.stageName}
-            workspacePath={row.pipelinePath}
+            pipelineFile={pipelineFile}
+            workspacePath={pipelinePath(pipelineFile)}
             logHandler={logHandler}
             openHandler={setOpen}
-            stepCount={row.steps?.length}
           />
         </TableCell>
       </TableRow>

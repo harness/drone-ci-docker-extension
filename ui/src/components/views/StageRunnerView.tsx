@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
-import { vscodeURI } from '../../utils';
+import { pipelineDisplayName, pipelinePath, vscodeURI } from '../../utils';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import RemovePipelineDialog from '../dialogs/RemovePipelineDialog';
 import PlayCircleOutlineOutlinedIcon from '@mui/icons-material/PlayCircleOutlineOutlined';
@@ -8,6 +8,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import RunPipelineDialog from '../dialogs/RunPipelineDialog';
 import { useSelector } from 'react-redux';
 import {
+  Chip,
   Divider,
   Grid,
   IconButton,
@@ -15,17 +16,22 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Menu,
+  MenuItem,
   Stack,
   Tooltip,
   Typography
 } from '@mui/material';
 import { selectStagesByPipeline, updateStep, persistPipeline } from '../../features/pipelinesSlice';
-import { Stage, Event, EventStatus, Status } from '../../features/types';
+import { Stage, Event, EventStatus, Status, Step } from '../../features/types';
 import { StepStatus } from '../StepStatus';
 import { LazyLog, ScrollFollow } from 'react-lazylog';
 import { getDockerDesktopClient, extractStepInfo } from '../../utils';
 import { useAppDispatch } from '../../app/hooks';
 import { RootState } from '../../app/store';
+import React from 'react';
+import _ from 'lodash';
+import { Label } from '@mui/icons-material';
 
 function useQuery(loc) {
   const { search } = loc;
@@ -52,11 +58,7 @@ export const StageRunnerView = (props) => {
   const ddClient = getDockerDesktopClient();
 
   useEffect(() => {
-    const paths = pipelineFile.split('/');
-    let wsPath = '';
-    for (let i = 0; i < paths.length - 1; i++) {
-      wsPath = wsPath + paths[i];
-    }
+    const wsPath = pipelinePath(pipelineFile);
     //console.log('Workspace Path %s', wsPath);
     setWorkspacePath(wsPath);
   }, [pipelineFile]);
@@ -105,14 +107,14 @@ export const StageRunnerView = (props) => {
             return;
           }
           //console.log('Running Pipeline %s', pipelineFile);
-          console.log('Event %s', JSON.stringify(event));
+          //console.log('Event %s', JSON.stringify(event));
           const eventActorID = event.Actor['ID'];
           const stageName = event.Actor.Attributes['io.drone.stage.name'];
           const pipelineDir = event.Actor.Attributes['io.drone.desktop.pipeline.dir'];
           switch (event.status) {
             case EventStatus.PULL: {
               //TODO update the status with image pull
-              console.log('Pulling Image %s', eventActorID);
+              //console.log('Pulling Image %s', eventActorID);
               break;
             }
             case EventStatus.START: {
@@ -133,7 +135,7 @@ export const StageRunnerView = (props) => {
             case EventStatus.DIE: {
               const pipelineID = pipelineFile;
               const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, Status.NONE);
-              console.log('DIE %s', JSON.stringify(event));
+              //console.log('DIE %s', JSON.stringify(event));
               const exitCode = parseInt(event.Actor.Attributes['exitCode']);
               if (stageName) {
                 if (exitCode === 0) {
@@ -207,6 +209,58 @@ export const StageRunnerView = (props) => {
     }
   };
 
+  const StageItem = ({ step }) => {
+    return (
+      <ListItemButton>
+        <ListItemIcon>
+          <StepStatus status={step.status} />
+        </ListItemIcon>
+        <ListItemText primary={step.name} />
+      </ListItemButton>
+    );
+  };
+
+  const MemoizedStageItem = React.memo(StageItem);
+
+  const Stage = ({ stage }) => {
+    return (
+      <>
+        <Stack sx={{ pt: 2 }}>
+          <Typography variant="button">{stage.name}</Typography>
+          <List
+            component="div"
+            disablePadding
+          >
+            {stage.steps &&
+              stage.steps.map((step) => {
+                return (
+                  <MemoizedStageItem
+                    key={`${stage.id}-${step.name}`}
+                    step={step}
+                  />
+                );
+              })}
+          </List>
+        </Stack>
+        <Divider
+          orientation="horizontal"
+          flexItem
+        />
+      </>
+    );
+  };
+
+  const MemoizedStages = React.memo(Stage);
+
+  const StageList = stages.map((s) => {
+    return (
+      <MemoizedStages
+        key={s.id}
+        stage={s}
+      />
+    );
+  });
+
   return (
     <>
       <Stack
@@ -235,7 +289,22 @@ export const StageRunnerView = (props) => {
                 fontSize="large"
               />
             </IconButton>
-            {pipelineFile}
+            <Tooltip
+              title={pipelineFile}
+              sx={{
+                textTransform: 'lowercase'
+              }}
+            >
+              <Typography
+                variant="button"
+                fontSize="large"
+                sx={{
+                  textTransform: 'lowercase'
+                }}
+              >
+                {pipelineDisplayName(pipelineFile)}
+              </Typography>
+            </Tooltip>
           </Grid>
           <Grid
             item
@@ -326,42 +395,12 @@ export const StageRunnerView = (props) => {
           item
           xs={4}
         >
-          <Stack direction="column">
+          <Stack
+            direction="column"
+            sx={{ paddingTop: 2, marginBottom: 2 }}
+          >
             <Typography variant="h3">Stages</Typography>
-            {stages &&
-              stages.map((s) => {
-                return (
-                  <>
-                    <Stack>
-                      <Typography variant="button">{s.name}</Typography>
-                      <List
-                        component="div"
-                        disablePadding
-                        key={s.id}
-                      >
-                        {s.steps &&
-                          s.steps.map((step) => {
-                            return (
-                              <ListItemButton
-                                sx={{ pl: 4 }}
-                                key={step.id}
-                              >
-                                <ListItemIcon>
-                                  <StepStatus status={step.status} />
-                                </ListItemIcon>
-                                <ListItemText primary={step.name} />
-                              </ListItemButton>
-                            );
-                          })}
-                      </List>
-                    </Stack>
-                    <Divider
-                      orientation="horizontal"
-                      flexItem
-                    />
-                  </>
-                );
-              })}
+            {stages && StageList}
           </Stack>
         </Grid>
         <Grid

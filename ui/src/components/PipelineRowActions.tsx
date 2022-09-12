@@ -6,16 +6,8 @@ import RemovePipelineDialog from './dialogs/RemovePipelineDialog';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
 import RunPipelineDialog from './dialogs/RunPipelineDialog';
 
-export const PipelineRowActions = (props: {
-  pipelineID: string;
-  workspacePath: string;
-  stageName: string;
-  pipelineFile: string;
-  stepCount: number;
-  logHandler;
-  openHandler;
-}) => {
-  const { pipelineID, pipelineFile, workspacePath, logHandler, openHandler, stepCount } = props;
+export const PipelineRowActions = (props: { workspacePath: string; pipelineFile: string; logHandler; openHandler }) => {
+  const { pipelineFile, workspacePath, logHandler, openHandler } = props;
   const [removeConfirm, setRemoveConfirm] = useState(false);
   const [openRunPipeline, setOpenRunPipeline] = useState(false);
 
@@ -66,7 +58,7 @@ export const PipelineRowActions = (props: {
       {removeConfirm && (
         <RemovePipelineDialog
           open={removeConfirm}
-          selectedToRemove={[pipelineID]}
+          selectedToRemove={[pipelineFile]}
           onClose={handleRemoveDialogClose}
         />
       )}
@@ -75,12 +67,10 @@ export const PipelineRowActions = (props: {
         <RunPipelineDialog
           open={openRunPipeline}
           onClose={handleRunPipelineDialogClose}
-          pipelineID={pipelineID}
           pipelineFile={pipelineFile}
           workspacePath={workspacePath}
           logHandler={logHandler}
           openHandler={openHandler}
-          stepCount={stepCount}
         />
       )}
     </Stack>
