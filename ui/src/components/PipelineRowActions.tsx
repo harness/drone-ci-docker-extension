@@ -23,7 +23,7 @@ export const PipelineRowActions = (props: { workspacePath: string; pipelineFile:
 
   const navigateToView = () => {
     const url = encodeURI(`run/${loc.search}&file=${pipelineFile}&runPipeline=true`);
-    console.log('Pipeline Row Actions %s', url);
+    //console.log('Pipeline Row Actions %s', url);
     navigate(url, { replace: true });
   };
 

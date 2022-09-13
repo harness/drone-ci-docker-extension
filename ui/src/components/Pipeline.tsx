@@ -51,8 +51,8 @@ export const Pipeline = (props) => {
     }
   };
 
-  return (
-    <Fragment>
+  const PipelineTR = () => {
+    return (
       <TableRow sx={{ '& > *': { borderTop: 'unset', borderBottom: 'unset' } }}>
         <TableCell padding="checkbox">
           <Checkbox
@@ -65,19 +65,17 @@ export const Pipeline = (props) => {
             role="checkbox"
           />
         </TableCell>
-        <Tooltip title={pipelineFile}>
-          <TableCell
-            component="th"
-            scope="row"
+        <TableCell
+          component="th"
+          scope="row"
+        >
+          <Link
+            href="#"
+            onClick={() => navigateToView()}
           >
-            <Link
-              href="#"
-              onClick={() => navigateToView()}
-            >
-              {pipelineDisplayName(pipelineFile)}
-            </Link>
-          </TableCell>
-        </Tooltip>
+            {pipelineDisplayName(pipelineFile)}
+          </Link>
+        </TableCell>
 
         <TableCell
           component="th"
@@ -94,6 +92,14 @@ export const Pipeline = (props) => {
           />
         </TableCell>
       </TableRow>
+    );
+  };
+
+  const MemoizedPipelineTR = React.memo(PipelineTR);
+
+  return (
+    <Fragment>
+      <MemoizedPipelineTR />
     </Fragment>
   );
 };

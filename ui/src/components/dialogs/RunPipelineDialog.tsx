@@ -157,7 +157,7 @@ export default function RunPipelineDialog({ ...props }) {
 
     //Add --pipeline flag
     if (includeStages && includeStages.length > 0) {
-      console.log('Adding Stage to run %s', includeStages[0]);
+      //console.log('Adding Stage to run %s', includeStages[0]);
       pipelineExecArgs.push(`--pipeline=${includeStages[0]}`);
     }
 
