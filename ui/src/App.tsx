@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { Button, Grid, Stack, Typography } from '@mui/material';
 import ImportOrLoadStages from './components/dialogs/ImportOrLoadStages';
 import { getDockerDesktopClient } from './utils';
-import { dataLoadStatus, importPipelines } from './features/pipelinesSlice';
+import { dataLoadStatus, importPipelines, refreshPipelines } from './features/pipelinesSlice';
 import { useAppDispatch } from './app/hooks';
 import { Pipelines } from './components/Pipelines';
 export function App() {
@@ -22,16 +22,15 @@ export function App() {
   /* End of Handlers */
 
   useEffect(() => {
+    //console.log('pipelinesStatus %s', pipelinesStatus);
     if (pipelinesStatus === 'idle') {
       dispatch(importPipelines());
     }
-
+    const timer = setInterval(() => {
+      dispatch(refreshPipelines());
+    }, 3000);
     return () => {
-      //Write the current tstamp to a file so that we can track the events later
-      const writeCurrTstamp = async () => {
-        await getDockerDesktopClient().extension.vm.cli.exec('bash', ['-c', '"date +%s > /data/currts"']);
-      };
-      writeCurrTstamp().catch(console.error);
+      clearInterval(timer);
     };
   }, []);
 

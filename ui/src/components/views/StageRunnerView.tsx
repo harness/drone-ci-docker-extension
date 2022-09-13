@@ -41,7 +41,6 @@ export const StageRunnerView = (props) => {
   const navigate = useNavigate();
   const [logs, setLogs] = useState('\n');
   const dispatch = useAppDispatch();
-  const [eventTS, setEventTS] = useState('');
   const [logFollow, setFollow] = useState(true);
   const loc = useLocation();
   const query = useQuery(loc);
@@ -54,121 +53,10 @@ export const StageRunnerView = (props) => {
   const [removeConfirm, setRemoveConfirm] = useState(false);
   const [openRunPipeline, setOpenRunPipeline] = useState(false);
 
-  const ddClient = getDockerDesktopClient();
-
   useEffect(() => {
     const wsPath = pipelinePath(pipelineFile);
     //console.log('Workspace Path %s', wsPath);
     setWorkspacePath(wsPath);
-  }, [pipelineFile]);
-
-  useEffect(() => {
-    const loadEventTS = async () => {
-      const out = await getDockerDesktopClient().extension.vm.cli.exec('bash', [
-        '-c',
-        "'[ -f /data/currts ] && cat /data/currts || date +%s > /data/currts'"
-      ]);
-      if (out.stdout) {
-        setEventTS(out.stdout);
-      }
-    };
-    loadEventTS().catch(console.error);
-
-    const args = [
-      '--filter',
-      'type=container',
-      '--filter',
-      'event=start',
-      '--filter',
-      'event=die',
-      '--filter',
-      'scope=local',
-      '--filter',
-      'label=io.drone.desktop.pipeline.dir',
-      '--filter',
-      'label=io.drone.stage.name',
-      '--format',
-      'label=io.drone.step.name',
-      '--format',
-      '{{json .}}'
-    ];
-
-    if (props.eventTS) {
-      args.push('--since', props.eventTS.trimEnd());
-    }
-
-    const process = ddClient.docker.cli.exec('events', args, {
-      stream: {
-        splitOutputLines: true,
-        async onOutput(data) {
-          const event = JSON.parse(data.stdout ?? data.stderr) as Event;
-          if (!event) {
-            return;
-          }
-          //console.log('Running Pipeline %s', pipelineFile);
-          //console.log('Event %s', JSON.stringify(event));
-          const eventActorID = event.Actor['ID'];
-          const stageName = event.Actor.Attributes['io.drone.stage.name'];
-          const pipelineDir = event.Actor.Attributes['io.drone.desktop.pipeline.dir'];
-          switch (event.status) {
-            case EventStatus.START: {
-              const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, Status.RUNNING);
-              if (stageName) {
-                dispatch(
-                  updateStep({
-                    pipelineID: pipelineFile,
-                    stageName,
-                    step: stepInfo
-                  })
-                );
-              }
-              break;
-            }
-
-            case EventStatus.DIE: {
-              const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, Status.NONE);
-              //console.log('DIE %s', JSON.stringify(event));
-              const exitCode = parseInt(event.Actor.Attributes['exitCode']);
-              if (stageName) {
-                if (exitCode === 0) {
-                  stepInfo.status = Status.SUCCESS;
-                } else {
-                  stepInfo.status = Status.ERROR;
-                }
-                dispatch(
-                  updateStep({
-                    pipelineID: pipelineFile,
-                    stageName,
-                    step: stepInfo
-                  })
-                );
-                dispatch(
-                  persistPipeline({
-                    pipelineID: pipelineFile,
-                    stageName,
-                    step: stepInfo
-                  })
-                );
-              }
-              break;
-            }
-            default: {
-              //not handled EventStatus.DESTROY
-              break;
-            }
-          }
-        }
-      }
-    });
-
-    return () => {
-      process.close();
-      //Write the current tstamp to a file so that we can track the events later
-      const writeCurrTstamp = async () => {
-        await getDockerDesktopClient().extension.vm.cli.exec('bash', ['-c', '"date +%s > /data/currts"']);
-      };
-      writeCurrTstamp();
-    };
   }, [pipelineFile]);
 
   const navigateToHome = async () => {

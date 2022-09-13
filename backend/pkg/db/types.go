@@ -15,8 +15,10 @@ const (
 	None Status = iota
 	//1 represents successful stage/step
 	Success
-	//2 represents failed stage/step
-	Failed
+	//2 represents running stage/step
+	Running
+	//3 represents failed stage/step
+	Error
 )
 
 func (s Status) String() string {

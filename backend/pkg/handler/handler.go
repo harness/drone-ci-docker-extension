@@ -20,22 +20,22 @@ func NewHandler(ctx context.Context, dbFile string, log *logrus.Logger) *Handler
 	dbc.Init()
 
 	return &Handler{
-		dbc: dbc,
+		DatabaseConfig: dbc,
 	}
 }
 
 //GetStages selects all the available stages from the backend. The selected stages are sorted in ascending using column `pipeline_file`
 func (h *Handler) GetStages(c echo.Context) error {
-	log := h.dbc.Log
+	log := h.DatabaseConfig.Log
 	log.Info("Get Stages")
 	stages := make(db.Stages, 0)
-	db := h.dbc.DB
+	db := h.DatabaseConfig.DB
 
 	err := db.NewSelect().
 		Model(&stages).
 		Relation("Steps").
 		Order("pipeline_file ASC").
-		Scan(h.dbc.Ctx)
+		Scan(h.DatabaseConfig.Ctx)
 
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func (h *Handler) GetStages(c echo.Context) error {
 
 //GetStagesByPipelineFile selects selects stages associated with a PipelineFile
 func (h *Handler) GetStagesByPipelineFile(c echo.Context) error {
-	log := h.dbc.Log
+	log := h.DatabaseConfig.Log
 	var pipelineFile string
 	if err := echo.PathParamsBinder(c).
 		String("pipelineFile", &pipelineFile).
@@ -55,13 +55,13 @@ func (h *Handler) GetStagesByPipelineFile(c echo.Context) error {
 	log.Infof("Get Stage by %s", pipelineFile)
 
 	var stages db.Stages
-	db := h.dbc.DB
+	db := h.DatabaseConfig.DB
 
 	err := db.NewSelect().
 		Model(&stages).
 		Relation("Steps").
 		Where("pipeline_file = ?", pipelineFile).
-		Scan(h.dbc.Ctx)
+		Scan(h.DatabaseConfig.Ctx)
 
 	if err != nil {
 		return err
@@ -72,7 +72,7 @@ func (h *Handler) GetStagesByPipelineFile(c echo.Context) error {
 
 //GetStage selects selects a stage by id from the backend.
 func (h *Handler) GetStage(c echo.Context) error {
-	log := h.dbc.Log
+	log := h.DatabaseConfig.Log
 	var stageID int
 	if err := echo.PathParamsBinder(c).
 		Int("id", &stageID).
@@ -84,13 +84,13 @@ func (h *Handler) GetStage(c echo.Context) error {
 	stage := &db.Stage{
 		ID: stageID,
 	}
-	db := h.dbc.DB
+	db := h.DatabaseConfig.DB
 
 	err := db.NewSelect().
 		Model(stage).
 		Relation("Steps").
 		WherePK().
-		Scan(h.dbc.Ctx)
+		Scan(h.DatabaseConfig.Ctx)
 
 	if err != nil {
 		return err
@@ -101,14 +101,14 @@ func (h *Handler) GetStage(c echo.Context) error {
 
 //DeleteStages deletes one or more stage ids from the backend
 func (h *Handler) DeleteAllStages(c echo.Context) error {
-	log := h.dbc.Log
+	log := h.DatabaseConfig.Log
 	var stages []*db.Stage
 	if err := c.Bind(&stages); err != nil {
 		return err
 	}
 	log.Infof("Delete all stages and steps")
-	ctx := h.dbc.Ctx
-	dbConn := h.dbc.DB
+	ctx := h.DatabaseConfig.Ctx
+	dbConn := h.DatabaseConfig.DB
 	err := dbConn.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		_, err := dbConn.NewTruncateTable().
 			Model((*db.StageStep)(nil)).
@@ -138,7 +138,7 @@ func (h *Handler) DeleteAllStages(c echo.Context) error {
 
 //DeletePipeline delete all the stages and its steps of a defined PipelineFile
 func (h *Handler) DeletePipeline(c echo.Context) error {
-	log := h.dbc.Log
+	log := h.DatabaseConfig.Log
 	var pipelineFile string
 	if err := echo.PathParamsBinder(c).
 		String("pipelineFile", &pipelineFile).
@@ -148,13 +148,13 @@ func (h *Handler) DeletePipeline(c echo.Context) error {
 	log.Infof("Delete Pipeline %s", pipelineFile)
 
 	var stages db.Stages
-	db := h.dbc.DB
+	db := h.DatabaseConfig.DB
 
 	err := db.NewSelect().
 		Model(&stages).
 		Column("id").
 		Where("pipeline_file = ?", pipelineFile).
-		Scan(h.dbc.Ctx)
+		Scan(h.DatabaseConfig.Ctx)
 
 	if err != nil {
 		return err
@@ -169,7 +169,7 @@ func (h *Handler) DeletePipeline(c echo.Context) error {
 }
 
 func (h *Handler) DeleteStage(c echo.Context) error {
-	log := h.dbc.Log
+	log := h.DatabaseConfig.Log
 	var stageID int
 	if err := echo.PathParamsBinder(c).
 		Int("id", &stageID).
@@ -187,8 +187,8 @@ func (h *Handler) DeleteStage(c echo.Context) error {
 }
 
 func (h *Handler) delete(stages db.Stages) error {
-	ctx := h.dbc.Ctx
-	dbConn := h.dbc.DB
+	ctx := h.DatabaseConfig.Ctx
+	dbConn := h.DatabaseConfig.DB
 	return dbConn.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		for _, stage := range stages {
 			_, err := dbConn.NewDelete().
@@ -213,15 +213,15 @@ func (h *Handler) delete(stages db.Stages) error {
 
 //SaveStages saves one or more stage ids to the backend
 func (h *Handler) SaveStages(c echo.Context) error {
-	log := h.dbc.Log
-	ctx := h.dbc.Ctx
+	log := h.DatabaseConfig.Log
+	ctx := h.DatabaseConfig.Ctx
 	var stages []*db.Stage
 	if err := c.Bind(&stages); err != nil {
 		return err
 	}
 	log.Infof("Saving stages %v", stages)
 
-	dbConn := h.dbc.DB
+	dbConn := h.DatabaseConfig.DB
 	if err := dbConn.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		_, err := dbConn.NewInsert().
 			Model(&stages).
@@ -262,7 +262,7 @@ func (h *Handler) SaveStages(c echo.Context) error {
 // StageLogs retrieves logs associated with the stage. It is streaming operation
 // that continuously reads from file system file
 func (h *Handler) StageLogs(c echo.Context) error {
-	log := h.dbc.Log
+	log := h.DatabaseConfig.Log
 	var stageID int
 	if err := echo.PathParamsBinder(c).
 		Int("id", &stageID).
@@ -280,9 +280,9 @@ func (h *Handler) StageLogs(c echo.Context) error {
 // 1  - Success
 // 2  - Failed
 func (h *Handler) UpdateStageStatus(c echo.Context) error {
-	log := h.dbc.Log
-	ctx := h.dbc.Ctx
-	dbConn := h.dbc.DB
+	log := h.DatabaseConfig.Log
+	ctx := h.DatabaseConfig.Ctx
+	dbConn := h.DatabaseConfig.DB
 	var stageID, status int
 	if err := echo.PathParamsBinder(c).
 		Int("id", &stageID).
@@ -318,9 +318,9 @@ func (h *Handler) UpdateStageStatus(c echo.Context) error {
 // 2  - Failed
 
 func (h *Handler) UpdateStepStatus(c echo.Context) error {
-	log := h.dbc.Log
-	ctx := h.dbc.Ctx
-	dbConn := h.dbc.DB
+	log := h.DatabaseConfig.Log
+	ctx := h.DatabaseConfig.Ctx
+	dbConn := h.DatabaseConfig.DB
 	var stepID, status int
 	if err := echo.PathParamsBinder(c).
 		Int("stepId", &stepID).
@@ -351,9 +351,9 @@ func (h *Handler) UpdateStepStatus(c echo.Context) error {
 
 // CheckIfStageExists checks if the Stage exists in the backend
 func (h *Handler) CheckIfStageExists(c echo.Context) bool {
-	log := h.dbc.Log
-	ctx := h.dbc.Ctx
-	dbConn := h.dbc.DB
+	log := h.DatabaseConfig.Log
+	ctx := h.DatabaseConfig.Ctx
+	dbConn := h.DatabaseConfig.DB
 	var stageID int
 	err := echo.PathParamsBinder(c).
 		Int("id", &stageID).
@@ -377,9 +377,9 @@ func (h *Handler) CheckIfStageExists(c echo.Context) bool {
 
 // CheckIfStepExists checks if the Stage exists in the backend
 func (h *Handler) CheckIfStepExists(c echo.Context) bool {
-	log := h.dbc.Log
-	ctx := h.dbc.Ctx
-	dbConn := h.dbc.DB
+	log := h.DatabaseConfig.Log
+	ctx := h.DatabaseConfig.Ctx
+	dbConn := h.DatabaseConfig.DB
 	var stepID int
 	err := echo.PathParamsBinder(c).
 		Int("id", &stepID).

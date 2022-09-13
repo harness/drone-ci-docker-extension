@@ -5,5 +5,7 @@ services:
       - type: volume
         source: drone-desktop-data
         target: /data
+      #https://docs.docker.com/desktop/extensions-sdk/extensions/METADATA/#use-the-docker-socket-from-your-extension-backend
+      - /var/run/docker.sock.raw:/var/run/docker.sock
 volumes:
   drone-desktop-data:

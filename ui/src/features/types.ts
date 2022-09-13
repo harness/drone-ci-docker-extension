@@ -72,6 +72,6 @@ export interface PipelineStatus {
 }
 
 export interface PipelinesState {
-  status: 'idle' | 'loading' | 'failed' | 'loaded';
+  status: 'idle' | 'loading' | 'failed' | 'loaded' | 'refreshed';
   rows: Pipeline[];
 }

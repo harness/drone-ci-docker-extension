@@ -233,7 +233,7 @@ func TestDeleteAllStages(t *testing.T) {
 
 	var stages db.Stages
 	//Verify
-	exists, err := h.dbc.DB.
+	exists, err := h.DatabaseConfig.DB.
 		NewSelect().
 		Model(&stages).
 		Exists(ctx)
@@ -244,7 +244,7 @@ func TestDeleteAllStages(t *testing.T) {
 	assert.False(t, exists, "Expecting no stages, but there are")
 
 	var steps db.Steps
-	exists, err = h.dbc.DB.
+	exists, err = h.DatabaseConfig.DB.
 		NewSelect().
 		Model(&steps).
 		Exists(ctx)
@@ -317,7 +317,7 @@ func TestDeleteStage(t *testing.T) {
 				t.Fatal(err)
 			}
 			//Verify
-			exists, err := h.dbc.DB.
+			exists, err := h.DatabaseConfig.DB.
 				NewSelect().
 				Model(&stages).
 				WherePK().
@@ -328,7 +328,7 @@ func TestDeleteStage(t *testing.T) {
 
 			assert.False(t, exists, "Expecting records to be deleted but it is not")
 			//Verify
-			exists, err = h.dbc.DB.
+			exists, err = h.DatabaseConfig.DB.
 				NewSelect().
 				Model(&[]db.StageStep{}).
 				Where(tc.whereQuery).
@@ -466,7 +466,7 @@ func TestSaveStage(t *testing.T) {
 			h := NewHandler(ctx, getDBFile(dbFile), log)
 			if c := e.NewContext(req, rec); assert.NoError(t, h.SaveStages(c)) {
 				assert.Equal(t, http.StatusCreated, rec.Code)
-				dbConn := h.dbc.DB
+				dbConn := h.DatabaseConfig.DB
 				err := dbConn.NewSelect().
 					Model(&got).
 					Relation("Steps").
@@ -537,7 +537,7 @@ func TestUpdateStageStatus(t *testing.T) {
 			c.SetParamValues(fmt.Sprintf("%d", tc.stageID), fmt.Sprintf("%d", tc.want))
 			if assert.NoError(t, h.UpdateStageStatus(c)) {
 				assert.Equal(t, http.StatusNoContent, rec.Code)
-				dbConn := h.dbc.DB
+				dbConn := h.DatabaseConfig.DB
 				stage := &db.Stage{ID: tc.stageID}
 				err := dbConn.NewSelect().
 					Model(stage).
@@ -596,7 +596,7 @@ func TestUpdateStepStatus(t *testing.T) {
 			c.SetParamValues(fmt.Sprintf("%d", tc.stepID), fmt.Sprintf("%d", tc.want))
 			if assert.NoError(t, h.UpdateStageStatus(c)) {
 				assert.Equal(t, http.StatusNoContent, rec.Code)
-				dbConn := h.dbc.DB
+				dbConn := h.DatabaseConfig.DB
 				step := &db.Stage{ID: tc.stepID}
 				err := dbConn.NewSelect().
 					Model(step).

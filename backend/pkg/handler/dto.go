@@ -3,7 +3,7 @@ package handler
 import "github.com/kameshsampath/drone-desktop-docker-extension/pkg/db"
 
 type Handler struct {
-	dbc *db.Config
+	DatabaseConfig *db.Config
 }
 
 //PipelineStep represents a pipeline step

@@ -4,10 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"os"
 	"sync"
 
-	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/sqlitedialect"
@@ -37,9 +35,6 @@ func WithContext(ctx context.Context) Option {
 
 func WithLogger(log *logrus.Logger) Option {
 	return func(c *Config) {
-		if log == nil {
-			log = utils.LogSetup(os.Stdout, "warn")
-		}
 		c.Log = log
 	}
 }

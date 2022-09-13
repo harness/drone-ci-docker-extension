@@ -75,6 +75,27 @@ export const importPipelines = createAsyncThunk('pipelines/loadStages', async ()
   return pipelines;
 });
 
+const runRefresh = (state: PipelinesState, groupedStages: _.Dictionary<Stage[]>) => {
+  //console.log('Current State %s', JSON.stringify(rows));
+  for (const [key, value] of Object.entries(groupedStages)) {
+    //console.log('Refreshing Pipeline %s', key);
+    const pipelineIdx = state.rows.findIndex((o) => o.pipelineFile === key);
+    //console.log('Refreshing Pipeline Index %s', pipelineIdx);
+    const pipeline = _.find(state.rows, { pipelineFile: key }) as Pipeline;
+    if (pipeline) {
+      pipeline.stages = [...value];
+      state.rows = [...state.rows.slice(0, pipelineIdx), pipeline, ...state.rows.slice(pipelineIdx + 1)];
+      //console.log('Refreshed Pipelines %s', JSON.stringify(state.rows));
+    }
+  }
+  return state.rows;
+};
+export const refreshPipelines = createAsyncThunk('pipelines/refreshPipelines', async () => {
+  const response = (await ddClient.extension.vm.service.get('/stages')) as Stage[];
+  //console.log('Refreshing pipelines from backend %s', response.length);
+  return _.groupBy(response, 'pipelineFile');
+});
+
 export const persistPipeline = createAsyncThunk(
   'pipelines/persistPipeline',
   async (payload: StepPayload, { getState }) => {
@@ -173,13 +194,12 @@ export const pipelinesSlice = createSlice({
       })
       .addCase(importPipelines.rejected, (state) => {
         state.status = 'failed';
-        state.rows = [];
-      })
-      .addCase(persistPipeline.fulfilled, () => {
-        console.log('saved');
-      })
-      .addCase(persistPipeline.rejected, () => {
-        console.log('save error');
+        //don't do anything
+      }) // not worried about rejected/pending cases as it keeps refreshing
+      .addCase(refreshPipelines.fulfilled, (state, action) => {
+        console.log('refreshed');
+        const groupStages = action.payload;
+        runRefresh(state, groupStages);
       });
   }
 });

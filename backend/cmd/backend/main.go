@@ -5,8 +5,11 @@ import (
 	"flag"
 	"net"
 	"os"
+	"path"
+	"path/filepath"
 
 	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/handler"
+	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/monitor"
 	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/utils"
 	echo "github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
@@ -19,7 +22,8 @@ func main() {
 
 	flag.StringVar(&socketPath, "socket", "/run/guest/volumes-service.sock", "Unix domain socket to listen on")
 	flag.StringVar(&dbFile, "dbPath", utils.LookupEnvOrString("DB_FILE", "/data/db"), "File to store the Drone Pipeline Info")
-	flag.StringVar(&v, "level", utils.LookupEnvOrString("LOG_LEVEL", logrus.WarnLevel.String()), "The log level to use. Allowed values trace,debug,info,warn,fatal,panic.")
+	//TODO revert to warn after testing
+	flag.StringVar(&v, "level", utils.LookupEnvOrString("LOG_LEVEL", logrus.DebugLevel.String()), "The log level to use. Allowed values trace,debug,info,warn,fatal,panic.")
 	flag.Parse()
 
 	os.RemoveAll(socketPath)
@@ -42,6 +46,8 @@ func main() {
 	ctx := context.Background()
 
 	h := handler.NewHandler(ctx, dbFile, log)
+
+	//Routes
 	router.GET("/stages", h.GetStages)
 	router.GET("/stage/:id", h.GetStage)
 	router.GET("/stage/:pipelineFile", h.GetStagesByPipelineFile)
@@ -54,7 +60,25 @@ func main() {
 	//TODO stream
 	router.GET("/stage/:id/logs", h.StageLogs)
 
+	//Start the monitor to monitor pipeline
+	//Save logs and update statuses
+	logsPath := path.Join(filepath.Dir(dbFile), "logs")
+	log.Infof("Saving pipeline logs in %s\n", logsPath)
+	cfg, err := monitor.New(h.DatabaseConfig.Ctx,
+		h.DatabaseConfig.DB,
+		h.DatabaseConfig.Log, monitor.WithLogsPath(logsPath))
+
+	if err != nil {
+		log.Fatal(err)
+	} else {
+		go cfg.MonitorAndLog()
+	}
+
 	log.Fatal(router.Start(startURL))
+	for {
+		errCh := <-cfg.MonitorErrors
+		log.Error(errCh.Error())
+	}
 }
 
 func listen(path string) (net.Listener, error) {

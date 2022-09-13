@@ -8,8 +8,6 @@ import { PipelineStatus } from './PipelineStatus';
 import { useAppDispatch } from '../app/hooks';
 import { PipelineRowActions } from './PipelineRowActions';
 import { Checkbox, Link } from '@mui/material';
-import { Event, EventStatus, Status } from '../features/types';
-import { updateStep, persistPipeline } from '../features/pipelinesSlice';
 
 export const Pipeline = (props) => {
   const logRef: any = useRef();
@@ -17,7 +15,6 @@ export const Pipeline = (props) => {
   const loc = useLocation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const [eventTS, setEventTS] = useState('');
   const [runViewURL, setRunViewURL] = useState('');
 
   const { labelId, pipelineFile, selected, onClick } = props;
@@ -27,8 +24,6 @@ export const Pipeline = (props) => {
   const isSelected = (id: string) => selected.indexOf(id) !== -1;
 
   const isItemSelected = isSelected(pipelineFile);
-
-  const ddClient = getDockerDesktopClient();
 
   useEffect(() => {
     setRunViewURL(encodeURI(`run/${loc.search}&file=${pipelineFile}`));
@@ -55,118 +50,6 @@ export const Pipeline = (props) => {
       }
     }
   };
-
-  useEffect(() => {
-    const loadEventTS = async () => {
-      const out = await getDockerDesktopClient().extension.vm.cli.exec('bash', [
-        '-c',
-        "'[ -f /data/currts ] && cat /data/currts || date +%s > /data/currts'"
-      ]);
-      if (out.stdout) {
-        setEventTS(out.stdout);
-      }
-    };
-    loadEventTS().catch(console.error);
-
-    const args = [
-      '--filter',
-      'type=container',
-      '--filter',
-      'event=start',
-      '--filter',
-      'event=stop',
-      '--filter',
-      'event=kill',
-      '--filter',
-      'event=die',
-      '--filter',
-      'event=destroy',
-      '--filter',
-      'type=image',
-      '--filter',
-      'event=pull',
-      '--format',
-      '{{json .}}'
-    ];
-
-    if (props.eventTS) {
-      args.push('--since', props.eventTS.trimEnd());
-    }
-
-    const process = ddClient.docker.cli.exec('events', args, {
-      stream: {
-        splitOutputLines: true,
-        async onOutput(data) {
-          const event = JSON.parse(data.stdout ?? data.stderr) as Event;
-          if (!event) {
-            return;
-          }
-          console.log('Running Pipeline %s', pipelineFile);
-          //console.log('Event %s', JSON.stringify(event));
-          const eventActorID = event.Actor['ID'];
-          const stageName = event.Actor.Attributes['io.drone.stage.name'];
-          const pipelineDir = event.Actor.Attributes['io.drone.desktop.pipeline.dir'];
-          switch (event.status) {
-            case EventStatus.PULL: {
-              //TODO update the status with image pull
-              console.log('Pulling Image %s', eventActorID);
-              break;
-            }
-            case EventStatus.START: {
-              const pipelineID = pipelineFile;
-              const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, Status.RUNNING);
-              if (stageName) {
-                dispatch(
-                  updateStep({
-                    pipelineID,
-                    stageName: stageName,
-                    step: stepInfo
-                  })
-                );
-              }
-              break;
-            }
-
-            case EventStatus.DIE: {
-              const pipelineID = pipelineFile;
-              const stepInfo = extractStepInfo(event, eventActorID, pipelineDir, Status.NONE);
-              //console.log('STOP/DIE/KILL %s', JSON.stringify(event));
-              const exitCode = parseInt(event.Actor.Attributes['exitCode']);
-              if (stageName) {
-                if (exitCode === 0) {
-                  stepInfo.status = Status.SUCCESS;
-                } else {
-                  stepInfo.status = Status.ERROR;
-                }
-                dispatch(
-                  updateStep({
-                    pipelineID,
-                    stageName: stageName,
-                    step: stepInfo
-                  })
-                );
-                dispatch(persistPipeline(pipelineID));
-              }
-              break;
-            }
-            default: {
-              //not handled EventStatus.DESTROY
-              break;
-            }
-          }
-        }
-      }
-    });
-
-    return () => {
-      process.close();
-      //Write the current tstamp to a file so that we can track the events later
-      const writeCurrTstamp = async () => {
-        await getDockerDesktopClient().extension.vm.cli.exec('bash', ['-c', '"date +%s > /data/currts"']);
-      };
-      writeCurrTstamp();
-    };
-  }, [pipelineFile]);
 
   return (
     <Fragment>
