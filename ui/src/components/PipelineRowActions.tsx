@@ -1,15 +1,16 @@
+import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { IconButton, Stack, Tooltip } from '@mui/material';
 import { vscodeURI } from '../utils';
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
-import { useState } from 'react';
 import RemovePipelineDialog from './dialogs/RemovePipelineDialog';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
-import RunPipelineDialog from './dialogs/RunPipelineDialog';
 
 export const PipelineRowActions = (props: { workspacePath: string; pipelineFile: string; logHandler; openHandler }) => {
+  const navigate = useNavigate();
+  const loc = useLocation();
   const { pipelineFile, workspacePath, logHandler, openHandler } = props;
   const [removeConfirm, setRemoveConfirm] = useState(false);
-  const [openRunPipeline, setOpenRunPipeline] = useState(false);
 
   /* Handlers */
   const handleDeletePipelines = () => {
@@ -20,12 +21,10 @@ export const PipelineRowActions = (props: { workspacePath: string; pipelineFile:
     setRemoveConfirm(false);
   };
 
-  const handleRunPipeline = () => {
-    setOpenRunPipeline(true);
-  };
-
-  const handleRunPipelineDialogClose = () => {
-    setOpenRunPipeline(false);
+  const navigateToView = () => {
+    const url = encodeURI(`run/${loc.search}&file=${pipelineFile}&runPipeline=true`);
+    console.log('Pipeline Row Actions %s', url);
+    navigate(url, { replace: true });
   };
 
   return (
@@ -34,7 +33,7 @@ export const PipelineRowActions = (props: { workspacePath: string; pipelineFile:
       spacing={2}
     >
       <Tooltip title="Run Pipeline">
-        <IconButton onClick={handleRunPipeline}>
+        <IconButton onClick={navigateToView}>
           <PlayCircleFilledWhiteIcon color="info" />
         </IconButton>
       </Tooltip>
@@ -60,17 +59,6 @@ export const PipelineRowActions = (props: { workspacePath: string; pipelineFile:
           open={removeConfirm}
           selectedToRemove={[pipelineFile]}
           onClose={handleRemoveDialogClose}
-        />
-      )}
-
-      {openRunPipeline && (
-        <RunPipelineDialog
-          open={openRunPipeline}
-          onClose={handleRunPipelineDialogClose}
-          pipelineFile={pipelineFile}
-          workspacePath={workspacePath}
-          logHandler={logHandler}
-          openHandler={openHandler}
         />
       )}
     </Stack>

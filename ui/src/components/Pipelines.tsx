@@ -10,7 +10,6 @@ import RemovePipelineDialog from './dialogs/RemovePipelineDialog';
 import { useAppDispatch } from '../app/hooks';
 import * as _ from 'lodash';
 import React from 'react';
-import { Pipeline } from '../features/types';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const Pipelines = () => {

@@ -155,6 +155,12 @@ export default function RunPipelineDialog({ ...props }) {
 
     const pipelineExecArgs = new Array<string>();
 
+    //Add --pipeline flag
+    if (includeStages && includeStages.length > 0) {
+      console.log('Adding Stage to run %s', includeStages[0]);
+      pipelineExecArgs.push(`--pipeline=${includeStages[0]}`);
+    }
+
     // Add --trusted arg
     if (trusted) {
       //console.log('Adding trusted');

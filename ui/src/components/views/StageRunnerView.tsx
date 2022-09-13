@@ -22,11 +22,9 @@ import {
   Tooltip,
   Typography
 } from '@mui/material';
-import { selectStagesByPipeline, updateStep, persistPipeline } from '../../features/pipelinesSlice';
-import { Stage, Event, EventStatus, Status, Step } from '../../features/types';
+import { selectStagesByPipeline, refreshPipelines } from '../../features/pipelinesSlice';
 import { StepStatus } from '../StepStatus';
 import { LazyLog, ScrollFollow } from 'react-lazylog';
-import { getDockerDesktopClient, extractStepInfo } from '../../utils';
 import { useAppDispatch } from '../../app/hooks';
 import { RootState } from '../../app/store';
 import React from 'react';
@@ -57,6 +55,22 @@ export const StageRunnerView = (props) => {
     const wsPath = pipelinePath(pipelineFile);
     //console.log('Workspace Path %s', wsPath);
     setWorkspacePath(wsPath);
+
+    const runPipeline = query.get('runPipeline');
+    if (runPipeline && runPipeline === 'true') {
+      setOpenRunPipeline(true);
+    }
+    //Show realtime status while running pipelines
+    //We need to poll as currently there is no way to
+    //do push from backend
+    const timer = setInterval(() => {
+      dispatch(refreshPipelines());
+    }, 500);
+
+    //Clear the timer on unmounting component
+    return () => {
+      clearInterval(timer);
+    };
   }, [pipelineFile]);
 
   const navigateToHome = async () => {

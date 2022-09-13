@@ -197,7 +197,7 @@ export const pipelinesSlice = createSlice({
         //don't do anything
       }) // not worried about rejected/pending cases as it keeps refreshing
       .addCase(refreshPipelines.fulfilled, (state, action) => {
-        console.log('refreshed');
+        //console.log('refreshed');
         const groupStages = action.payload;
         runRefresh(state, groupStages);
       });
