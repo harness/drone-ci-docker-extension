@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/md5"
+	"fmt"
 	"io"
 	"os"
 
@@ -38,4 +40,11 @@ func LookupEnvOrString(envName, defaultVal string) string {
 	}
 
 	return defaultVal
+}
+
+//Md5OfString returns the md5 has of the string
+//Its ok to use md5 hashing here as it just used
+//for consistent and sanitized naming
+func Md5OfString(str string) string {
+	return fmt.Sprintf("%x", md5.Sum([]byte(str)))
 }

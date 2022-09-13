@@ -60,17 +60,6 @@ export const StageRunnerView = (props) => {
     if (runPipeline && runPipeline === 'true') {
       setOpenRunPipeline(true);
     }
-    //Show realtime status while running pipelines
-    //We need to poll as currently there is no way to
-    //do push from backend
-    const timer = setInterval(() => {
-      dispatch(refreshPipelines());
-    }, 500);
-
-    //Clear the timer on unmounting component
-    return () => {
-      clearInterval(timer);
-    };
   }, [pipelineFile]);
 
   const navigateToHome = async () => {

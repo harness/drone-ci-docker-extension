@@ -10,7 +10,7 @@ export function App() {
   const [openImportDialog, setOpenImportDialog] = useState<boolean>(false);
   const pipelinesStatus = useSelector(dataLoadStatus);
   const dispatch = useAppDispatch();
-
+  const ddClient = getDockerDesktopClient();
   /* Handlers */
   const handleImportPipeline = () => {
     setOpenImportDialog(true);
@@ -26,17 +26,43 @@ export function App() {
     if (pipelinesStatus === 'idle') {
       dispatch(importPipelines());
     }
-    //Show realtime status while running pipelines
-    //We need to poll as currently there is no way to
-    //do push from backend
-    const timer = setInterval(() => {
-      dispatch(refreshPipelines());
-    }, 500);
-
-    //Clear the timer on unmounting component
-    return () => {
-      clearInterval(timer);
+    const extensionContainersEvents = async () => {
+      //console.log("listening to extension's container events...");
+      await ddClient.docker.cli.exec(
+        'events',
+        [
+          '--format',
+          `"{{ json . }}"`,
+          '--filter',
+          'type=container',
+          '--filter',
+          'event=create',
+          '--filter',
+          'event=destroy',
+          '--filter',
+          'label=com.docker.compose.project=drone_drone-desktop-docker-extension-desktop-extension',
+          '--filter',
+          'label=io.drone.desktop.ui.refresh=true'
+        ],
+        {
+          stream: {
+            onOutput() {
+              //console.log(data);
+              dispatch(refreshPipelines());
+            },
+            onError(error) {
+              console.error(error);
+            },
+            onClose(exitCode) {
+              console.log('onClose with exit code ' + exitCode);
+            },
+            splitOutputLines: true
+          }
+        }
+      );
     };
+
+    extensionContainersEvents();
   }, []);
 
   return (

@@ -1,4 +1,4 @@
-IMAGE?=kameshsampath/drone-desktop-docker-extension
+IMAGE?=drone/drone-desktop-docker-extension
 TAG?=latest
 
 BUILDER=buildx-multi-arch

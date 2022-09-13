@@ -69,12 +69,14 @@ export const Pipeline = (props) => {
           component="th"
           scope="row"
         >
-          <Link
-            href="#"
-            onClick={() => navigateToView()}
-          >
-            {pipelineDisplayName(pipelineFile)}
-          </Link>
+          <Tooltip title={pipelineFile}>
+            <Link
+              href="#"
+              onClick={() => navigateToView()}
+            >
+              {pipelineDisplayName(pipelineFile)}
+            </Link>
+          </Tooltip>
         </TableCell>
 
         <TableCell
