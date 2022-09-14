@@ -514,7 +514,7 @@ func TestUpdateStageStatus(t *testing.T) {
 			stageID: 4,
 			uriPath: "/stage/:id/:status",
 			dbFile:  "test",
-			want:    db.Failed,
+			want:    db.Error,
 		},
 		"default": {
 			stageID: 7,
@@ -573,7 +573,7 @@ func TestUpdateStepStatus(t *testing.T) {
 			stepID:  4,
 			uriPath: "/step/:id/:status",
 			dbFile:  "test",
-			want:    db.Failed,
+			want:    db.Error,
 		},
 		"default": {
 			stepID:  7,

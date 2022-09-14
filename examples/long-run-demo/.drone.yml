@@ -6,10 +6,16 @@ platform:
   arch: arm64
 steps: 
   - name: sleep5
+    image: fedora
+    commands:
+    - x=0;while [ $x -lt 10 ]; do echo "hello"; sleep 1; x=$((x+1)); done
+  
+  - name: say good bye
     image: busybox
     pull: if-not-exists
     commands:
-    - x=0;while [ $x -lt 5 ]; do echo "hello"; sleep 1; x=$((x+1)); done
+    - x=0;while [ $x -lt 5 ]; do echo "good bye"; sleep 1; x=$((x+1)); done
+
   - name: an error step
     image: busybox
     pull: if-not-exists

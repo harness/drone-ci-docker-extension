@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
-import { pipelineDisplayName, pipelinePath, vscodeURI } from '../../utils';
+import { getDockerDesktopClient, md5, pipelineDisplayName, pipelinePath, vscodeURI } from '../../utils';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import RemovePipelineDialog from '../dialogs/RemovePipelineDialog';
 import PlayCircleOutlineOutlinedIcon from '@mui/icons-material/PlayCircleOutlineOutlined';
@@ -29,6 +29,8 @@ import { useAppDispatch } from '../../app/hooks';
 import { RootState } from '../../app/store';
 import React from 'react';
 import _ from 'lodash';
+import { Stage, Status, Step } from '../../features/types';
+import { ExecProcess } from '@docker/extension-api-client-types/dist/v1';
 
 function useQuery(loc) {
   const { search } = loc;
@@ -38,8 +40,12 @@ function useQuery(loc) {
 export const StageRunnerView = (props) => {
   const navigate = useNavigate();
   const [logs, setLogs] = useState('\n');
-  const dispatch = useAppDispatch();
+  const [refreshSelectedStep, setRefreshSelectedStep] = useState(false);
+  const [logReaderContainerID, setLogReaderContainerID] = useState<undefined | string>();
+  const [logReaderExec, setLogReaderExec] = useState<undefined | ExecProcess>();
+  const ddClient = getDockerDesktopClient();
   const [logFollow, setFollow] = useState(true);
+  const [selectedStep, setSelectedStep] = useState(null);
   const loc = useLocation();
   const query = useQuery(loc);
 
@@ -51,6 +57,93 @@ export const StageRunnerView = (props) => {
   const [removeConfirm, setRemoveConfirm] = useState(false);
   const [openRunPipeline, setOpenRunPipeline] = useState(false);
 
+  const showLogs = async (stage, step) => {
+    setSelectedStep(step.name);
+    if (logReaderExec) {
+      logReaderExec.close();
+      setLogs('');
+    }
+    if (logReaderContainerID) {
+      // console.log('Show logs for Stage %s and step %s', JSON.stringify(stage), JSON.stringify(step));
+      let execCmdArgs = [];
+      let execCmd: string;
+      switch (step.status) {
+        case Status.SUCCESS:
+        case Status.ERROR: {
+          execCmd = 'exec';
+          execCmdArgs = [logReaderContainerID, 'cat', `/data/logs/${stage.id}/${md5(step.name)}.log`];
+          break;
+        }
+        default: {
+          const out = await ddClient.docker.cli.exec('ps', [
+            '--filter',
+            `'label=io.drone.stage.name=${stage.name}'`,
+            '--filter',
+            `'label=io.drone.step.name=${step.name}'`,
+            '--filter',
+            `'label=io.drone.desktop.pipeline.dir=${stage.pipelinePath}'`,
+            "--format '{{.ID}}'",
+            '--no-trunc'
+          ]);
+
+          //console.log('Pipeline Step Container ID %s', JSON.stringify(out));
+          if (out.stdout) {
+            execCmd = 'logs';
+            execCmdArgs = ['--follow', out.stdout.trim()];
+          } else if (out.stderr) {
+            ddClient.desktopUI.toast.error(`Error while getting logs for step ${step.name} of stage ${stage.name}`);
+          }
+          break;
+        }
+      }
+
+      if (execCmd && execCmdArgs.length > 0) {
+        //console.log('Exec command %s', execCmd);
+        const exec = await ddClient.docker.cli.exec(execCmd, execCmdArgs, {
+          stream: {
+            onOutput(data) {
+              if (data) {
+                const out = data.stdout;
+                const err = data.stderr;
+                if (out) {
+                  setLogs((oldLog) => oldLog + `\n${out}`);
+                } else if (err) {
+                  setLogs((oldLog) => oldLog + `\n${err}`);
+                }
+              }
+            },
+            onError(error) {
+              console.error(error);
+            },
+            splitOutputLines: true
+          }
+        });
+        setLogReaderExec(exec);
+      }
+    }
+  };
+
+  /*
+   * Check if the stage has any running steps, if one then
+   * make that step as selected in the list. If not make the first
+   * step selected by default
+   */
+  const computeSelected = (stage: Stage) => {
+    if (!selectedStep || refreshSelectedStep) {
+      const steps = stage.steps;
+      if (stage.status !== Status.RUNNING) {
+        setSelectedStep(steps[0].name);
+        showLogs(stage, steps[0]);
+        return true;
+      }
+      const rStep = steps.find((s) => s.status === Status.RUNNING);
+      setSelectedStep(rStep.name);
+      showLogs(stage, rStep);
+      return true;
+    }
+    return true;
+  };
+
   useEffect(() => {
     const wsPath = pipelinePath(pipelineFile);
     //console.log('Workspace Path %s', wsPath);
@@ -60,7 +153,45 @@ export const StageRunnerView = (props) => {
     if (runPipeline && runPipeline === 'true') {
       setOpenRunPipeline(true);
     }
+
+    const getLogReaderContainerID = async () => {
+      const out = await ddClient.docker.cli.exec('ps', [
+        '--filter',
+        "'name=log-reader'",
+        "--format '{{.ID}}'",
+        '--no-trunc'
+      ]);
+      //console.log('Log Reader PS out %s', JSON.stringify(out));
+      if (out.stdout) {
+        setLogReaderContainerID(out.stdout.trim());
+      }
+    };
+    getLogReaderContainerID();
+    return () => {
+      if (logReaderExec) {
+        logReaderExec.close();
+      }
+    };
   }, [pipelineFile]);
+
+  useMemo(() => {
+    //console.log('Reader Log Container ID ' + logReaderContainerID);
+    let defaultStage = stages.find((s) => {
+      const runningStep = s.steps.find((s2) => s2.status === Status.RUNNING);
+      if (!runningStep) {
+        return s;
+      }
+    });
+
+    if (!defaultStage) {
+      if (stages.length === 1) {
+        defaultStage = stages[0];
+      }
+    }
+    setRefreshSelectedStep(true);
+    computeSelected(defaultStage);
+    //console.log('Default Stage %s', JSON.stringify(defaultStage));
+  }, [logReaderContainerID]);
 
   const navigateToHome = async () => {
     setRemoveConfirm(false);
@@ -83,24 +214,23 @@ export const StageRunnerView = (props) => {
   };
 
   const logHandler = (data: any | undefined, clean?: boolean) => {
+    //console.log('logHandler: clean : %s', clean);
     if (clean) {
       setLogs('');
-      return true;
     }
+    //console.log('Data %s', JSON.stringify(data));
     if (data) {
-      const out = data.stdout;
-      const err = data.stderr;
-      if (out) {
-        setLogs((oldLog) => oldLog + `\n${out}`);
-      } else if (err) {
-        setLogs((oldLog) => oldLog + `\n${err}`);
-      }
+      //console.log('Running stage %s', JSON.stringify(data));
+      computeSelected(data.stage);
     }
   };
 
-  const StageItem = ({ step }) => {
+  const StageItem = ({ stage, step }) => {
     return (
-      <ListItemButton>
+      <ListItemButton
+        onClick={() => showLogs(stage, step)}
+        selected={step.name === selectedStep}
+      >
         <ListItemIcon>
           <StepStatus status={step.status} />
         </ListItemIcon>
@@ -125,6 +255,7 @@ export const StageRunnerView = (props) => {
                 return (
                   <MemoizedStageItem
                     key={`${stage.id}-${step.name}`}
+                    stage={stage}
                     step={step}
                   />
                 );
@@ -302,6 +433,7 @@ export const StageRunnerView = (props) => {
               <LazyLog
                 text={logs}
                 follow={follow}
+                stream={true}
                 onScroll={onScroll}
                 enableSearch={true}
               />

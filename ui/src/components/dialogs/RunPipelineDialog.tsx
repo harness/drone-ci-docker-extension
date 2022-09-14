@@ -24,13 +24,15 @@ import SearchIcon from '@mui/icons-material/Search';
 import InfoIcon from '@mui/icons-material/Info';
 import BackspaceIcon from '@mui/icons-material/Backspace';
 import { getDockerDesktopClient } from '../../utils';
-import { resetPipelineStatus, selectPipelines } from '../../features/pipelinesSlice';
+import { refreshPipelines, selectPipelines, selectStagesByPipeline } from '../../features/pipelinesSlice';
 import * as _ from 'lodash';
-import { Pipeline } from '../../features/types';
+import { Pipeline, Status } from '../../features/types';
+import { RootState } from '../../app/store';
+import { useAppDispatch } from '../../app/hooks';
 
 export default function RunPipelineDialog({ ...props }) {
   const pipelines = useSelector(selectPipelines);
-
+  const dispatch = useAppDispatch();
   const ddClient = getDockerDesktopClient();
   const { pipelineFile, workspacePath, logHandler } = props;
   const [pipelineSteps, setPipelineSteps] = useState<string[]>([]);
@@ -43,6 +45,9 @@ export default function RunPipelineDialog({ ...props }) {
   const [secretFile, setSecretFile] = React.useState<string>('');
   const [envFile, setEnvFile] = React.useState<string>('');
   const [trusted, setTrusted] = useState(false);
+
+  //get the latest status with running status
+  const stages = useSelector((state: RootState) => selectStagesByPipeline(state, pipelineFile));
 
   const ITEM_HEIGHT = 48;
   const ITEM_PADDING_TOP = 8;
@@ -150,7 +155,7 @@ export default function RunPipelineDialog({ ...props }) {
   };
 
   const runPipeline = async () => {
-    console.log('Running pipeline ', pipelineFile);
+    //console.log('Running pipeline ', pipelineFile);
     logHandler(undefined, true);
 
     const pipelineExecArgs = new Array<string>();
@@ -196,21 +201,48 @@ export default function RunPipelineDialog({ ...props }) {
     //The pipeline file to use
     pipelineExecArgs.push(pipelineFile);
 
-    console.log('Pipeline Exec Args %s', JSON.stringify(pipelineExecArgs));
-    // dispatch(resetPipelineStatus({ pipelineID, status: { error: 0, done: 0, running: 0, total: stepCount } }));
-    await ddClient.extension.host.cli.exec('run-drone', pipelineExecArgs, {
-      stream: {
-        splitOutputLines: true,
-        onOutput(data): void {
-          // As we can receive both `stdout` and `stderr`, we wrap them in a JSON object
-          logHandler(data);
-        },
-        onError(error): void {
-          console.error(error);
+    //console.log('Pipeline Exec Args %s', JSON.stringify(pipelineExecArgs));
+
+    const stageName = includeStages && includeStages.length > 0 ? includeStages[0] : undefined;
+
+    try {
+      let once = 0;
+      ddClient.extension.host.cli.exec('run-drone', pipelineExecArgs, {
+        stream: {
+          onOutput() {
+            if (once === 1) {
+              const stage = stages.find((s) => s.name === stageName);
+              //make it writable and set the status
+              const runningStage = Object.assign({}, stage);
+              //Reset step status
+              let steps = runningStage.steps;
+              for (let i = 0; i < steps.length; i++) {
+                //make it writable and set the status
+                const oldStep = steps[i];
+                const toBeRunStep = Object.assign({}, oldStep);
+                toBeRunStep.status = Status.NONE;
+                //console.log('toBeRunStep %s', JSON.stringify(toBeRunStep));
+                steps = [...steps.slice(0, i), toBeRunStep, ...steps.slice(i + 1)];
+              }
+              runningStage.steps = steps;
+              //console.log('runningStage %s', JSON.stringify(runningStage));
+              logHandler(
+                {
+                  stage: runningStage
+                },
+                true
+              );
+            }
+            once++;
+          },
+          splitOutputLines: true
         }
-      }
-    });
-    props.onClose();
+      });
+    } catch (err) {
+      console.log('Error %s', err);
+    } finally {
+      props.onClose();
+    }
   };
 
   return (

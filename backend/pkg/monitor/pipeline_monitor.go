@@ -7,10 +7,8 @@ import (
 	"io"
 	"os"
 	"path"
-	"runtime"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
@@ -149,8 +147,7 @@ func (c *Config) updateStatuses(stage *db.Stage, stepName string, stepStatus db.
 		if err := updateStageStatus(c.Ctx, dbConn, stage); err != nil {
 			return err
 		}
-		c.triggerUIRefresh()
-		return nil
+		return utils.TriggerUIRefresh(c.Ctx, c.DockerCli, c.Log)
 	}); err != nil {
 		c.MonitorErrors <- err
 	}
@@ -238,49 +235,5 @@ func (c *Config) writeLogs(pipelineLogPath string, attrs map[string]string) {
 				c.MonitorErrors <- err
 			}
 		}
-	}
-}
-
-// triggerUIRefresh starts a container to notify the extension UI to reload the progress actions from the cache.
-// The container uses the label "io.drone.desktop.ui.refresh=true" for that purpose and is auto-removed when exited.
-// The extension UI is listening for container events with that label. Once an event is received, the extension UI sends a ui refresh action to refresh and reload the pipelines from backend
-func (c *Config) triggerUIRefresh() {
-	c.Log.Debugf("Trigger UI Refresh")
-	ctx := c.Ctx
-	cli := c.DockerCli
-	// Ensure the image is present before creating the container
-	if _, _, err := cli.ImageInspectWithRaw(ctx, busyboxImage); err != nil {
-		reader, err := cli.ImagePull(ctx, busyboxImage, types.ImagePullOptions{
-			Platform: "linux/" + runtime.GOARCH,
-		})
-		if err != nil {
-			c.MonitorErrors <- err
-		}
-		_, err = io.Copy(os.Stdout, reader)
-		if err != nil {
-			c.MonitorErrors <- err
-		}
-	}
-
-	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image:        busyboxImage,
-		AttachStdout: true,
-		AttachStderr: true,
-		Labels: map[string]string{
-			"com.docker.desktop.extension":      "true",
-			"com.docker.desktop.extension.name": "Drone CI",
-			"com.docker.compose.project":        "drone_drone-desktop-docker-extension-desktop-extension",
-			"io.drone.desktop.ui.refresh":       "true",
-		},
-	}, &container.HostConfig{
-		AutoRemove: true,
-	}, nil, nil, "")
-	if err != nil {
-		c.MonitorErrors <- err
-	}
-
-	err = cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{})
-	if err != nil {
-		c.MonitorErrors <- err
 	}
 }

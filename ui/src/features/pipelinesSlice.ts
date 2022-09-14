@@ -37,30 +37,6 @@ export const selectPipelineStatus = createSelector(
   }
 );
 
-//TODO remove
-// export const selectPipelineStages = (state: RootState, pipelineFile: string) =>
-//   state.pipelines.rows.find((o) => o.pipelineFile === pipelineFile).stages;
-
-function computePipelineStatus(state, pipelineId): PipelineStatus {
-  const pipeline = _.find(state.rows, { id: pipelineId });
-  if (pipeline) {
-    const steps = pipeline.steps;
-
-    const runningSteps = _.filter(steps, (s) => s.status === Status.RUNNING);
-
-    const erroredSteps = _.filter(steps, (s) => s.status === Status.ERROR);
-
-    const allDoneSteps = _.filter(steps, (s) => s.status === Status.SUCCESS);
-
-    return {
-      total: steps?.length,
-      running: runningSteps?.length,
-      error: erroredSteps?.length,
-      done: allDoneSteps?.length
-    };
-  }
-}
-
 export const importPipelines = createAsyncThunk('pipelines/loadStages', async () => {
   const response = (await ddClient.extension.vm.service.get('/stages')) as Stage[];
   //console.log('Loading pipelines from backend %s', response.length);
@@ -123,8 +99,8 @@ export const savePipelines = (): AppThunk => async (_dispatch, getState) => {
   //console.log('Saving pipelines to backend ' + JSON.stringify(pipelines));
   if (pipelines?.keys.length > 0) {
     try {
-      const response = await ddClient.extension.vm.service.post('/pipeline', pipelines);
-      console.log('Saved pipelines' + JSON.stringify(response));
+      await ddClient.extension.vm.service.post('/pipeline', pipelines);
+      //console.log('Saved pipelines' + JSON.stringify(response));
     } catch (err) {
       console.error('Error Saving' + JSON.stringify(err));
       ddClient.desktopUI.toast.error(`Error saving pipelines ${err.message}`);
@@ -197,7 +173,7 @@ export const pipelinesSlice = createSlice({
         //don't do anything
       }) // not worried about rejected/pending cases as it keeps refreshing
       .addCase(refreshPipelines.fulfilled, (state, action) => {
-        console.log('refreshed');
+        //console.log('refreshed');
         const groupStages = action.payload;
         runRefresh(state, groupStages);
       });

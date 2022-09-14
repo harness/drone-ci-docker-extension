@@ -3,9 +3,13 @@ package handler
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"net/http"
+	"os"
 
+	"github.com/docker/docker/client"
 	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/db"
+	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/utils"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 	"github.com/uptrace/bun"
@@ -133,6 +137,8 @@ func (h *Handler) DeleteAllStages(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	//Clean the logs directory
+	os.RemoveAll("/data/logs")
 	return c.NoContent(http.StatusNoContent)
 }
 
@@ -198,6 +204,7 @@ func (h *Handler) delete(stages db.Stages) error {
 			if err != nil {
 				return err
 			}
+			os.RemoveAll(fmt.Sprintf("/data/logs/%d", stage.ID))
 		}
 
 		_, err := dbConn.NewDelete().
@@ -308,6 +315,12 @@ func (h *Handler) UpdateStageStatus(c echo.Context) error {
 		return err
 	}
 
+	if cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation()); err != nil {
+		return err
+	} else {
+		utils.TriggerUIRefresh(ctx, cli, log)
+	}
+
 	return c.NoContent(http.StatusNoContent)
 }
 
@@ -346,6 +359,11 @@ func (h *Handler) UpdateStepStatus(c echo.Context) error {
 		return err
 	}
 
+	if cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation()); err != nil {
+		return err
+	} else {
+		utils.TriggerUIRefresh(ctx, cli, log)
+	}
 	return c.NoContent(http.StatusNoContent)
 }
 

@@ -29,7 +29,6 @@ type Monitor interface {
 type Option func(*Config)
 
 const (
-	busyboxImage     = "docker.io/library/busybox"
 	labelPipelineDir = "io.drone.desktop.pipeline.dir"
 	labelStageName   = "io.drone.stage.name"
 	labelStepName    = "io.drone.step.name"
