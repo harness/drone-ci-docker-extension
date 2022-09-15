@@ -52,7 +52,7 @@ export const importPipelines = createAsyncThunk('pipelines/loadStages', async ()
 });
 
 const runRefresh = (state: PipelinesState, groupedStages: _.Dictionary<Stage[]>) => {
-  console.debug('Current State %s', JSON.stringify(rows));
+  console.debug('Current State %s', JSON.stringify(state.rows));
   for (const [key, value] of Object.entries(groupedStages)) {
     console.debug('Refreshing Pipeline %s', key);
     const pipelineIdx = state.rows.findIndex((o) => o.pipelineFile === key);
@@ -100,7 +100,6 @@ export const savePipelines = (): AppThunk => async (_dispatch, getState) => {
   if (pipelines?.keys.length > 0) {
     try {
       await ddClient.extension.vm.service.post('/pipeline', pipelines);
-      console.debug('Saved pipelines' + JSON.stringify(response));
     } catch (err) {
       console.error('Error Saving' + JSON.stringify(err));
       ddClient.desktopUI.toast.error(`Error saving pipelines ${err.message}`);

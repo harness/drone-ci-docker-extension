@@ -50,7 +50,6 @@ export function App() {
         {
           stream: {
             onOutput() {
-              console.debug(data);
               dispatch(refreshPipelines());
             },
             onError(error) {

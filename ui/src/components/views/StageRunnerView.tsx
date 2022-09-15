@@ -200,7 +200,6 @@ export const StageRunnerView = (props) => {
         {
           stream: {
             onOutput() {
-              console.debug(data);
               dispatch(refreshPipelines());
             },
             onError(error) {
