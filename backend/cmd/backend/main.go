@@ -8,9 +8,9 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/handler"
-	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/monitor"
-	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/utils"
+	"github.com/harness/drone-ci-docker-extension/pkg/handler"
+	"github.com/harness/drone-ci-docker-extension/pkg/monitor"
+	"github.com/harness/drone-ci-docker-extension/pkg/utils"
 	echo "github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 )

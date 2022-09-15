@@ -2,13 +2,13 @@ FROM --platform=amd64 alpine
 LABEL org.opencontainers.image.title="Drone CI" \
     org.opencontainers.image.description="Run Continuous Integration & Delivery Pipelines (CI/CD) from within Docker Desktop." \
     org.opencontainers.image.vendor="Harness" \
-    com.docker.desktop.extension.icon="https://github.com/harness/drone-desktop-docker-extension/raw/main/etc/icon.png" \
+    com.docker.desktop.extension.icon="https://github.com/harness/drone-ci-docker-extension/raw/main/etc/icon.png" \
     com.docker.desktop.extension.api.version=">= 0.2.3" \
-    com.docker.extension.screenshots="[{\"alt\":\"List of Pipelines\", \"url\":\"https://github.com/harness/drone-desktop-docker-extension/raw/main/docs/images/list.png\"}, {\"alt\":\"Pipeline Details\", \"url\":\"https://github.com/harness/drone-desktop-docker-extension/raw/main/docs/images/details.png\"}]" \
+    com.docker.extension.screenshots="[{\"alt\":\"List of Pipelines\", \"url\":\"https://github.com/harness/drone-ci-docker-extension/raw/main/docs/images/list.png\"}, {\"alt\":\"Pipeline Details\", \"url\":\"https://github.com/harness/drone-ci-docker-extension/raw/main/docs/images/details.png\"}]" \
     com.docker.extension.detailed-description="Drone is a self-service Continuous Integration platform for busy development teams. This extension will help developers do Continuous Integration on their laptops using <a href=\"https://drone.io\">Drone</a> CI." \
     com.docker.extension.publisher-url="https://www.drone.io/" \
-    com.docker.extension.additional-urls="[{\"title\":\"Documentation\",\"url\":\"https://docs.drone.io\"}, {\"title\":\"Support\",\"url\":\"https://github.com/harness/drone-desktop-docker-extension/issues\"}, {\"title\":\"License\",\"url\":\"https://github.com/harness/drone-desktop-docker-extension/blob/main/LICENSE\"}, {\"title\":\"Discussions\",\"url\":\"https://github.com/harness/drone-desktop-docker-extension/discussions\"}]" \
-    com.docker.extension.changelog="https://github.com/harness/drone-desktop-docker-extension/blob/main/CHANGELOG.md"
+    com.docker.extension.additional-urls="[{\"title\":\"Documentation\",\"url\":\"https://docs.drone.io\"}, {\"title\":\"Support\",\"url\":\"https://github.com/harness/drone-ci-docker-extension/issues\"}, {\"title\":\"License\",\"url\":\"https://github.com/harness/drone-ci-docker-extension/blob/main/LICENSE\"}, {\"title\":\"Discussions\",\"url\":\"https://github.com/harness/drone-ci-docker-extension/discussions\"}]" \
+    com.docker.extension.changelog="https://github.com/harness/drone-ci-docker-extension/blob/main/CHANGELOG.md"
 
 ARG TARGETARCH=amd64
 ARG ARCH_VERSION=v1
@@ -58,4 +58,4 @@ COPY ui/build ui
 
 COPY backend/scripts/run-drone.sh /tools/run-drone
 
-CMD /backend -socket /run/guest-services/extension-drone-desktop.sock
+CMD /backend -socket /run/guest-services/extension-drone-ci.sock

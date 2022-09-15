@@ -1,21 +1,17 @@
 import React, { Fragment, useRef, useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { createSearchParams, Link as RouterLink, LinkProps as RouterLinkProps } from 'react-router-dom';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
 import { pipelineDisplayName, pipelinePath } from '../utils';
 import { PipelineStatus } from './PipelineStatus';
-import { useAppDispatch } from '../app/hooks';
 import { PipelineRowActions } from './PipelineRowActions';
-import { Checkbox, Link } from '@mui/material';
+import { Link, Checkbox } from '@mui/material';
 
 export const Pipeline = (props) => {
   const logRef: any = useRef();
   //!!!IMPORTANT - pass the location query params
-  const loc = useLocation();
-  const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-  const [runViewURL, setRunViewURL] = useState('');
+  const [runViewURL, setRunViewURL] = useState({});
 
   const { labelId, pipelineFile, selected, onClick } = props;
   const [open, setOpen] = useState(false);
@@ -25,16 +21,26 @@ export const Pipeline = (props) => {
 
   const isItemSelected = isSelected(pipelineFile);
 
+  const NavigateToRunView = React.forwardRef<any, Omit<RouterLinkProps, 'to'>>((props, ref) => (
+    <RouterLink
+      ref={ref}
+      to={runViewURL}
+      {...props}
+    />
+  ));
+
   useEffect(() => {
-    setRunViewURL(encodeURI(`run/${loc.search}&file=${pipelineFile}`));
+    const url = {
+      pathname: '/run',
+      search: `?${createSearchParams({
+        file: pipelineFile
+      })}`
+    };
+    setRunViewURL(url);
   }, [pipelineFile]);
 
-  const navigateToView = () => {
-    navigate(runViewURL, { replace: true });
-  };
-
   const logHandler = (data: any | undefined, clean?: boolean) => {
-    //console.log('>> ', logRef.current);
+    console.debug('>> ', logRef.current);
     const logEl = logRef.current;
     if (logEl) {
       if (clean) {
@@ -70,12 +76,7 @@ export const Pipeline = (props) => {
           scope="row"
         >
           <Tooltip title={pipelineFile}>
-            <Link
-              href="#"
-              onClick={() => navigateToView()}
-            >
-              {pipelineDisplayName(pipelineFile)}
-            </Link>
+            <Link component={NavigateToRunView}>{pipelineDisplayName(pipelineFile)}</Link>
           </Tooltip>
         </TableCell>
 

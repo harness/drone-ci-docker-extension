@@ -42,7 +42,7 @@ func TriggerUIRefresh(ctx context.Context, cli *client.Client, log *logrus.Logge
 		Labels: map[string]string{
 			"com.docker.desktop.extension":      "true",
 			"com.docker.desktop.extension.name": "Drone CI",
-			"com.docker.compose.project":        "drone_drone-desktop-docker-extension-desktop-extension",
+			"com.docker.compose.project":        "drone_drone-ci-docker-extension-desktop-extension",
 			"io.drone.desktop.ui.refresh":       "true",
 		},
 	}, &container.HostConfig{

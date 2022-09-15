@@ -1,6 +1,7 @@
 {
   "search.exclude": {
     "**/.node_modules": true,
+    "**/.pnpm-store": true,
   },
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "[typescriptreact]": {

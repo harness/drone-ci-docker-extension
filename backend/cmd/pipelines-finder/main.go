@@ -11,8 +11,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/db"
-	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/ignore"
+	"github.com/harness/drone-ci-docker-extension/pkg/db"
+	"github.com/harness/drone-ci-docker-extension/pkg/ignore"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )

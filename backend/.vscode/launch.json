@@ -12,7 +12,7 @@
       "program": "${fileDirname}",
       "args": [
         "-path",
-        "/Users/kameshs/git/harness/drone-desktop-docker-extension/examples/multi-stage"
+        "/Users/kameshs/git/harness/drone-ci-docker-extension/examples/multi-stage"
       ]
     }
   ]

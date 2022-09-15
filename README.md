@@ -1,6 +1,6 @@
 # Drone Desktop
 
-[![Build Status](https://harness.drone.io/api/badges/harness/drone-desktop-docker-extension/status.svg?ref=refs/heads/main)](https://harness.drone.io/harness/drone-desktop-docker-extension)
+[![Build Status](https://harness.drone.io/api/badges/harness/drone-ci-docker-extension/status.svg?ref=refs/heads/main)](https://harness.drone.io/harness/drone-ci-docker-extension)
 
 A [Docker Desktop Extension](https://docs.docker.com/desktop/extensions/) to run [Drone CI](https://drone.io) pipelines on your laptops.
 
@@ -59,7 +59,7 @@ You can remove one or more Drone pipelines, removing does not physically delete 
 ## Install Extension
 
 ```shell
-docker extension install drone/drone-desktop-docker-extension:0.0.2
+docker extension install drone/drone-ci-docker-extension:0.0.2
 ```
 
 ***IMPORTANT**: It is recommended to install the extension using Docker Extension Marketplace.
@@ -67,7 +67,7 @@ docker extension install drone/drone-desktop-docker-extension:0.0.2
 ## Remove Extension
 
 ```shell
-docker extension rm drone/drone-desktop-docker-extension
+docker extension rm drone/drone-ci-docker-extension
 ```
 
 ## Documentation
@@ -77,11 +77,11 @@ docker extension rm drone/drone-desktop-docker-extension
 
 ## Issues
 
-We welcome your feedback and improvements. Please open an [issue](https://github.com/kameshsampath/drone-desktop-docker-extension/issues) for any bugs, feature requests.
+We welcome your feedback and improvements. Please open an [issue](https://github.com/harness/drone-ci-docker-extension/issues) for any bugs, feature requests.
 
 ## Questions
 
-For any questions please use [discussions](https://github.com/kameshsampath/drone-desktop-docker-extension/discussions) for questions/discussions.
+For any questions please use [discussions](https://github.com/harness/drone-ci-docker-extension/discussions) for questions/discussions.
 
 ## Disclaimer
 

@@ -3,7 +3,7 @@
   "vm": {
     "composefile": "docker-compose.yaml",
     "exposes": {
-      "socket": "extension-drone-desktop.sock"
+      "socket": "extension-drone-ci.sock"
     }
   },
   "ui": {
@@ -12,7 +12,7 @@
       "src": "index.html",
       "root": "ui",
       "backend": {
-        "socket": "extension-drone-desktop.sock"
+        "socket": "extension-drone-ci.sock"
       }
     }
   },

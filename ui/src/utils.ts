@@ -43,7 +43,7 @@ export function md5(str): string {
 export async function getStepsCount(pipelinePath: string): Promise<number> {
   const out = await getDockerDesktopClient().extension.host.cli.exec('yq', ["'.steps|length'", pipelinePath]);
   if (out.stdout) {
-    console.log(`Pipeline ${pipelinePath} has ${out.stdout} steps`);
+    console.debug(`Pipeline ${pipelinePath} has ${out.stdout} steps`);
     return parseInt(out.stdout);
   }
   return 0;

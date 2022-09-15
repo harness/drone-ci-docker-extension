@@ -65,7 +65,7 @@ export default function RunPipelineDialog({ ...props }) {
       const cmd = await ddClient.docker.cli.exec('network', ['ls', "--format='{{.Name}}'"]);
       if (cmd.stdout) {
         const networkNames = cmd.stdout?.trim().split('\n');
-        //console.log('Networks %s', JSON.stringify(networkNames));
+        console.debug('Networks %s', JSON.stringify(networkNames));
         setDockerNetworks(networkNames);
       }
     };
@@ -155,53 +155,53 @@ export default function RunPipelineDialog({ ...props }) {
   };
 
   const runPipeline = async () => {
-    //console.log('Running pipeline ', pipelineFile);
+    console.debug('Running pipeline ', pipelineFile);
     logHandler(undefined, true);
 
     const pipelineExecArgs = new Array<string>();
 
     //Add --pipeline flag
     if (includeStages && includeStages.length > 0) {
-      //console.log('Adding Stage to run %s', includeStages[0]);
+      console.debug('Adding Stage to run %s', includeStages[0]);
       pipelineExecArgs.push(`--pipeline=${includeStages[0]}`);
     }
 
     // Add --trusted arg
     if (trusted) {
-      //console.log('Adding trusted');
+      console.debug('Adding trusted');
       pipelineExecArgs.push(`--trusted`);
     }
 
     //Add --env-file arg
     if (envFile) {
-      //console.log('Adding envfile');
+      console.debug('Adding envfile');
       pipelineExecArgs.push(`--env-file=${envFile}`);
     }
 
     //Add --secret-file arg
     if (secretFile) {
-      //console.log('Adding secretFile');
+      console.debug('Adding secretFile');
       pipelineExecArgs.push(`--secret-file=${secretFile}`);
     }
 
     //Add steps to include
     if (includeSteps && includeSteps?.length > 0) {
-      //console.log('Adding includeSteps');
+      console.debug('Adding includeSteps');
       const incSteps = includeSteps.map((s) => `--include="${s}"`);
-      //console.log('Included Steps ', JSON.stringify(incSteps));
+      console.debug('Included Steps ', JSON.stringify(incSteps));
       pipelineExecArgs.push(...incSteps);
     }
 
     //Configure network
     if (dockerNetwork && dockerNetwork !== 'none') {
-      //console.log('Adding Docker Network');
+      console.debug('Adding Docker Network');
       pipelineExecArgs.push(`--network=${dockerNetwork}`);
     }
 
     //The pipeline file to use
     pipelineExecArgs.push(pipelineFile);
 
-    //console.log('Pipeline Exec Args %s', JSON.stringify(pipelineExecArgs));
+    console.debug('Pipeline Exec Args %s', JSON.stringify(pipelineExecArgs));
 
     const stageName = includeStages && includeStages.length > 0 ? includeStages[0] : undefined;
 
@@ -221,11 +221,11 @@ export default function RunPipelineDialog({ ...props }) {
                 const oldStep = steps[i];
                 const toBeRunStep = Object.assign({}, oldStep);
                 toBeRunStep.status = Status.NONE;
-                //console.log('toBeRunStep %s', JSON.stringify(toBeRunStep));
+                console.debug('toBeRunStep %s', JSON.stringify(toBeRunStep));
                 steps = [...steps.slice(0, i), toBeRunStep, ...steps.slice(i + 1)];
               }
               runningStage.steps = steps;
-              //console.log('runningStage %s', JSON.stringify(runningStage));
+              console.debug('runningStage %s', JSON.stringify(runningStage));
               logHandler(
                 {
                   stage: runningStage
@@ -239,7 +239,7 @@ export default function RunPipelineDialog({ ...props }) {
         }
       });
     } catch (err) {
-      console.log('Error %s', err);
+      console.debug('Error %s', err);
     } finally {
       props.onClose();
     }

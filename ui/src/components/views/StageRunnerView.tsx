@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getDockerDesktopClient, md5, pipelineDisplayName, pipelinePath, vscodeURI } from '../../utils';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import RemovePipelineDialog from '../dialogs/RemovePipelineDialog';
@@ -8,7 +8,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import RunPipelineDialog from '../dialogs/RunPipelineDialog';
 import { useSelector } from 'react-redux';
 import {
-  Chip,
   Divider,
   Grid,
   IconButton,
@@ -16,8 +15,6 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Menu,
-  MenuItem,
   Stack,
   Tooltip,
   Typography
@@ -25,12 +22,12 @@ import {
 import { selectStagesByPipeline, refreshPipelines } from '../../features/pipelinesSlice';
 import { StepStatus } from '../StepStatus';
 import { LazyLog, ScrollFollow } from 'react-lazylog';
-import { useAppDispatch } from '../../app/hooks';
 import { RootState } from '../../app/store';
 import React from 'react';
 import _ from 'lodash';
-import { Stage, Status, Step } from '../../features/types';
+import { Stage, Status } from '../../features/types';
 import { ExecProcess } from '@docker/extension-api-client-types/dist/v1';
+import { useAppDispatch } from '../../app/hooks';
 
 function useQuery(loc) {
   const { search } = loc;
@@ -38,6 +35,7 @@ function useQuery(loc) {
 }
 
 export const StageRunnerView = (props) => {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [logs, setLogs] = useState('\n');
   const [refreshSelectedStep, setRefreshSelectedStep] = useState(false);
@@ -64,7 +62,7 @@ export const StageRunnerView = (props) => {
       setLogs('');
     }
     if (logReaderContainerID) {
-      // console.log('Show logs for Stage %s and step %s', JSON.stringify(stage), JSON.stringify(step));
+      // console.debug('Show logs for Stage %s and step %s', JSON.stringify(stage), JSON.stringify(step));
       let execCmdArgs = [];
       let execCmd: string;
       switch (step.status) {
@@ -86,19 +84,24 @@ export const StageRunnerView = (props) => {
             '--no-trunc'
           ]);
 
-          //console.log('Pipeline Step Container ID %s', JSON.stringify(out));
-          if (out.stdout) {
-            execCmd = 'logs';
-            execCmdArgs = ['--follow', out.stdout.trim()];
-          } else if (out.stderr) {
-            ddClient.desktopUI.toast.error(`Error while getting logs for step ${step.name} of stage ${stage.name}`);
+          console.debug('Pipeline Step Container ID %s', JSON.stringify(out));
+          if (!out.stdout && !out.stderr) {
+            execCmd = 'exec';
+            execCmdArgs = [logReaderContainerID, 'cat', `/data/logs/${stage.id}/${md5(step.name)}.log`];
+          } else {
+            if (out.stdout) {
+              execCmd = 'logs';
+              execCmdArgs = ['--follow', out.stdout.trim()];
+            } else if (out.stderr) {
+              ddClient.desktopUI.toast.error(`Error while getting logs for step ${step.name} of stage ${stage.name}`);
+            }
           }
           break;
         }
       }
 
       if (execCmd && execCmdArgs.length > 0) {
-        //console.log('Exec command %s', execCmd);
+        console.debug('Exec command %s', execCmd);
         const exec = await ddClient.docker.cli.exec(execCmd, execCmdArgs, {
           stream: {
             onOutput(data) {
@@ -146,7 +149,7 @@ export const StageRunnerView = (props) => {
 
   useEffect(() => {
     const wsPath = pipelinePath(pipelineFile);
-    //console.log('Workspace Path %s', wsPath);
+    console.debug('Workspace Path %s', wsPath);
     setWorkspacePath(wsPath);
 
     const runPipeline = query.get('runPipeline');
@@ -161,7 +164,7 @@ export const StageRunnerView = (props) => {
         "--format '{{.ID}}'",
         '--no-trunc'
       ]);
-      //console.log('Log Reader PS out %s', JSON.stringify(out));
+      console.debug('Log Reader PS out %s', JSON.stringify(out));
       if (out.stdout) {
         setLogReaderContainerID(out.stdout.trim());
       }
@@ -174,8 +177,54 @@ export const StageRunnerView = (props) => {
     };
   }, [pipelineFile]);
 
+  useEffect(() => {
+    let process;
+    const extensionContainersEvents = async () => {
+      console.debug("listening to extension's container events...");
+      process = await ddClient.docker.cli.exec(
+        'events',
+        [
+          '--format',
+          `"{{ json . }}"`,
+          '--filter',
+          'type=container',
+          '--filter',
+          'event=create',
+          '--filter',
+          'event=destroy',
+          '--filter',
+          'label=com.docker.compose.project=drone_drone-ci-docker-extension-desktop-extension',
+          '--filter',
+          'label=io.drone.desktop.ui.refresh=true'
+        ],
+        {
+          stream: {
+            onOutput() {
+              console.debug(data);
+              dispatch(refreshPipelines());
+            },
+            onError(error) {
+              console.error(error);
+            },
+            onClose(exitCode) {
+              console.debug('onClose with exit code ' + exitCode);
+            },
+            splitOutputLines: true
+          }
+        }
+      );
+    };
+
+    extensionContainersEvents();
+    return () => {
+      if (process) {
+        process.close();
+      }
+    };
+  }, []);
+
   useMemo(() => {
-    //console.log('Reader Log Container ID ' + logReaderContainerID);
+    console.debug('Reader Log Container ID ' + logReaderContainerID);
     let defaultStage = stages.find((s) => {
       const runningStep = s.steps.find((s2) => s2.status === Status.RUNNING);
       if (!runningStep) {
@@ -190,13 +239,13 @@ export const StageRunnerView = (props) => {
     }
     setRefreshSelectedStep(true);
     computeSelected(defaultStage);
-    //console.log('Default Stage %s', JSON.stringify(defaultStage));
+    console.debug('Default Stage %s', JSON.stringify(defaultStage));
   }, [logReaderContainerID]);
 
   const navigateToHome = async () => {
     setRemoveConfirm(false);
     const url = `/?extension_name=${query.get('extension_name')}&hasBackend=${query.get('hasBackend')}`;
-    //console.log('View Return URL %s', url);
+    console.debug('View Return URL %s', url);
     navigate(url, { replace: true });
   };
   /* Handlers */
@@ -214,13 +263,13 @@ export const StageRunnerView = (props) => {
   };
 
   const logHandler = (data: any | undefined, clean?: boolean) => {
-    //console.log('logHandler: clean : %s', clean);
+    console.debug('logHandler: clean : %s', clean);
     if (clean) {
       setLogs('');
     }
-    //console.log('Data %s', JSON.stringify(data));
+    console.debug('Data %s', JSON.stringify(data));
     if (data) {
-      //console.log('Running stage %s', JSON.stringify(data));
+      console.debug('Running stage %s', JSON.stringify(data));
       computeSelected(data.stage);
     }
   };

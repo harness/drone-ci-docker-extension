@@ -1,4 +1,4 @@
-module github.com/kameshsampath/drone-desktop-docker-extension
+module github.com/harness/drone-ci-docker-extension
 
 go 1.18
 

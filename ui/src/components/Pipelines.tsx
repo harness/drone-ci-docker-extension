@@ -81,7 +81,7 @@ export const Pipelines = () => {
 
   const PipelineRows = pipelines.map((row) => {
     const id = _.sumBy(row.stages, 'id');
-    // console.log('Row  ID %s : %s', id, row.pipelineFile);
+    // console.debug('Row  ID %s : %s', id, row.pipelineFile);
     return (
       <MemoizedPipelineRow
         key={id}

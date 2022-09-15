@@ -1,6 +1,6 @@
 package handler
 
-import "github.com/kameshsampath/drone-desktop-docker-extension/pkg/db"
+import "github.com/harness/drone-ci-docker-extension/pkg/db"
 
 type Handler struct {
 	DatabaseConfig *db.Config

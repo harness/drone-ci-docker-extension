@@ -15,8 +15,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/db"
-	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/utils"
+	"github.com/harness/drone-ci-docker-extension/pkg/db"
+	"github.com/harness/drone-ci-docker-extension/pkg/utils"
 	echo "github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"

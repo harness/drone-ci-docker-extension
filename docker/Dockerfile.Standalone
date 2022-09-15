@@ -117,4 +117,4 @@ COPY scripts/run-drone.sh /tools/run-drone
 RUN mkdir -p /data \
    && rm -rf /build
 
-CMD /backend -socket /run/guest-services/extension-drone-desktop.sock
+CMD /backend -socket /run/guest-services/extension-drone-ci.sock

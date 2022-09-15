@@ -5,7 +5,7 @@ import (
 
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/handler"
+	"github.com/harness/drone-ci-docker-extension/pkg/handler"
 	"github.com/sirupsen/logrus"
 	"github.com/uptrace/bun"
 )

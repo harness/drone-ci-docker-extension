@@ -6,7 +6,16 @@ import { DockerMuiThemeProvider } from '@docker/docker-mui-theme';
 import { App } from './App';
 import { Pipelines } from './components/Pipelines';
 import { StageRunnerView } from './components/views/StageRunnerView';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { StaticRouter } from 'react-router-dom/server';
+import { HashRouter, Route, Routes } from 'react-router-dom';
+
+const Router = (props: { children?: React.ReactNode }) => {
+  const { children } = props;
+  if (typeof window === 'undefined') {
+    return <StaticRouter location="/">{children}</StaticRouter>;
+  }
+  return <HashRouter>{children}</HashRouter>;
+};
 
 ReactDOM.render(
   <>
@@ -17,10 +26,10 @@ ReactDOM.render(
     */}
     <DockerMuiThemeProvider>
       <Provider store={store}>
-        <BrowserRouter>
+        <Router>
           <Routes>
             <Route
-              path="/"
+              path="/*"
               element={<App />}
             >
               <Route
@@ -29,11 +38,11 @@ ReactDOM.render(
               />
             </Route>
             <Route
-              path="run"
+              path="/run"
               element={<StageRunnerView />}
-            />
+            ></Route>
           </Routes>
-        </BrowserRouter>
+        </Router>
       </Provider>
     </DockerMuiThemeProvider>
   </>,

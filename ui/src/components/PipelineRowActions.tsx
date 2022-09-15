@@ -1,15 +1,16 @@
+import React, { useEffect } from 'react';
 import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { IconButton, Stack, Tooltip } from '@mui/material';
+import { createSearchParams, Link as RouterLink, LinkProps as RouterLinkProps } from 'react-router-dom';
+import { Button, IconButton, Link, Stack, Tooltip } from '@mui/material';
 import { vscodeURI } from '../utils';
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 import RemovePipelineDialog from './dialogs/RemovePipelineDialog';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
 
 export const PipelineRowActions = (props: { workspacePath: string; pipelineFile: string; logHandler; openHandler }) => {
-  const navigate = useNavigate();
-  const loc = useLocation();
-  const { pipelineFile, workspacePath, logHandler, openHandler } = props;
+  //!!!IMPORTANT - pass the location query params
+  const [runViewURL, setRunViewURL] = useState({});
+  const { pipelineFile, workspacePath } = props;
   const [removeConfirm, setRemoveConfirm] = useState(false);
 
   /* Handlers */
@@ -21,11 +22,24 @@ export const PipelineRowActions = (props: { workspacePath: string; pipelineFile:
     setRemoveConfirm(false);
   };
 
-  const navigateToView = () => {
-    const url = encodeURI(`run/${loc.search}&file=${pipelineFile}&runPipeline=true`);
-    //console.log('Pipeline Row Actions %s', url);
-    navigate(url, { replace: true });
-  };
+  useEffect(() => {
+    const url = {
+      pathname: '/run',
+      search: `?${createSearchParams({
+        file: pipelineFile
+      })}`
+    };
+    setRunViewURL(url);
+  }, [pipelineFile]);
+
+  const NavigateToRunView = React.forwardRef<any, Omit<RouterLinkProps, 'to'>>((props, ref) => (
+    <RouterLink
+      ref={ref}
+      to={runViewURL}
+      {...props}
+      role={undefined}
+    />
+  ));
 
   return (
     <Stack
@@ -33,7 +47,7 @@ export const PipelineRowActions = (props: { workspacePath: string; pipelineFile:
       spacing={2}
     >
       <Tooltip title="Run Pipeline">
-        <IconButton onClick={navigateToView}>
+        <IconButton component={NavigateToRunView}>
           <PlayCircleFilledWhiteIcon color="info" />
         </IconButton>
       </Tooltip>

@@ -23,11 +23,11 @@ export default function ImportOrLoadStages({ ...props }) {
     try {
       const response = (await ddClient.extension.vm.service.post('/stages', droneFiles)) as Stage[];
 
-      //console.log('API Response %s', JSON.stringify(response));
+      console.debug('API Response %s', JSON.stringify(response));
 
       //Group Stages
       const groupedStages = _.groupBy(response, 'pipelineFile');
-      //console.log('Grouped Stages %s', JSON.stringify(groupedStages));
+      console.debug('Grouped Stages %s', JSON.stringify(groupedStages));
 
       const pipelines = new Array<Pipeline>();
       for (const [key, value] of Object.entries(groupedStages)) {
@@ -42,7 +42,7 @@ export default function ImportOrLoadStages({ ...props }) {
         ddClient.desktopUI.toast.success(`Successfully imported stages`);
       }
     } catch (error) {
-      console.log(error);
+      console.debug(error);
       ddClient.desktopUI.toast.error(`Error importing pipelines : ${JSON.stringify(error)}`);
     } finally {
       setActionInProgress(false);
@@ -60,14 +60,14 @@ export default function ImportOrLoadStages({ ...props }) {
 
     try {
       const cmd = await ddClient.extension.host.cli.exec('pipelines-finder', ['-path', result.filePaths[0]]);
-      //console.log(' Pipeline find %s', JSON.stringify(cmd.stdout));
+      console.debug(' Pipeline find %s', JSON.stringify(cmd.stdout));
       if (cmd.stdout) {
         const droneFiles = JSON.parse(cmd.stdout);
-        //console.log('Drone files %s', droneFiles.length);
+        console.debug('Drone files %s', droneFiles.length);
         savePipelines(droneFiles);
       }
     } catch (err) {
-      console.log(err);
+      console.debug(err);
     }
   };
 

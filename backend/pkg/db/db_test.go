@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kameshsampath/drone-desktop-docker-extension/pkg/utils"
+	"github.com/harness/drone-ci-docker-extension/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dbfixture"

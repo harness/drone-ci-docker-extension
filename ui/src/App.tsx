@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Button, Grid, Stack, Typography } from '@mui/material';
 import ImportOrLoadStages from './components/dialogs/ImportOrLoadStages';
@@ -6,11 +6,13 @@ import { getDockerDesktopClient } from './utils';
 import { dataLoadStatus, importPipelines, refreshPipelines } from './features/pipelinesSlice';
 import { useAppDispatch } from './app/hooks';
 import { Pipelines } from './components/Pipelines';
+
 export function App() {
   const [openImportDialog, setOpenImportDialog] = useState<boolean>(false);
   const pipelinesStatus = useSelector(dataLoadStatus);
   const dispatch = useAppDispatch();
   const ddClient = getDockerDesktopClient();
+
   /* Handlers */
   const handleImportPipeline = () => {
     setOpenImportDialog(true);
@@ -22,13 +24,14 @@ export function App() {
   /* End of Handlers */
 
   useEffect(() => {
-    //console.log('pipelinesStatus %s', pipelinesStatus);
+    console.debug('pipelinesStatus %s', pipelinesStatus);
     if (pipelinesStatus === 'idle') {
       dispatch(importPipelines());
     }
+    let process;
     const extensionContainersEvents = async () => {
-      //console.log("listening to extension's container events...");
-      await ddClient.docker.cli.exec(
+      console.debug("listening to extension's container events...");
+      process = await ddClient.docker.cli.exec(
         'events',
         [
           '--format',
@@ -40,21 +43,21 @@ export function App() {
           '--filter',
           'event=destroy',
           '--filter',
-          'label=com.docker.compose.project=drone_drone-desktop-docker-extension-desktop-extension',
+          'label=com.docker.compose.project=drone_drone-ci-docker-extension-desktop-extension',
           '--filter',
           'label=io.drone.desktop.ui.refresh=true'
         ],
         {
           stream: {
             onOutput() {
-              //console.log(data);
+              console.debug(data);
               dispatch(refreshPipelines());
             },
             onError(error) {
               console.error(error);
             },
             onClose(exitCode) {
-              console.log('onClose with exit code ' + exitCode);
+              console.debug('onClose with exit code ' + exitCode);
             },
             splitOutputLines: true
           }
@@ -63,6 +66,11 @@ export function App() {
     };
 
     extensionContainersEvents();
+    return () => {
+      if (process) {
+        process.close();
+      }
+    };
   }, []);
 
   return (
