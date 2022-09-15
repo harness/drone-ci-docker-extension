@@ -1,0 +1,124 @@
+[
+  {
+    "id": 1,
+    "pipelineFile": "/tmp/examples/hello-world/.drone.yml",
+    "pipelinePath": "/tmp/examples/hello-world",
+    "name": "default",
+    "status": 0,
+    "Steps": [
+      {
+        "id": 1,
+        "name": "unit test",
+        "image": "kameshsampath/drone-java-maven-plugin:v1.0.3",
+        "status": 0
+      },
+      {
+        "id": 2,
+        "name": "package as jar",
+        "image": "kameshsampath/drone-java-maven-plugin:v1.0.3",
+        "status": 0
+      },
+      {
+        "id": 3,
+        "name": "push image to registry",
+        "image": "plugins/docker",
+        "status": 0
+      },
+      {
+        "id": 4,
+        "name": "deploy app to k8s",
+        "image": "kameshsampath/kube-dev-tools",
+        "status": 0
+      }
+    ],
+    "logs": ""
+  },
+  {
+    "id": 2,
+    "pipelineFile": "/tmp/examples/long-run-demo/.drone.yml",
+    "pipelinePath": "/tmp/examples/long-run-demo",
+    "name": "sleep-demos",
+    "status": 0,
+    "Steps": [
+      { "id": 5, "name": "sleep5", "image": "busybox", "status": 0 },
+      { "id": 6, "name": "an error step", "image": "busybox", "status": 0 }
+    ],
+    "logs": ""
+  },
+  {
+    "id": 3,
+    "pipelineFile": "/tmp/examples/multi-stage/.drone.yml",
+    "pipelinePath": "/tmp/examples/multi-stage",
+    "name": "default",
+    "status": 0,
+    "Steps": [
+      { "id": 7, "name": "hello world", "image": "busybox", "status": 0 },
+      { "id": 8, "name": "good bye world", "image": "busybox", "status": 0 }
+    ],
+    "logs": ""
+  },
+  {
+    "id": 4,
+    "pipelineFile": "/tmp/examples/multi-stage/.drone.yml",
+    "pipelinePath": "/tmp/examples/multi-stage",
+    "name": "use-env",
+    "status": 0,
+    "Steps": [
+      {
+        "id": 9,
+        "name": "display enviornment variables",
+        "image": "busybox",
+        "status": 0
+      }
+    ],
+    "logs": ""
+  },
+  {
+    "id": 5,
+    "pipelineFile": "/tmp/examples/multi-stage/.drone.yml",
+    "pipelinePath": "/tmp/examples/multi-stage",
+    "name": "use-secret",
+    "status": 0,
+    "Steps": [
+      {
+        "id": 10,
+        "name": "display secret variables",
+        "image": "ubuntu",
+        "status": 0
+      }
+    ],
+    "logs": ""
+  },
+  {
+    "id": 6,
+    "pipelineFile": "/tmp/examples/use-env/.drone.yml",
+    "pipelinePath": "/tmp/examples/use-env",
+    "name": "default",
+    "status": 0,
+    "Steps": [
+      {
+        "id": 11,
+        "name": "display environment variables",
+        "image": "busybox",
+        "status": 0
+      }
+    ],
+    "logs": ""
+  },
+  {
+    "id": 7,
+    "pipelineFile": "/tmp/examples/use-secrets/.drone.yml",
+    "pipelinePath": "/tmp/examples/use-secrets",
+    "name": "default",
+    "status": 0,
+    "Steps": [
+      {
+        "id": 12,
+        "name": "display secret variables",
+        "image": "ubuntu",
+        "status": 0
+      }
+    ],
+    "logs": ""
+  }
+]

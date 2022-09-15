@@ -8,3 +8,8 @@ data
 .drone.local
 .cache
 !ui/.env
+!bin
+backend/demo.db
+test.db
+ui/.pnpm-store
+backend/work

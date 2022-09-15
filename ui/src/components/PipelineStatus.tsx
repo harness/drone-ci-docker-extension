@@ -1,47 +1,44 @@
 import { Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { useAppDispatch } from '../app/hooks';
-import { updateStepCount } from '../features/pipelinesSlice';
-import { getDockerDesktopClient } from '../utils';
+import { useSelector } from 'react-redux';
+import { RootState } from '../app/store';
+import { selectPipelineStatus } from '../features/pipelinesSlice';
 
 export const PipelineStatus = (props) => {
-  const dispatch = useAppDispatch();
-  const { status, pipelineID, pipelineFile } = props;
+  const { pipelineFile } = props;
+  const pipelineStatus = useSelector((state: RootState) => selectPipelineStatus(state, pipelineFile));
   const [statusColor, setStatusColor] = useState('info');
   const [statusText, setStatusText] = useState('');
-  //console.log('Pipeline Status' + JSON.stringify(status));
 
   useEffect(() => {
-    const countSteps = async () => {
-      const out = await getDockerDesktopClient().extension.host.cli.exec('yq', ["'.steps|length'", pipelineFile]);
-      //console.log('Pipeline ' + pipelineFile + ' has ' + out.stdout + ' steps');
-      if (out && out.stdout) {
-        dispatch(updateStepCount({ pipelineID, status: { total: parseInt(out.stdout) } }));
-      }
-    };
-    countSteps();
-  }, []);
+    //console.debug('pipelineFile %s Status %s', pipelineFile, pipelineStatus);
 
-  useEffect(() => {
-    if (status?.running > 0 && status?.running != status?.done) {
-      setStatusColor('warning');
-      setStatusText(`${status.running}/${status.total}(running)`);
-    } else if (status?.error > 0) {
-      setStatusColor('error');
-      setStatusText(`${status.error}/${status.total}(errored)`);
-    } else if (status?.done == status.total) {
-      setStatusColor('success');
-      setStatusText(`${status.done}/${status.total}(completed)`);
-    } else {
-      setStatusColor('primary');
-      setStatusText(`0/${status?.total}`);
+    switch (pipelineStatus) {
+      case 1:
+        setStatusColor('green');
+        setStatusText('success');
+        break;
+      case 2:
+        setStatusColor('orange');
+        setStatusText('running');
+        break;
+      case 3:
+        setStatusColor('error');
+        setStatusText('error');
+        break;
+      default:
+        setStatusColor('primary');
+        setStatusText('none');
+        break;
     }
-  }, [status]);
+  }, []);
 
   return (
     <Typography
-      variant="body1"
+      variant="caption"
       color={statusColor}
+      fontSize="small"
+      fontWeight="bold"
     >
       {statusText}
     </Typography>

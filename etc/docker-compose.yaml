@@ -1,0 +1,25 @@
+services:
+  drone-ci-docker-extension:
+    image: ${DESKTOP_PLUGIN_IMAGE}
+    volumes:
+      - type: volume
+        source: drone-ci-data
+        target: /data
+      #https://docs.docker.com/desktop/extensions-sdk/extensions/METADATA/#use-the-docker-socket-from-your-extension-backend
+      - /var/run/docker.sock.raw:/var/run/docker.sock
+  log-reader:
+    container_name: log-reader
+    depends_on:
+      - drone-ci-docker-extension
+    image: ubuntu
+    command:
+     - tail 
+     - -f 
+     - /dev/null
+    volumes:
+      - type: volume
+        source: drone-ci-data
+        target: /data
+        read_only: true
+volumes:
+  drone-ci-data:

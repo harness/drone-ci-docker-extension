@@ -1,9 +1,0 @@
-services:
-  drone-desktop:
-    image: ${DESKTOP_PLUGIN_IMAGE}
-    volumes:
-      - type: volume
-        source: drone-desktop-data
-        target: /data
-volumes:
-  drone-desktop-data:

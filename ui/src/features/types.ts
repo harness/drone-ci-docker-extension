@@ -7,6 +7,13 @@ export enum EventStatus {
   PULL = 'pull'
 }
 
+export const enum Status {
+  NONE = 0,
+  SUCCESS,
+  RUNNING,
+  ERROR
+}
+
 export interface Event {
   status: EventStatus;
   id: string;
@@ -22,25 +29,33 @@ export interface Event {
 //in the UI
 export interface Step {
   stepContainerId: string;
-  pipelineFQN: string;
-  stepName: string;
-  stepImage: string;
-  status: string;
+  id?: string;
+  name: string;
+  image: string;
+  status: Status;
 }
 
 //Pipeline defines the single Pipeline row that is displayed
 //in the UI
 export interface Pipeline {
+  pipelineFile: string;
+  stages: Stage[];
+  logs?: string;
+  status?: Status;
+}
+
+export interface Stage {
   id: string;
-  pipelineName: string;
+  name: string;
   pipelinePath: string;
   pipelineFile: string;
-  status: PipelineStatus;
+  status: Status;
   steps: Step[];
 }
 
 export interface StepPayload {
   pipelineID: string;
+  stageName: string;
   step: Step;
 }
 
@@ -57,6 +72,6 @@ export interface PipelineStatus {
 }
 
 export interface PipelinesState {
-  status: 'idle' | 'loading' | 'failed' | 'loaded';
+  status: 'idle' | 'loading' | 'failed' | 'loaded' | 'refreshed';
   rows: Pipeline[];
 }

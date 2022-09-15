@@ -1,0 +1,33 @@
+# TODO improve and update linters as the app is built
+run:
+  timeout: 5m
+  skip-dirs:
+    - .github
+
+linters:
+  enable:
+    - asciicheck
+    - deadcode
+    - revive
+    - gosimple
+    - govet
+    - ineffassign
+    - errname
+    - errorlint
+    - stylecheck
+    - structcheck
+    - gosec
+    - prealloc
+    - unparam
+    - unused
+    - whitespace
+    - ifshort
+    - unconvert
+  disable:
+    - errcheck
+
+linters-settings:
+  gosec:
+    excludes:
+      - 'G401' # ignore md5 rules as its used only for hashing trivial value
+      - 'G501' # ignore md5 rules as its used only for hashing trivial value

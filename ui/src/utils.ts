@@ -1,7 +1,7 @@
 import { createDockerDesktopClient } from '@docker/extension-api-client';
 import { DockerDesktopClient } from '@docker/extension-api-client-types/dist/v1';
 import { Md5 } from 'ts-md5/dist/md5';
-import { Step } from './features/types';
+import { Status, Step } from './features/types';
 
 let client: DockerDesktopClient;
 
@@ -12,16 +12,24 @@ export function getDockerDesktopClient() {
   return client;
 }
 
-export function pipelineFQN(pipelinePath: string, pipelineName: string): string {
-  if (pipelineName.indexOf('/') != -1) {
-    pipelineName = pipelineName.split('/')[1];
+export function pipelineFQN(pipelinePath: string, stageName: string): string {
+  if (stageName.indexOf('/') != -1) {
+    stageName = stageName.split('/')[1];
   }
-  return `${pipelinePath.replaceAll('/', '-')}~~${pipelineName}`;
+  return `${pipelinePath.replaceAll('/', '-')}~~${stageName}`;
 }
 
-export function pipelineDisplayName(pipelinePath: string, pipelineName: string): string {
-  const paths = pipelinePath.split('/');
-  return `${paths[paths.length - 1]}/${pipelineName}`;
+export function pipelineDisplayName(pipelineFile: string): string {
+  const paths = pipelineFile.split('/');
+  const pipelineDirLastPath = [paths[paths.length - 2]];
+  const piplineFileLastPath = [paths[paths.length - 1]];
+  return `${pipelineDirLastPath}/${piplineFileLastPath}`;
+}
+
+export function pipelinePath(pipelineFile: string): string {
+  const paths = pipelineFile.split('/');
+  const pipelineFileDirs = paths.slice(0, paths.length - 1);
+  return pipelineFileDirs.join('/');
 }
 
 export function vscodeURI(pipelinePath: string): string {
@@ -35,19 +43,18 @@ export function md5(str): string {
 export async function getStepsCount(pipelinePath: string): Promise<number> {
   const out = await getDockerDesktopClient().extension.host.cli.exec('yq', ["'.steps|length'", pipelinePath]);
   if (out.stdout) {
-    console.log(`Pipeline ${pipelinePath} has ${out.stdout} steps`);
+    console.debug(`Pipeline ${pipelinePath} has ${out.stdout} steps`);
     return parseInt(out.stdout);
   }
   return 0;
 }
 
-export function extractStepInfo(event: any, eventActorID: string, pipelineDir: string, status: string): Step {
-  const pipelineName = event.Actor.Attributes['io.drone.stage.name'];
+export function extractStepInfo(event: any, eventActorID: string, pipelineDir: string, status: Status): Step {
+  const stageName = event.Actor.Attributes['io.drone.stage.name'];
   return {
     stepContainerId: eventActorID,
-    pipelineFQN: pipelineFQN(pipelineDir, pipelineName),
-    stepName: event.Actor.Attributes['io.drone.step.name'],
-    stepImage: event.Actor.Attributes['image'],
+    name: event.Actor.Attributes['io.drone.step.name'],
+    image: event.Actor.Attributes['image'],
     status: status
   };
 }

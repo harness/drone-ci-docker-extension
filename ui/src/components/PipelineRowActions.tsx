@@ -1,22 +1,17 @@
-import { IconButton, Stack, Tooltip } from '@mui/material';
-import { getDockerDesktopClient, vscodeURI } from '../utils';
-import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
+import React, { useEffect } from 'react';
 import { useState } from 'react';
-import RemovePipelineDialog from './RemovePipelineDialog';
+import { createSearchParams, Link as RouterLink, LinkProps as RouterLinkProps } from 'react-router-dom';
+import { Button, IconButton, Link, Stack, Tooltip } from '@mui/material';
+import { vscodeURI } from '../utils';
+import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
+import RemovePipelineDialog from './dialogs/RemovePipelineDialog';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
-import RunPipelineDialog from './RunPipelineDialog';
 
-export const PipelineRowActions = (props: {
-  pipelineID: string;
-  workspacePath: string;
-  pipelineName: string;
-  pipelineFile: string;
-  logHandler;
-  openHandler;
-}) => {
-  const { pipelineID, pipelineFile, workspacePath, logHandler, openHandler } = props;
+export const PipelineRowActions = (props: { workspacePath: string; pipelineFile: string; logHandler; openHandler }) => {
+  //!!!IMPORTANT - pass the location query params
+  const [runViewURL, setRunViewURL] = useState({});
+  const { pipelineFile, workspacePath } = props;
   const [removeConfirm, setRemoveConfirm] = useState(false);
-  const [openRunPipeline, setOpenRunPipeline] = useState(false);
 
   /* Handlers */
   const handleDeletePipelines = () => {
@@ -27,13 +22,25 @@ export const PipelineRowActions = (props: {
     setRemoveConfirm(false);
   };
 
-  const handleRunPipeline = () => {
-    setOpenRunPipeline(true);
-  };
+  useEffect(() => {
+    const url = {
+      pathname: '/run',
+      search: `?${createSearchParams({
+        file: pipelineFile,
+        runPipeline: 'true'
+      })}`
+    };
+    setRunViewURL(url);
+  }, [pipelineFile]);
 
-  const handleRunPipelineDialogClose = () => {
-    setOpenRunPipeline(false);
-  };
+  const NavigateToRunView = React.forwardRef<any, Omit<RouterLinkProps, 'to'>>((props, ref) => (
+    <RouterLink
+      ref={ref}
+      to={runViewURL}
+      {...props}
+      role={undefined}
+    />
+  ));
 
   return (
     <Stack
@@ -41,7 +48,7 @@ export const PipelineRowActions = (props: {
       spacing={2}
     >
       <Tooltip title="Run Pipeline">
-        <IconButton onClick={handleRunPipeline}>
+        <IconButton component={NavigateToRunView}>
           <PlayCircleFilledWhiteIcon color="info" />
         </IconButton>
       </Tooltip>
@@ -65,20 +72,8 @@ export const PipelineRowActions = (props: {
       {removeConfirm && (
         <RemovePipelineDialog
           open={removeConfirm}
-          selectedToRemove={[pipelineID]}
+          selectedToRemove={[pipelineFile]}
           onClose={handleRemoveDialogClose}
-        />
-      )}
-
-      {openRunPipeline && (
-        <RunPipelineDialog
-          open={openRunPipeline}
-          onClose={handleRunPipelineDialogClose}
-          pipelineID={pipelineID}
-          pipelineFile={pipelineFile}
-          workspacePath={workspacePath}
-          logHandler={logHandler}
-          openHandler={openHandler}
         />
       )}
     </Stack>

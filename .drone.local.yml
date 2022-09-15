@@ -13,13 +13,69 @@ steps:
     pull: if-not-exists
     environment:
       CGO_ENABLED: "0"
-      GITHUB_TOKEN:
-        from_secret: github_token
     commands:
-      - goreleaser release --snapshot --rm-dist --debug
+      - cd backend
+      - goreleaser build --snapshot --rm-dist --debug
 
   - name: ui-build
-    image: node:17.7-alpine3.14
+    image: node:17.7-buster
+    pull: if-not-exists
+    environment:
+      # this is required by Docker Extension to load
+      # static files from extension path on the Host
+      PUBLIC_URL: .
+      BROWSER: none
+    commands:
+      - cd ui
+      - curl -f https://get.pnpm.io/v6.16.js | node - add --global pnpm@7
+      - pnpm install
+      - pnpm run clean && pnpm run build
+
+  - name: Publish Dev Build arm64
+    image: plugins/docker
+    pull: if-not-exists
+    settings:
+      tags:
+       - latest
+      dry_run: true
+      purge: false
+      daemon_off: true
+      dockerfile: docker/Dockerfile.linux.arm64
+      registry: docker.io
+      repo:
+        from_secret: destination_image
+      username:
+        from_secret: image_registry_username
+      password:
+        from_secret: image_registry_password
+    volumes:
+    - name: dockersock
+      path: /var/run/docker.sock
+
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/docker.sock
+---
+kind: pipeline
+type: docker
+name: linux-amd64
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+  - name: goreleaser
+    image: goreleaser/goreleaser
+    pull: if-not-exists
+    environment:
+      CGO_ENABLED: "0"
+    commands:
+      - goreleaser build --snapshot --rm-dist --debug
+
+  - name: ui-build
+    image: node:17.7-buster
     environment:
       CI: false
       # this is required by Docker Extension to load
@@ -28,31 +84,18 @@ steps:
       BROWSER: none
     commands:
       - cd ui
-      - npm ci
-      - npm run build
-
-  - name: Publish Dev Build arm64
-    image: plugins/docker
-    pull: if-not-exists
-    settings:
-      auto_tag: true
-      auto_tag_suffix: linux-arm64
-      dockerfile: docker/Dockerfile.linux.arm64
-      registry:
-        from_secret: image_registry
-      repo:
-        from_secret: destination_image
-      username:
-        from_secret: image_registry_username
-      password:
-        from_secret: image_registry_password
-
+      - curl -f https://get.pnpm.io/v6.16.js | node - add --global pnpm@7
+      - pnpm install
+      - pnpm build
   - name: Publish Dev Build amd64
     image: plugins/docker
     pull: if-not-exists
     settings:
-      auto_tag: true
-      auto_tag_suffix: linux-amd64
+      dry_run: true
+      purge: false
+      daemon_off: true
+      tags:
+      - latest
       dockerfile: docker/Dockerfile.linux.amd64
       registry:
         from_secret: image_registry
@@ -62,15 +105,11 @@ steps:
         from_secret: image_registry_username
       password:
         from_secret: image_registry_password
+    volumes:
+    - name: dockersock
+      path: /var/run/docker.sock
 
-  - name: Publish Dev Manifests
-    image: plugins/manifest:1.2
-    settings:
-      tags:
-        - latest
-      ignore_missing: true
-      spec: docker/manifest.local.tmpl
-      username:
-        from_secret: image_registry_username
-      password:
-        from_secret: image_registry_password
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/docker.sock

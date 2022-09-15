@@ -107,8 +107,9 @@ steps:
       BROWSER: none
     commands:
       - cd ui
-      - npm ci
-      - npm run build
+      - curl -f https://get.pnpm.io/v6.16.js | node - add --global pnpm@7
+      - pnpm install
+      - pnpm run clean && pnpm run build
 
   - name: Publish GA
     image: plugins/docker
@@ -206,8 +207,9 @@ steps:
       BROWSER: none
     commands:
       - cd ui
-      - npm ci
-      - npm run build
+      - curl -f https://get.pnpm.io/v6.16.js | node - add --global pnpm@7
+      - pnpm install
+      - pnpm run clean && pnpm run build
 
   - name: Publish GA
     image: plugins/docker
