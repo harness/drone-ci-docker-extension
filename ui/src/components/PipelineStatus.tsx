@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../app/store';
 import { selectPipelineStatus } from '../features/pipelinesSlice';
-import { Status } from '../features/types';
 
 export const PipelineStatus = (props) => {
   const { pipelineFile } = props;
@@ -12,7 +11,7 @@ export const PipelineStatus = (props) => {
   const [statusText, setStatusText] = useState('');
 
   useEffect(() => {
-    console.debug('pipelineFile %s Status %s', pipelineFile, pipelineStatus);
+    //console.debug('pipelineFile %s Status %s', pipelineFile, pipelineStatus);
 
     switch (pipelineStatus) {
       case 1:

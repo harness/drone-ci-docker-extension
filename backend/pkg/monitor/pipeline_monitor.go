@@ -95,6 +95,7 @@ func (c *Config) MonitorAndLog() {
 				var stage = &db.Stage{}
 				count, err := dbConn.NewSelect().
 					Model(stage).
+					Relation("Steps").
 					Where("name = ? and pipeline_path = ? ", stageName, pipelineDir).
 					ScanAndCount(c.Ctx)
 				if err != nil {
@@ -111,18 +112,31 @@ func (c *Config) MonitorAndLog() {
 					}
 					switch msg.Status {
 					case "start":
-						log.Tracef("Step Name %s", stepName)
+						log.Infof("Starting Step Name %s", stepName)
 						go c.writeLogs(pipelineLogPath, actor.Attributes)
-						c.updateStatuses(stage, stepName, db.Running)
+						//Resetting the status of the steps
+						//All steps from the current step identified by stepName
+						//are set to status == db.None
+						stepIdx := getRunningStepIndex(stage, stepName)
+						//currently running step will have running status
+						stage.Steps[stepIdx].Status = db.Running
+						for i := stepIdx + 1; i < len(stage.Steps); i++ {
+							stage.Steps[i].Status = db.None
+						}
+						//update the stage to be running if current step is the first step
+						c.updateStatuses(stage, stepIdx == 0)
 					case "die":
-						log.Tracef("Step Name %s", stepName)
+						log.Infof("Dying Step Name %s, attributes %#v", stepName, actor.Attributes)
+						stepIdx := getRunningStepIndex(stage, stepName)
 						var stepStatus db.Status
 						if actor.Attributes["exitCode"] == "0" {
 							stepStatus = db.Success
 						} else {
 							stepStatus = db.Error
 						}
-						c.updateStatuses(stage, stepName, stepStatus)
+						stage.Steps[stepIdx].Status = stepStatus
+						//update the overall stage status only if the current step is last step
+						c.updateStatuses(stage, stepIdx == len(stage.Steps)-1)
 					default:
 						//no requirement to handle other cases
 					}
@@ -134,18 +148,31 @@ func (c *Config) MonitorAndLog() {
 	}
 }
 
-func (c *Config) updateStatuses(stage *db.Stage, stepName string, stepStatus db.Status) {
+func getRunningStepIndex(stage *db.Stage, stepName string) int {
+	var stepIdx int
+	for i, st := range stage.Steps {
+		if st.Name == stepName {
+			stepIdx = i
+			break
+		}
+	}
+	return stepIdx
+}
+
+func (c *Config) updateStatuses(stage *db.Stage, updateStage bool) {
 	dbConn := c.DB
 	log := c.Log
 	if err := dbConn.RunInTx(c.Ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		log.Debugf("Updating Status for stage %#v and steps %s", stage, stepName)
+		log.Debugf("Updating Status for stage %s of pipeline %s", stage.Name, stage.PipelineFile)
 
-		if err := updateStepStatus(c.Ctx, dbConn, stage, stepStatus, stepName); err != nil {
+		if err := updateStepStatus(c.Ctx, dbConn, stage.Steps); err != nil {
 			return err
 		}
 
-		if err := updateStageStatus(c.Ctx, dbConn, stage); err != nil {
-			return err
+		if updateStage {
+			if err := updateStageStatus(c.Ctx, dbConn, stage); err != nil {
+				return err
+			}
 		}
 		return utils.TriggerUIRefresh(c.Ctx, c.DockerCli, c.Log)
 	}); err != nil {
@@ -154,21 +181,14 @@ func (c *Config) updateStatuses(stage *db.Stage, stepName string, stepStatus db.
 }
 
 func updateStageStatus(ctx context.Context, dbConn bun.IDB, stage *db.Stage) error {
-	log.Debugf("Updating Status for stage %#v", stage)
-	err := dbConn.NewSelect().
-		Model(stage).
-		Relation("Steps").
-		WherePK().
-		Scan(ctx)
-	if err != nil {
-		return err
-	}
 	var status db.Status
 	for _, step := range stage.Steps {
-		status = status | step.Status
+		if step.Status > status {
+			status = step.Status
+		}
 	}
 	stage.Status = status
-	_, err = dbConn.NewUpdate().
+	_, err := dbConn.NewUpdate().
 		Model(stage).
 		WherePK().
 		Exec(ctx)
@@ -176,39 +196,29 @@ func updateStageStatus(ctx context.Context, dbConn bun.IDB, stage *db.Stage) err
 		return err
 	}
 
-	log.Debugf("Updated Status for stage %#v", stage)
+	log.Infof("Updated Status for stage %s with status %s", stage.Name, stage.Status)
 
 	return nil
 }
 
-func updateStepStatus(ctx context.Context, dbConn bun.IDB, stage *db.Stage, status db.Status, stepName string) error {
-	var step = &db.StageStep{
-		Name: stepName,
-	}
+func updateStepStatus(ctx context.Context, dbConn bun.IDB, steps db.Steps) error {
+	values := dbConn.NewValues(&steps)
 
-	log.Debugf("Updating Step %#v for stage %#v", step, stage)
-
-	err := dbConn.NewSelect().
-		Model(step).
-		Where("stage_id=? and name = ?", stage.ID, stepName).
-		Scan(ctx)
-
-	if err != nil {
-		return err
-	}
-
-	step.Status = status
-
-	_, err = dbConn.NewUpdate().
-		Model(step).
-		WherePK().
+	_, err := dbConn.NewUpdate().
+		With("_data", values).
+		Model((*db.StageStep)(nil)).
+		Table("_data").
+		Set("status = _data.status").
+		Where("st.id = _data.id").
 		Exec(ctx)
 
 	if err != nil {
 		return err
 	}
 
-	log.Debugf("Updating Step %#v for stage %#v", step, stage)
+	for _, step := range steps {
+		log.Infof("Updated Step %s with status %s", step.Name, step.Status)
+	}
 
 	return nil
 }

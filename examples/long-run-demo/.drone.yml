@@ -4,25 +4,26 @@ name: sleep-demos
 platform:
   os: linux
   arch: arm64
-steps: 
-  - name: sleep5
+steps:
+  - name: say hello on fedora
     image: fedora
     commands:
-    - x=0;while [ $x -lt 10 ]; do echo "hello"; sleep 1; x=$((x+1)); done
-  
-  - name: say good bye
+      - x=0;while [ $x -lt 15 ]; do echo "hello"; sleep 1; x=$((x+1)); done
+
+  - name: say good bye from busy box
     image: busybox
     pull: if-not-exists
     commands:
-    - x=0;while [ $x -lt 5 ]; do echo "good bye"; sleep 1; x=$((x+1)); done
+      - x=0;while [ $x -lt 15 ]; do echo "good bye"; sleep 1; x=$((x+1)); done
+
+  - name: sleep for 30 seconds
+    image: busybox
+    pull: if-not-exists
+    commands:
+      - x=0;while [ $x -lt 30 ]; do echo "sleeping"; sleep 1; x=$((x+1)); done
 
   - name: an error step
     image: busybox
     pull: if-not-exists
     commands:
-    - yq --help
-  # - name: sleep-5m
-  #   image: busybox
-  # pull: if-not-exists
-  #   commands:
-  #   - sleep 5m
+      - yq --help

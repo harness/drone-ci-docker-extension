@@ -54,6 +54,7 @@ export default function ImportOrLoadStages({ ...props }) {
       properties: ['openDirectory'],
       message: 'Select base directory to discover pipelines'
     });
+
     if (result.canceled) {
       return;
     }
@@ -65,9 +66,13 @@ export default function ImportOrLoadStages({ ...props }) {
         const droneFiles = JSON.parse(cmd.stdout);
         console.debug('Drone files %s', droneFiles.length);
         savePipelines(droneFiles);
+      } else if (cmd.stderr) {
+        ddClient.desktopUI.toast.error(`Error importing pipelines : ${JSON.stringify(cmd.stderr)}`);
       }
     } catch (err) {
-      console.debug(err);
+      console.debug(JSON.stringify(err));
+      props.onClose();
+      ddClient.desktopUI.toast.error(`Error importing pipelines : ${JSON.stringify(err.stderr)}`);
     }
   };
 
@@ -107,6 +112,7 @@ export default function ImportOrLoadStages({ ...props }) {
       <DialogActions>
         <Button
           variant="outlined"
+          disabled={actionInProgress}
           onClick={() => {
             props.onClose();
           }}
@@ -115,6 +121,7 @@ export default function ImportOrLoadStages({ ...props }) {
         </Button>
         <Button
           variant="contained"
+          disabled={actionInProgress}
           onClick={selectStageFromDir}
         >
           Search

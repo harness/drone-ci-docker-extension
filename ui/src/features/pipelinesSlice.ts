@@ -26,14 +26,18 @@ export const selectPipelineStatus = createSelector(
   [selectPipelines, (state, pipelineFile) => pipelineFile],
   (pipelines, pipelineFile) => {
     const pipeline = pipelines.find((p) => p.pipelineFile === pipelineFile);
-    //Combined status of all stage statuses
-    let status: Status;
-    const stages = pipeline.stages;
-    stages.forEach((stage) => {
-      const steps = stage.steps;
-      status = steps.reduce((result, item) => result | item.status, Status.NONE);
-    });
-    return status;
+    let defaultStage: Stage;
+    if (pipeline.stages.length === 1) {
+      defaultStage = pipeline.stages[0];
+    } else {
+      defaultStage = pipeline.stages.find((s) => s.name === 'default');
+    }
+    if (defaultStage) {
+      console.debug('Pipeline Status %s', JSON.stringify(defaultStage.status));
+      return defaultStage.status;
+    }
+
+    return Status.NONE;
   }
 );
 

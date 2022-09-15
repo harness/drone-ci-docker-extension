@@ -26,7 +26,9 @@ func (s Status) String() string {
 	case 1:
 		return "success"
 	case 2:
-		return "failed"
+		return "running"
+	case 3:
+		return "error"
 	default:
 		return "none"
 	}

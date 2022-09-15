@@ -22,8 +22,7 @@ func main() {
 
 	flag.StringVar(&socketPath, "socket", "/run/guest/volumes-service.sock", "Unix domain socket to listen on")
 	flag.StringVar(&dbFile, "dbPath", utils.LookupEnvOrString("DB_FILE", "/data/db"), "File to store the Drone Pipeline Info")
-	//TODO revert to warn after testing
-	flag.StringVar(&v, "level", utils.LookupEnvOrString("LOG_LEVEL", logrus.DebugLevel.String()), "The log level to use. Allowed values trace,debug,info,warn,fatal,panic.")
+	flag.StringVar(&v, "level", utils.LookupEnvOrString("LOG_LEVEL", logrus.WarnLevel.String()), "The log level to use. Allowed values trace,debug,info,warn,fatal,panic.")
 	flag.Parse()
 
 	os.RemoveAll(socketPath)
