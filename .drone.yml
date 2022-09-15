@@ -49,6 +49,7 @@ steps:
       GITHUB_TOKEN:
         from_secret: extn_github_token
     commands:
+      - cd backend
       - goreleaser release --rm-dist
 ---
 kind: pipeline
@@ -79,6 +80,7 @@ steps:
     environment:
       CGO_ENABLED: "0"
     commands:
+      - cd backend
       - goreleaser build --snapshot --rm-dist --debug
     when:
       event:
@@ -92,6 +94,7 @@ steps:
     environment:
       CGO_ENABLED: "0"
     commands:
+      - cd backend
       - goreleaser build --rm-dist
     when:
       event:
@@ -179,6 +182,7 @@ steps:
     environment:
       CGO_ENABLED: "0"
     commands:
+      - cd backend
       - goreleaser build --snapshot --rm-dist --debug
     when:
       event:
@@ -192,6 +196,7 @@ steps:
     environment:
       CGO_ENABLED: "0"
     commands:
+      - cd backend
       - goreleaser build --rm-dist
     when:
       event:
