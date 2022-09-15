@@ -101,7 +101,7 @@ steps:
         - tag
 
   - name: ui-build
-    image: node:17.7-alpine3.14
+    image: node:17.7-buster
     environment:
       CI: false
       # this is required by Docker Extension to load
@@ -203,7 +203,7 @@ steps:
         - tag
 
   - name: ui-build
-    image: node:17.7-alpine3.14
+    image: node:17.7-buster
     environment:
       CI: false
       # this is required by Docker Extension to load
