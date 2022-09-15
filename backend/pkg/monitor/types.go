@@ -29,7 +29,9 @@ type Monitor interface {
 type Option func(*Config)
 
 const (
-	labelPipelineDir = "io.drone.desktop.pipeline.dir"
-	labelStageName   = "io.drone.stage.name"
-	labelStepName    = "io.drone.step.name"
+	labelPipelineFile = "io.drone.desktop.pipeline.file"
+	labelIncludes     = "io.drone.desktop.pipeline.includes"
+	labelExcludes     = "io.drone.desktop.pipeline.excludes"
+	labelStageName    = "io.drone.stage.name"
+	labelStepName     = "io.drone.step.name"
 )

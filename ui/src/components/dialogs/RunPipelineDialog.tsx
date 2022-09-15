@@ -23,7 +23,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import SearchIcon from '@mui/icons-material/Search';
 import InfoIcon from '@mui/icons-material/Info';
 import BackspaceIcon from '@mui/icons-material/Backspace';
-import { getDockerDesktopClient } from '../../utils';
+import { getDockerDesktopClient, md5 } from '../../utils';
 import { refreshPipelines, selectPipelines, selectStagesByPipeline } from '../../features/pipelinesSlice';
 import * as _ from 'lodash';
 import { Pipeline, Status } from '../../features/types';
@@ -202,6 +202,17 @@ export default function RunPipelineDialog({ ...props }) {
     pipelineExecArgs.push(pipelineFile);
 
     console.debug('Pipeline Exec Args %s', JSON.stringify(pipelineExecArgs));
+
+    // ddClient.extension.vm.cli.exec('ls', ['-ltr', '/data'], {
+    //   stream: {
+    //     onOutput(data) {
+    //       console.log('ls %s', JSON.stringify(data));
+    //     },
+    //     onError(data) {
+    //       console.log('ls error %s', JSON.stringify(data));
+    //     }
+    //   }
+    // });
 
     const stageName = includeStages && includeStages.length > 0 ? includeStages[0] : undefined;
 

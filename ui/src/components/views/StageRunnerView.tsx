@@ -61,68 +61,64 @@ export const StageRunnerView = (props) => {
       logReaderExec.close();
       setLogs('');
     }
-    if (logReaderContainerID) {
-      // console.debug('Show logs for Stage %s and step %s', JSON.stringify(stage), JSON.stringify(step));
-      let execCmdArgs = [];
-      let execCmd: string;
-      switch (step.status) {
-        case Status.SUCCESS:
-        case Status.ERROR: {
+    console.debug('Show logs for Stage %s and step %s', JSON.stringify(stage), JSON.stringify(step));
+    let execCmdArgs = [];
+    let execCmd: string;
+    switch (step.status) {
+      case Status.SUCCESS:
+      case Status.ERROR: {
+        if (logReaderContainerID) {
           execCmd = 'exec';
           execCmdArgs = [logReaderContainerID, 'cat', `/data/logs/${stage.id}/${md5(step.name)}.log`];
-          break;
         }
-        default: {
-          const out = await ddClient.docker.cli.exec('ps', [
-            '--filter',
-            `'label=io.drone.stage.name=${stage.name}'`,
-            '--filter',
-            `'label=io.drone.step.name=${step.name}'`,
-            '--filter',
-            `'label=io.drone.desktop.pipeline.dir=${stage.pipelinePath}'`,
-            "--format '{{.ID}}'",
-            '--no-trunc'
-          ]);
-
-          console.debug('Pipeline Step Container ID %s', JSON.stringify(out));
-          if (!out.stdout && !out.stderr) {
-            execCmd = 'exec';
-            execCmdArgs = [logReaderContainerID, 'cat', `/data/logs/${stage.id}/${md5(step.name)}.log`];
-          } else {
-            if (out.stdout) {
-              execCmd = 'logs';
-              execCmdArgs = ['--follow', out.stdout.trim()];
-            } else if (out.stderr) {
-              ddClient.desktopUI.toast.error(`Error while getting logs for step ${step.name} of stage ${stage.name}`);
-            }
-          }
-          break;
-        }
+        break;
       }
+      default: {
+        const out = await ddClient.docker.cli.exec('ps', [
+          '--all',
+          '--latest',
+          '--filter',
+          `'label=io.drone.stage.name=${stage.name}'`,
+          '--filter',
+          `'label=io.drone.step.name=${step.name}'`,
+          '--filter',
+          `'label=io.drone.desktop.pipeline.file=${stage.pipelineFile}'`,
+          "--format '{{.ID}}'",
+          '--no-trunc'
+        ]);
 
-      if (execCmd && execCmdArgs.length > 0) {
-        console.debug('Exec command %s', execCmd);
-        const exec = await ddClient.docker.cli.exec(execCmd, execCmdArgs, {
-          stream: {
-            onOutput(data) {
-              if (data) {
-                const out = data.stdout;
-                const err = data.stderr;
-                if (out) {
-                  setLogs((oldLog) => oldLog + `\n${out}`);
-                } else if (err) {
-                  setLogs((oldLog) => oldLog + `\n${err}`);
-                }
+        console.info('Pipeline Step Container ID %s', JSON.stringify(out));
+        if (out.stdout) {
+          execCmd = 'logs';
+          execCmdArgs = ['--follow', out.stdout.trim()];
+        } else if (out.stderr) {
+          ddClient.desktopUI.toast.error(`Error while getting logs for step ${step.name} of stage ${stage.name}`);
+        }
+        break;
+      }
+    }
+    if (execCmd && execCmdArgs.length > 0) {
+      console.debug('Exec command %s', execCmd);
+      const exec = await ddClient.docker.cli.exec(execCmd, execCmdArgs, {
+        stream: {
+          onOutput(data) {
+            if (data) {
+              const out = data.stdout;
+              const err = data.stderr;
+              if (out) {
+                setLogs((oldLog) => oldLog + `\n${out}`);
+              } else if (err) {
+                setLogs((oldLog) => oldLog + `\n${err}`);
               }
-            },
-            onError(error) {
-              console.error(error);
-            },
-            splitOutputLines: true
-          }
-        });
-        setLogReaderExec(exec);
-      }
+            }
+          },
+          onError(error) {
+            console.error(error);
+          },
+          splitOutputLines: true
+        }
+      });
+      setLogReaderExec(exec);
     }
   };
 
@@ -481,7 +477,9 @@ export const StageRunnerView = (props) => {
               <LazyLog
                 text={logs}
                 follow={follow}
+                extraLines={1}
                 stream={true}
+                selectableLines={true}
                 onScroll={onScroll}
                 enableSearch={true}
               />

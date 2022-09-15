@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
@@ -42,7 +43,7 @@ func New(ctx context.Context, db *bun.DB, log *logrus.Logger, options ...Option)
 	filters.Add("event", "start")
 	filters.Add("event", "die")
 	filters.Add("scope", "local")
-	filters.Add("label", labelPipelineDir)
+	filters.Add("label", labelPipelineFile)
 	filters.Add("label", labelStageName)
 	filters.Add("label", labelStepName)
 
@@ -89,18 +90,38 @@ func (c *Config) MonitorAndLog() {
 			actor := msg.Actor
 			go func(actor events.Actor, msg events.Message) {
 				log.Tracef("Actor \n%#v\n", actor)
-				pipelineDir := actor.Attributes[labelPipelineDir]
+				pipelineFile := actor.Attributes[labelPipelineFile]
+				var includes, excludes []string
+				if v, ok := actor.Attributes[labelIncludes]; ok {
+					if v != "" {
+						includes = strings.Split(v, ",")
+					}
+				}
+				if v, ok := actor.Attributes[labelExcludes]; ok {
+					if v != "" {
+						excludes = strings.Split(v, ",")
+					}
+				}
 				stageName := actor.Attributes[labelStageName]
 				stepName := actor.Attributes[labelStepName]
 				var stage = &db.Stage{}
 				count, err := dbConn.NewSelect().
 					Model(stage).
 					Relation("Steps").
-					Where("name = ? and pipeline_path = ? ", stageName, pipelineDir).
+					Where("name = ? and pipeline_file = ? ", stageName, pipelineFile).
 					ScanAndCount(c.Ctx)
+
 				if err != nil {
 					log.Errorf("Error monitoring logs %v", err)
 					c.MonitorErrors <- err
+				}
+				log.Debugf("Includes %v", includes)
+				log.Debugf("Excludes %v", excludes)
+				if len(includes) > 0 {
+					stage.Steps = PickSteps(stage.Steps, includes)
+				}
+				if len(excludes) > 0 {
+					stage.Steps = UnPickSteps(stage.Steps, excludes)
 				}
 				if count == 1 {
 					log.Tracef("Stage %#v", stage)
@@ -146,6 +167,35 @@ func (c *Config) MonitorAndLog() {
 			}(actor, msg)
 		}
 	}
+}
+
+func PickSteps(steps []*db.StageStep, includes []string) (c db.Steps) {
+	m := make(map[string]bool)
+	for _, item := range includes {
+		m[item] = true
+	}
+
+	for _, step := range steps {
+		if _, ok := m[step.Name]; ok {
+			c = append(c, step)
+		}
+	}
+	return
+}
+
+func UnPickSteps(steps []*db.StageStep, excludes []string) (c db.Steps) {
+	m := make(map[string]bool)
+
+	for _, item := range excludes {
+		m[item] = true
+	}
+
+	for _, step := range steps {
+		if _, ok := m[step.Name]; !ok {
+			c = append(c, step)
+		}
+	}
+	return
 }
 
 func getRunningStepIndex(stage *db.Stage, stepName string) int {

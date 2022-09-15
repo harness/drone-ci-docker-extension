@@ -11,10 +11,11 @@ then
 	# Shall we provide exit codes??
 	#exit 1
 else
-	printf "\n Running pipeline from %s\n" "${PIPELINE_FILE}"
+	printf "\n Running pipeline %s\n" "${PIPELINE_FILE}"
 	PIPELINE_DIR=$(dirname "${PIPELINE_FILE}")
+	PIPELINE_FILE_NAME=$(basename "${PIPELINE_FILE}")
 	pushd "${PIPELINE_DIR}" &>/dev/null || true
-	DRONE_CMD=("${SCRIPT_DIR}/drone" "exec" "${@}")
+	DRONE_CMD=("${SCRIPT_DIR}/drone" "exec" "${@:1:$#-1}" "${PIPELINE_FILE_NAME}")
 	# printf "\n Command to be run %s\n"  "${DRONE_CMD[*]}"
     bash -c "${DRONE_CMD[*]}" || popd +1 &>/dev/null || true
 fi
