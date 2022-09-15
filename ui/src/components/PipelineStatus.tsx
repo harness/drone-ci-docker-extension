@@ -19,11 +19,11 @@ export const PipelineStatus = (props) => {
         setStatusText('success');
         break;
       case 2:
-        setStatusColor('blue');
+        setStatusColor('orange');
         setStatusText('running');
         break;
       case 3:
-        setStatusColor('red');
+        setStatusColor('error');
         setStatusText('error');
         break;
       default:
