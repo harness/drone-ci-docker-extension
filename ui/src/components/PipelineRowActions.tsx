@@ -26,7 +26,8 @@ export const PipelineRowActions = (props: { workspacePath: string; pipelineFile:
     const url = {
       pathname: '/run',
       search: `?${createSearchParams({
-        file: pipelineFile
+        file: pipelineFile,
+        runPipeline: 'true'
       })}`
     };
     setRunViewURL(url);
