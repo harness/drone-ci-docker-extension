@@ -1,0 +1,20 @@
+kind: pipeline
+type: docker
+name: default
+platform:
+  os: linux
+  arch: arm64
+steps: 
+  - name: display available docker images
+    image: kameshsampath/kube-dev-tools:0.0.8
+    pull: if-not-exists
+    commands:
+    - docker images
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/docker.sock
+

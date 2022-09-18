@@ -59,7 +59,7 @@ You can remove one or more Drone pipelines, removing does not physically delete 
 ## Install Extension
 
 ```shell
-docker extension install drone/drone-ci-docker-extension:0.0.2
+docker extension install drone/drone-ci-docker-extension:latest
 ```
 
 ***IMPORTANT**: It is recommended to install the extension using Docker Extension Marketplace.

@@ -7,6 +7,7 @@ platform:
 steps:
   - name: say hello on fedora
     image: fedora
+    pull: if-not-exists
     commands:
       - x=0;while [ $x -lt 15 ]; do echo "hello"; sleep 1; x=$((x+1)); done
 
