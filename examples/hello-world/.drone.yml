@@ -34,8 +34,8 @@ steps:
      - 1.0.0-SNAPSHOT
      - latest
 - name: deploy app to k8s
-  image: kameshsampath/kube-dev-tools
-  pull: never
+  image: kameshsampath/kube-dev-tools:0.0.8
+  pull: if-not-exists
   commands:
     - k3d kubeconfig get my-demos > $KUBECONFIG
     - export DOCKER_INTERNAL_IP=$(docker inspect k3d-my-demos-server-0 --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')
