@@ -34,6 +34,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	//TODO use WalkDir
 	err = filepath.Walk(directory, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			fmt.Println(err)
@@ -47,8 +48,6 @@ func main() {
 		switch ignorable {
 		case ignore.Transitive:
 			return filepath.SkipDir
-		case ignore.Current:
-			return nil
 		}
 
 		// Chase symlinks.

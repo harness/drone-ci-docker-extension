@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # TODO enable debugging
+set -e 
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 
@@ -17,5 +18,6 @@ else
 	pushd "${PIPELINE_DIR}" &>/dev/null || true
 	DRONE_CMD=("${SCRIPT_DIR}/drone" "exec" "${@:1:$#-1}" "${PIPELINE_FILE_NAME}")
 	# printf "\n Command to be run %s\n"  "${DRONE_CMD[*]}"
-    bash -c "${DRONE_CMD[*]}" || popd +1 &>/dev/null || true
+    bash -c "${DRONE_CMD[*]}"
+	popd +1 &>/dev/null || true
 fi
