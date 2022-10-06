@@ -89,7 +89,6 @@ export function App() {
       </Typography>
       <Grid
         container
-        spacing={2}
       >
         <Grid
           item
