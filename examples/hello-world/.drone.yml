@@ -9,7 +9,6 @@ steps:
   image: kameshsampath/drone-java-maven-plugin:v1.0.3
   pull: if-not-exists
   settings:
-    maven_mirror_url: http://nexus:8081/repository/maven-public
     goals:
     - clean 
     - test
@@ -17,7 +16,6 @@ steps:
   image: kameshsampath/drone-java-maven-plugin:v1.0.3
   pull: if-not-exists
   settings:
-    maven_mirror_url: http://nexus:8081/repository/maven-public
     goals:
     - clean 
     - install
