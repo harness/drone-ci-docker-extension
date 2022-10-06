@@ -246,11 +246,14 @@ export default function RunPipelineDialog({ ...props }) {
             }
             once++;
           },
+          onError(error) {
+            ddClient.desktopUI.toast.error(`Error running pipeline :${JSON.stringify(error)}`)
+          },
           splitOutputLines: true
         }
       });
     } catch (err) {
-      console.debug('Error %s', err);
+      ddClient.desktopUI.toast.error(`Error running pipeline :${JSON.stringify(err)}`)
     } finally {
       props.onClose();
     }
