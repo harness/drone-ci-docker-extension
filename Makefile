@@ -35,14 +35,12 @@ push-extension: prepare-buildx ## Build & Upload extension image to hub. Do not 
 	docker pull $(IMAGE):$(TAG) && echo "Failure: Tag already exists" || docker buildx build --push --builder=$(BUILDER) --platform=linux/amd64,linux/arm64 --build-arg TAG=$(TAG) --tag=$(IMAGE):$(TAG) --tag=$(IMAGE):latest .
 
 release-beta:	# Create a new beta release
-	git tag $$(svu patch --suffix=beta)
-	git push --tags
-	goreleaser --rm-dist
+	git tag $$(svu patch --strip-prefix --suffix=beta)
+	git push upstream --tags
 
 release:	# Create a new release
-	git tag $$(svu next)
-	git push --tags
-	goreleaser --rm-dist
+	git tag $$(svu patch --strip-prefix)
+	git push upstream --tags
 
 help: ## Show this help
 	@echo Please specify a build target. The choices are:
