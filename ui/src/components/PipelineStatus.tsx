@@ -11,7 +11,7 @@ export const PipelineStatus = (props) => {
   const [statusText, setStatusText] = useState('');
 
   useEffect(() => {
-    //console.debug('pipelineFile %s Status %s', pipelineFile, pipelineStatus);
+    console.log('pipelineFile %s Status %s', pipelineFile, pipelineStatus);
 
     switch (pipelineStatus) {
       case 1:

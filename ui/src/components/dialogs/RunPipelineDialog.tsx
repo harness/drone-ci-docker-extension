@@ -154,6 +154,10 @@ export default function RunPipelineDialog({ ...props }) {
     ddClient.host.openExternal(href);
   };
 
+  const showError = (err: any) => {
+    ddClient.desktopUI.toast.error(`Error running pipeline :${JSON.stringify(err)}`);
+  };
+
   const runPipeline = async () => {
     console.debug('Running pipeline ', pipelineFile);
     logHandler(undefined, true);
@@ -220,7 +224,12 @@ export default function RunPipelineDialog({ ...props }) {
       let once = 0;
       ddClient.extension.host.cli.exec('run-drone', pipelineExecArgs, {
         stream: {
-          onOutput() {
+          onOutput(data) {
+            console.debug('onOutput:%s', JSON.stringify(data));
+            if (data.stderr) {
+              showError(data.stderr);
+              return;
+            }
             if (once === 1) {
               const stage = stages.find((s) => s.name === stageName);
               //make it writable and set the status
@@ -246,14 +255,11 @@ export default function RunPipelineDialog({ ...props }) {
             }
             once++;
           },
-          onError(error) {
-            ddClient.desktopUI.toast.error(`Error running pipeline :${JSON.stringify(error)}`)
-          },
           splitOutputLines: true
         }
       });
     } catch (err) {
-      ddClient.desktopUI.toast.error(`Error running pipeline :${JSON.stringify(err)}`)
+      showError(err);
     } finally {
       props.onClose();
     }

@@ -135,9 +135,11 @@ export const StageRunnerView = (props) => {
         showLogs(stage, steps[0]);
         return true;
       }
-      const rStep = steps.find((s) => s.status === Status.RUNNING);
-      setSelectedStep(rStep.name);
-      showLogs(stage, rStep);
+      const rStep = steps.find((s) => s.status === Status.RUNNING || s.status === Status.ERROR);
+      if (rStep) {
+        setSelectedStep(rStep.name);
+        showLogs(stage, rStep);
+      }
       return true;
     }
     return true;

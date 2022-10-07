@@ -156,8 +156,8 @@ func (c *Config) MonitorAndLog() {
 							stepStatus = db.Error
 						}
 						stage.Steps[stepIdx].Status = stepStatus
-						//update the overall stage status only if the current step is last step
-						c.updateStatuses(stage, stepIdx == len(stage.Steps)-1)
+						//update the overall stage status only if the current step is last step or any error occurred
+						c.updateStatuses(stage, (stepIdx == len(stage.Steps)-1 || stepStatus == db.Error))
 					default:
 						//no requirement to handle other cases
 					}
@@ -213,7 +213,7 @@ func (c *Config) updateStatuses(stage *db.Stage, updateStage bool) {
 	dbConn := c.DB
 	log := c.Log
 	if err := dbConn.RunInTx(c.Ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		log.Debugf("Updating Status for stage %s of pipeline %s", stage.Name, stage.PipelineFile)
+		log.Infof("Updating Status for stage %s of pipeline %s", stage.Name, stage.PipelineFile)
 
 		if err := updateStepStatus(c.Ctx, dbConn, stage.Steps); err != nil {
 			return err
