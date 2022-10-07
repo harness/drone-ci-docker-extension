@@ -255,10 +255,6 @@ export default function RunPipelineDialog({ ...props }) {
             }
             once++;
           },
-          onError(error) {
-            showError(error);
-            return;
-          },
           splitOutputLines: true
         }
       });
