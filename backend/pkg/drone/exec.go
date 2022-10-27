@@ -164,7 +164,6 @@ func exec(cliContext *cli.Context) error {
 		return fmt.Errorf("stage '%s' not found in build file : %w", commy.Stage.Name, err)
 	}
 
-	log.Infof("Secrets:%#v", commy.Secrets)
 	// lint the pipeline and return an error if any
 	// linting rules are broken
 	lint := linter.New()
