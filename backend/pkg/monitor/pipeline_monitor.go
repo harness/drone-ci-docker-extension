@@ -88,9 +88,9 @@ func (c *Config) MonitorAndLog() {
 
 		case msg := <-msgCh:
 			actor := msg.Actor
-			log.Debugf("Message \n%#v\n", msg)
+			log.Tracef("Message \n%#v\n", msg)
 			go func(actor events.Actor, msg events.Message) {
-				//log.Infof("Actor \n%#v\n", actor)
+				log.Tracef("Actor \n%#v\n", actor)
 				pipelineFile := actor.Attributes[LabelPipelineFile]
 				var includes, excludes []string
 				if v, ok := actor.Attributes[LabelIncludes]; ok {
@@ -119,10 +119,14 @@ func (c *Config) MonitorAndLog() {
 				log.Debugf("Includes %v", includes)
 				log.Debugf("Excludes %v", excludes)
 				if len(includes) > 0 {
-					stage.Steps = PickSteps(stage.Steps, includes)
+					i, e := FilterSteps(stage.Steps, includes)
+					updateStepStatus(c.Ctx, dbConn, e)
+					stage.Steps = i
 				}
 				if len(excludes) > 0 {
-					stage.Steps = UnPickSteps(stage.Steps, excludes)
+					i, e := FilterSteps(stage.Steps, excludes)
+					updateStepStatus(c.Ctx, dbConn, e)
+					stage.Steps = i
 				}
 				if count == 1 {
 					log.Tracef("Stage %#v", stage)
@@ -143,7 +147,9 @@ func (c *Config) MonitorAndLog() {
 						//currently running step will have running status
 						stage.Steps[stepIdx].Status = db.Running
 						for i := stepIdx + 1; i < len(stage.Steps); i++ {
-							stage.Steps[i].Status = db.None
+							if stage.Steps[i].Service != 1 {
+								stage.Steps[i].Status = db.None
+							}
 						}
 						//update the stage to be running if current step is the first step
 						c.updateStatuses(stage, stepIdx == 0)
@@ -174,30 +180,21 @@ func (c *Config) MonitorAndLog() {
 	}
 }
 
-func PickSteps(steps []*db.StageStep, includes []string) (c db.Steps) {
+// FilterSteps Filters the Steps based on included/excluded step names.
+// Returns included and excluded steps
+func FilterSteps(steps []*db.StageStep, filters []string) (i db.Steps, e db.Steps) {
 	m := make(map[string]bool)
-	for _, item := range includes {
+	for _, item := range filters {
 		m[item] = true
 	}
 
 	for _, step := range steps {
 		if _, ok := m[step.Name]; ok {
-			c = append(c, step)
-		}
-	}
-	return
-}
-
-func UnPickSteps(steps []*db.StageStep, excludes []string) (c db.Steps) {
-	m := make(map[string]bool)
-
-	for _, item := range excludes {
-		m[item] = true
-	}
-
-	for _, step := range steps {
-		if _, ok := m[step.Name]; !ok {
-			c = append(c, step)
+			i = append(i, step)
+		} else {
+			//Erase old statuses if any
+			step.Status = db.None
+			e = append(e, step)
 		}
 	}
 	return

@@ -7,7 +7,7 @@ import (
 	"github.com/uptrace/bun"
 )
 
-//Status Stage/Step status
+// Status Stage/Step status
 type Status int
 
 const (
@@ -34,7 +34,7 @@ func (s Status) String() string {
 	}
 }
 
-//Stage represents Drone Stage
+// Stage represents Drone Stage
 type Stage struct {
 	bun.BaseModel `bun:"table:stages,alias:s"`
 
@@ -49,15 +49,17 @@ type Stage struct {
 	ModifiedAt   time.Time `json:"-"`
 }
 
-//StageStep represents Stage step
+// StageStep represents Stage step
 type StageStep struct {
 	bun.BaseModel `bun:"table:stage_steps,alias:st"`
 
-	ID         int       `bun:",pk,autoincrement" json:"id"`
-	Name       string    `bun:",notnull" json:"name"`
-	Image      string    `bun:",notnull" json:"image"`
-	Status     Status    `bun:",notnull" json:"status"`
-	StageID    int       `bun:",notnull" json:"stageId"`
+	ID      int    `bun:",pk,autoincrement" json:"id"`
+	Name    string `bun:",notnull" json:"name"`
+	Image   string `bun:",notnull" json:"image"`
+	Status  Status `bun:",notnull" json:"status"`
+	StageID int    `bun:",notnull" json:"stageId"`
+	//Flag to indicate if Step is a Service
+	Service    int       `bun:",nullzero,notnull,default:0" json:"isService"`
 	CreatedAt  time.Time `bun:",nullzero,notnull,default:current_timestamp" json:"-"`
 	ModifiedAt time.Time `json:"-"`
 }
