@@ -42,10 +42,12 @@ func New(ctx context.Context, db *bun.DB, log *logrus.Logger, options ...Option)
 	filters.Add("type", events.ContainerEventType)
 	filters.Add("event", "start")
 	filters.Add("event", "die")
+	filters.Add("event", "kill")
+	filters.Add("event", "destroy")
 	filters.Add("scope", "local")
-	filters.Add("label", labelPipelineFile)
-	filters.Add("label", labelStageName)
-	filters.Add("label", labelStepName)
+	filters.Add("label", LabelPipelineFile)
+	filters.Add("label", LabelStageName)
+	filters.Add("label", LabelStepName)
 
 	//TODO add since flag to filter events since the app started
 
@@ -88,22 +90,23 @@ func (c *Config) MonitorAndLog() {
 
 		case msg := <-msgCh:
 			actor := msg.Actor
+			log.Debugf("Message \n%#v\n", msg)
 			go func(actor events.Actor, msg events.Message) {
-				log.Tracef("Actor \n%#v\n", actor)
-				pipelineFile := actor.Attributes[labelPipelineFile]
+				//log.Infof("Actor \n%#v\n", actor)
+				pipelineFile := actor.Attributes[LabelPipelineFile]
 				var includes, excludes []string
-				if v, ok := actor.Attributes[labelIncludes]; ok {
+				if v, ok := actor.Attributes[LabelIncludes]; ok {
 					if v != "" {
 						includes = strings.Split(v, ",")
 					}
 				}
-				if v, ok := actor.Attributes[labelExcludes]; ok {
+				if v, ok := actor.Attributes[LabelExcludes]; ok {
 					if v != "" {
 						excludes = strings.Split(v, ",")
 					}
 				}
-				stageName := actor.Attributes[labelStageName]
-				stepName := actor.Attributes[labelStepName]
+				stageName := actor.Attributes[LabelStageName]
+				stepName := actor.Attributes[LabelStepName]
 				var stage = &db.Stage{}
 				count, err := dbConn.NewSelect().
 					Model(stage).
@@ -133,8 +136,8 @@ func (c *Config) MonitorAndLog() {
 					}
 					switch msg.Status {
 					case "start":
-						log.Infof("Starting Step Name %s", stepName)
 						go c.writeLogs(pipelineLogPath, actor.Attributes)
+						log.Infof("Starting Step Name %s", stepName)
 						//Resetting the status of the steps
 						//All steps from the current step identified by stepName
 						//are set to status == db.None
@@ -150,19 +153,21 @@ func (c *Config) MonitorAndLog() {
 						log.Infof("Dying Step Name %s, attributes %#v", stepName, actor.Attributes)
 						stepIdx := getRunningStepIndex(stage, stepName)
 						var stepStatus db.Status
-						if actor.Attributes["exitCode"] == "0" {
+						switch actor.Attributes["exitCode"] {
+						case "0":
+						case "137":
 							stepStatus = db.Success
-						} else {
+						default:
 							stepStatus = db.Error
 						}
 						stage.Steps[stepIdx].Status = stepStatus
 						//update the overall stage status only if the current step is last step or any error occurred
-						c.updateStatuses(stage, (stepIdx == len(stage.Steps)-1 || stepStatus == db.Error))
+						c.updateStatuses(stage, stepIdx == len(stage.Steps)-1 || stepStatus == db.Error)
 					default:
 						//no requirement to handle other cases
 					}
 				} else {
-					c.MonitorErrors <- fmt.Errorf("unable to find stage %s ", stageName)
+					c.MonitorErrors <- fmt.Errorf("unable to find stage %s in pipeline %s", stageName, pipelineFile)
 				}
 			}(actor, msg)
 		}
@@ -213,7 +218,7 @@ func (c *Config) updateStatuses(stage *db.Stage, updateStage bool) {
 	dbConn := c.DB
 	log := c.Log
 	if err := dbConn.RunInTx(c.Ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		log.Infof("Updating Status for stage %s of pipeline %s", stage.Name, stage.PipelineFile)
+		log.Infof("Updating Statuses for stage %s of pipeline %s", stage.Name, stage.PipelineFile)
 
 		if err := updateStepStatus(c.Ctx, dbConn, stage.Steps); err != nil {
 			return err
@@ -278,19 +283,19 @@ func (c *Config) writeLogs(pipelineLogPath string, attrs map[string]string) {
 	c.Log.Tracef("Actor Attributes %#v", attrs)
 	out, err := c.DockerCli.ContainerLogs(c.Ctx, attrs["name"], options)
 	if err != nil {
-		err := fmt.Errorf("error getting logs for container %s, %w ", attrs[labelStepName], err)
+		err := fmt.Errorf("error getting logs for container %s, %w ", attrs[LabelStepName], err)
 		log.Error(err)
 		c.MonitorErrors <- err
 	} else {
-		containerLogPath := path.Join(pipelineLogPath, fmt.Sprintf("%s.log", utils.Md5OfString(attrs[labelStepName])))
+		containerLogPath := path.Join(pipelineLogPath, fmt.Sprintf("%s.log", utils.Md5OfString(attrs[LabelStepName])))
 		f, err := os.OpenFile(containerLogPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 		if err != nil {
-			err := fmt.Errorf("error writing logs for container %s, %w ", attrs[labelStepName], err)
+			err := fmt.Errorf("error writing logs for container %s, %w ", attrs[LabelStepName], err)
 			log.Error(err)
 			c.MonitorErrors <- err
 		} else {
 			if _, err := io.Copy(f, out); err != nil {
-				err := fmt.Errorf("error copying logs for container %s, %w ", attrs[labelStepName], err)
+				err := fmt.Errorf("error copying logs for container %s, %w ", attrs[LabelStepName], err)
 				log.Error(err)
 				c.MonitorErrors <- err
 			}

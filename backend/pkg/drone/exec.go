@@ -245,7 +245,7 @@ func exec(cliContext *cli.Context) error {
 		}
 		step.Labels = labels.Combine(step.Labels, extraLabels)
 
-		log.Infof("Step %s, Labels: %#v", step.Name, step.Labels)
+		log.Tracef("Step %s, Labels: %#v", step.Name, step.Labels)
 	}
 
 	// include only steps that are in the include list,

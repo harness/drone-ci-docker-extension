@@ -47,7 +47,7 @@ func TriggerUIRefresh(ctx context.Context, cli *client.Client, log *logrus.Logge
 		},
 	}, &container.HostConfig{
 		AutoRemove: true,
-	}, nil, nil, "")
+	}, nil, "")
 	if err != nil {
 		return err
 	}

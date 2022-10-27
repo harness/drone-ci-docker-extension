@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//LogSetup sets up the logging for the application
+// LogSetup sets up the logging for the application
 func LogSetup(out io.Writer, level string) *logrus.Logger {
 	lvl, err := logrus.ParseLevel(level)
 
@@ -25,15 +25,15 @@ func LogSetup(out io.Writer, level string) *logrus.Logger {
 			TimestampFormat: "2006-01-02 15:15:10",
 		},
 		Out:          out,
-		ReportCaller: true,
+		ReportCaller: false,
 		Level:        lvl,
 	}
 
 	return log
 }
 
-//LookupEnvOrString looks up an environment variable if not found
-//returns defaultVal
+// LookupEnvOrString looks up an environment variable if not found
+// returns defaultVal
 func LookupEnvOrString(envName, defaultVal string) string {
 	if val, ok := os.LookupEnv(envName); ok {
 		return val
@@ -42,9 +42,9 @@ func LookupEnvOrString(envName, defaultVal string) string {
 	return defaultVal
 }
 
-//Md5OfString returns the md5 has of the string
-//Its ok to use md5 hashing here as it just used
-//for consistent and sanitized naming
+// Md5OfString returns the md5 has of the string
+// Its ok to use md5 hashing here as it just used
+// for consistent and sanitized naming
 func Md5OfString(str string) string {
 	return fmt.Sprintf("%x", md5.Sum([]byte(str)))
 }
