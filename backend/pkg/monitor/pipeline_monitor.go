@@ -42,8 +42,6 @@ func New(ctx context.Context, db *bun.DB, log *logrus.Logger, options ...Option)
 	filters.Add("type", events.ContainerEventType)
 	filters.Add("event", "start")
 	filters.Add("event", "die")
-	filters.Add("event", "kill")
-	filters.Add("event", "destroy")
 	filters.Add("scope", "local")
 	filters.Add("label", LabelPipelineFile)
 	filters.Add("label", LabelStageName)
@@ -150,14 +148,16 @@ func (c *Config) MonitorAndLog() {
 						//update the stage to be running if current step is the first step
 						c.updateStatuses(stage, stepIdx == 0)
 					case "die":
-						log.Infof("Dying Step Name %s, attributes %#v", stepName, actor.Attributes)
+						_, isService := actor.Attributes[LabelService]
+						log.Tracef("Dying Step Name %s, attributes %#v", stepName, actor.Attributes)
 						stepIdx := getRunningStepIndex(stage, stepName)
 						var stepStatus db.Status
-						switch actor.Attributes["exitCode"] {
-						case "0":
-						case "137":
+						exitCode := actor.Attributes["exitCode"]
+						log.Infof("Dying Step Name %s, Exit Code %s", stepName, exitCode)
+						//handle Exit code 137 to be success only for services
+						if exitCode == "0" || (isService && exitCode == "137") {
 							stepStatus = db.Success
-						default:
+						} else {
 							stepStatus = db.Error
 						}
 						stage.Steps[stepIdx].Status = stepStatus
