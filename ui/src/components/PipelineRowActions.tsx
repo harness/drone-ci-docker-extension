@@ -4,6 +4,7 @@ import { createSearchParams, Link as RouterLink, LinkProps as RouterLinkProps } 
 import { IconButton, Stack, Tooltip } from '@mui/material';
 import { md5, vscodeURI } from '../utils';
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
+import DeleteIcon from '@mui/icons-material/Delete';
 import RemovePipelineDialog from './dialogs/RemovePipelineDialog';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
@@ -100,7 +101,7 @@ export const PipelineRowActions = (props: { workspacePath: string; pipelineFile:
       )}
       <Tooltip title="Remove Pipeline">
         <IconButton onClick={handleDeletePipelines}>
-          <RemoveCircleIcon color="error" />
+          <DeleteIcon color="error" />
         </IconButton>
       </Tooltip>
       {removeConfirm && (
