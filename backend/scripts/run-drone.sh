@@ -18,7 +18,7 @@ else
 	pushd "${PIPELINE_DIR}" &>/dev/null || true
 	DRONE_CMD=("${SCRIPT_DIR}/drone" "exec" "${@:1:$#-2}" "${PIPELINE_FILE_NAME}")
 	# printf "\n Command to be run %s\n"  "${DRONE_CMD[*]}"
-	bash -c "${DRONE_CMD[*]}" > /dev/null 2>&1 & echo $! > "${SCRIPT_DIR}/${PID_FILE}.pid"
+	bash -c "${DRONE_CMD[*]}" & echo $! > "${SCRIPT_DIR}/${PID_FILE}.pid"
     # bash -c "${DRONE_CMD[*]}"
 	popd +1 &>/dev/null || true
 fi

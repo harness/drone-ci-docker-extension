@@ -6,6 +6,8 @@ import RemovePipelineDialog from '../dialogs/RemovePipelineDialog';
 import PlayCircleOutlineOutlinedIcon from '@mui/icons-material/PlayCircleOutlineOutlined';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RunPipelineDialog from '../dialogs/RunPipelineDialog';
+import StopCircleOutlinedIcon from '@mui/icons-material/StopCircleOutlined';
+import StopPipelineDialog from '../dialogs/StopPipelineDialog';
 import { useSelector } from 'react-redux';
 import {
   Divider,
@@ -19,7 +21,7 @@ import {
   Tooltip,
   Typography
 } from '@mui/material';
-import { selectStagesByPipeline, refreshPipelines } from '../../features/pipelinesSlice';
+import { selectStagesByPipeline, refreshPipelines, selectPipelineStatus } from '../../features/pipelinesSlice';
 import { StepStatus } from '../StepStatus';
 import { LazyLog, ScrollFollow } from 'react-lazylog';
 import { RootState } from '../../app/store';
@@ -48,10 +50,12 @@ export const StageRunnerView = (props) => {
 
   const pipelineFile = query.get('file');
   const stages = useSelector((state: RootState) => selectStagesByPipeline(state, pipelineFile));
+  const pipelineStatus = useSelector((state: RootState) => selectPipelineStatus(state, pipelineFile));
 
   const [workspacePath, setWorkspacePath] = useState('');
 
   const [removeConfirm, setRemoveConfirm] = useState(false);
+  const [stopConfirm, setStopConfirm] = useState(false);
   const [openRunPipeline, setOpenRunPipeline] = useState(false);
 
   const showLogs = async (stage, step) => {
@@ -258,6 +262,14 @@ export const StageRunnerView = (props) => {
     setOpenRunPipeline(false);
   };
 
+  const handleStopPipeline = () => {
+    setStopConfirm(true);
+  };
+
+  const handleStopPipelineDialogClose = () => {
+    setStopConfirm(false);
+  };
+
   const hasServices = (steps: Step[]) => {
     return steps && steps.find(s => s.isService);
   }
@@ -430,7 +442,7 @@ export const StageRunnerView = (props) => {
                 <PlayCircleOutlineOutlinedIcon
                   color="primary"
                   sx={{
-                    fontSize: '24px'
+                    fontSize: '26px'
                   }}
                 />
               </IconButton>
@@ -450,6 +462,30 @@ export const StageRunnerView = (props) => {
                 />
               </IconButton>
             </Tooltip>
+            <Tooltip title="Stop Pipeline">
+              <span>
+                <IconButton
+                  onClick={handleStopPipeline}
+                  color="primary"
+                  disabled={pipelineStatus != 2}
+                  sx={{
+                    fontSize: '24px'
+                  }}
+                >
+                  <StopCircleOutlinedIcon
+                    sx={{
+                      fontSize: '28px'
+                    }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+            {stopConfirm && (
+              <StopPipelineDialog
+                open={stopConfirm}
+                pipelineFile={pipelineFile}
+                onClose={handleStopPipelineDialogClose}
+              />
+            )}
             <Tooltip title="Remove Pipeline">
               <IconButton
                 onClick={handleDeletePipelines}
@@ -460,7 +496,7 @@ export const StageRunnerView = (props) => {
                 <DeleteIcon
                   color="primary"
                   sx={{
-                    fontSize: '24px'
+                    fontSize: '26px'
                   }}
                 />
               </IconButton>

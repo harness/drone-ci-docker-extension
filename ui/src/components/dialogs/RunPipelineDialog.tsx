@@ -227,6 +227,12 @@ export default function RunPipelineDialog({ ...props }) {
           onOutput(data) {
             console.debug('onOutput:%s', JSON.stringify(data));
             if (data.stderr) {
+              // any signals to kill the drone process will be treated 
+              // graciously - as it will denote docker signal 137 which
+              // wil be shown as "Stopped"
+              if (data.stderr === 'received signal, terminating process'){
+                return;
+              }
               showError(data.stderr);
               return;
             }
