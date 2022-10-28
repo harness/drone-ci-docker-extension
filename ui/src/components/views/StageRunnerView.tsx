@@ -24,8 +24,7 @@ import { StepStatus } from '../StepStatus';
 import { LazyLog, ScrollFollow } from 'react-lazylog';
 import { RootState } from '../../app/store';
 import React from 'react';
-import _ from 'lodash';
-import { Stage, Status } from '../../features/types';
+import { Stage, Status, Step } from '../../features/types';
 import { ExecProcess } from '@docker/extension-api-client-types/dist/v1';
 import { useAppDispatch } from '../../app/hooks';
 
@@ -34,6 +33,7 @@ function useQuery(loc) {
   return useMemo(() => new URLSearchParams(search), [search]);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const StageRunnerView = (props) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -42,7 +42,6 @@ export const StageRunnerView = (props) => {
   const [logReaderContainerID, setLogReaderContainerID] = useState<undefined | string>();
   const [logReaderExec, setLogReaderExec] = useState<undefined | ExecProcess>();
   const ddClient = getDockerDesktopClient();
-  const [logFollow, setFollow] = useState(true);
   const [selectedStep, setSelectedStep] = useState(null);
   const loc = useLocation();
   const query = useQuery(loc);
@@ -259,6 +258,10 @@ export const StageRunnerView = (props) => {
     setOpenRunPipeline(false);
   };
 
+  const hasServices = (steps: Step[]) => {
+    return steps && steps.find(s => s.isService);
+  }
+
   const logHandler = (data: any | undefined, clean?: boolean) => {
     console.debug('logHandler: clean : %s', clean);
     if (clean) {
@@ -291,22 +294,60 @@ export const StageRunnerView = (props) => {
     return (
       <>
         <Stack sx={{ pt: 2 }}>
-          <Typography variant="button">{stage.name}</Typography>
-          <List
-            component="div"
-            disablePadding
-          >
+          <Typography variant="h6" align='center'>{stage.name}</Typography>
+          {hasServices(stage.steps) && <Stack sx={{ pt: 2 }}>
+            <Typography variant="button"
+              sx={{
+                textTransform: 'initial',
+                fontWeight: 'bold',
+                textDecoration: 'underline'
+              }}
+            >
+              Services
+            </Typography>
             {stage.steps &&
               stage.steps.map((step) => {
-                return (
-                  <MemoizedStageItem
-                    key={`${stage.id}-${step.name}`}
-                    stage={stage}
-                    step={step}
-                  />
-                );
+                if (step.isService === 1) {
+                  return (
+                    <MemoizedStageItem
+                      key={`${stage.id}-${step.name}`}
+                      stage={stage}
+                      step={step}
+                    />
+                  );
+                }
               })}
-          </List>
+          </Stack>}
+          <Stack sx={{ pt: 2 }}>
+            <Typography variant="button"
+              sx={{
+                textTransform: 'initial',
+                fontWeight: 'bold',
+                textDecoration: 'underline'
+              }}
+            >
+              Steps
+            </Typography>
+            <List
+              component="div"
+              disablePadding
+            >
+
+              {stage.steps &&
+                stage.steps.map((step) => {
+                  if (step.isService === 0) {
+                    return (
+                      <MemoizedStageItem
+                        key={`${stage.id}-${step.name}`}
+                        stage={stage}
+                        step={step}
+                      />
+                    );
+                  }
+                })}
+            </List>
+          </Stack>
+
         </Stack>
         <Divider
           orientation="horizontal"

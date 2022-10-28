@@ -33,7 +33,7 @@ export interface Step {
   name: string;
   image: string;
   status: Status;
-  service?: number;
+  isService?: boolean;
 }
 
 //Pipeline defines the single Pipeline row that is displayed
