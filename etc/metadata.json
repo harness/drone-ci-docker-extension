@@ -31,6 +31,9 @@
           },
           {
             "path": "/tools/run-drone"
+          },
+          {
+            "path": "/tools/kill-drone"
           }
         ],
         "linux": [
@@ -45,6 +48,9 @@
           },
           {
             "path": "/tools/run-drone"
+          },
+          {
+            "path": "/tools/kill-drone"
           }
         ],
         "windows": [
@@ -59,6 +65,9 @@
           },
           {
             "path": "/tools/run-drone"
+          },
+          {
+            "path": "/tools/kill-drone"
           }
         ]
       }

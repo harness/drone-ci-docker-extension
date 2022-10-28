@@ -56,6 +56,12 @@ You can remove one or more Drone pipelines, removing does not physically delete 
 
 ![Remove Pipelines](./docs/images/drone_desktop_feature_remove_pipelines.gif)
 
+### Stop Pipelines
+
+You can now stop any running pipeline, this operation will basically kill the associated drone process.
+
+![Stop Pipelines](../docs/images/drone_desktop_feature_stop_pipelines.gif)
+
 ## Install Extension
 
 ```shell

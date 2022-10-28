@@ -11,7 +11,8 @@ export const enum Status {
   NONE = 0,
   SUCCESS,
   RUNNING,
-  ERROR
+  ERROR,
+  STOP
 }
 
 export interface Event {

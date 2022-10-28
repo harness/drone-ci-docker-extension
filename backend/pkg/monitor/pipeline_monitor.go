@@ -90,7 +90,8 @@ func (c *Config) MonitorAndLog() {
 			actor := msg.Actor
 			log.Tracef("Message \n%#v\n", msg)
 			go func(actor events.Actor, msg events.Message) {
-				log.Tracef("Actor \n%#v\n", actor)
+				log2 := utils.LogSetup(log.Out, log.Level.String())
+				log2.Tracef("Actor \n%#v\n", actor)
 				pipelineFile := actor.Attributes[LabelPipelineFile]
 				var includes, excludes []string
 				if v, ok := actor.Attributes[LabelIncludes]; ok {
@@ -113,11 +114,11 @@ func (c *Config) MonitorAndLog() {
 					ScanAndCount(c.Ctx)
 
 				if err != nil {
-					log.Errorf("Error monitoring logs %v", err)
+					log2.Errorf("Error monitoring logs %v", err)
 					c.MonitorErrors <- err
 				}
-				log.Debugf("Includes %v", includes)
-				log.Debugf("Excludes %v", excludes)
+				log2.Debugf("Includes %v", includes)
+				log2.Debugf("Excludes %v", excludes)
 				if len(includes) > 0 {
 					i, e := FilterSteps(stage.Steps, includes)
 					updateStepStatus(c.Ctx, dbConn, e)
@@ -129,17 +130,17 @@ func (c *Config) MonitorAndLog() {
 					stage.Steps = i
 				}
 				if count == 1 {
-					log.Tracef("Stage %#v", stage)
+					log2.Tracef("Stage %#v", stage)
 					pipelineLogPath := path.Join(c.LogsPath, fmt.Sprintf("%d", stage.ID))
 					if err := os.MkdirAll(pipelineLogPath, 0744); err != nil {
 						err := fmt.Errorf("unable to create pipeline logs folder %s %w", pipelineLogPath, err)
-						log.Error(err)
+						log2.Error(err)
 						c.MonitorErrors <- err
 					}
 					switch msg.Status {
 					case "start":
 						go c.writeLogs(pipelineLogPath, actor.Attributes)
-						log.Infof("Starting Step Name %s", stepName)
+						log2.Infof("Starting Step Name %s", stepName)
 						//Resetting the status of the steps
 						//All steps from the current step identified by stepName
 						//are set to status == db.None
@@ -155,20 +156,30 @@ func (c *Config) MonitorAndLog() {
 						c.updateStatuses(stage, stepIdx == 0)
 					case "die":
 						_, isService := actor.Attributes[LabelService]
-						log.Tracef("Dying Step Name %s, attributes %#v", stepName, actor.Attributes)
+						log2.Tracef("Dying Step Name %s, attributes %#v", stepName, actor.Attributes)
 						stepIdx := getRunningStepIndex(stage, stepName)
 						var stepStatus db.Status
 						exitCode := actor.Attributes["exitCode"]
-						log.Infof("Dying Step Name %s, Exit Code %s", stepName, exitCode)
-						//handle Exit code 137 to be success only for services
-						if exitCode == "0" || (isService && exitCode == "137") {
+						log2.Infof("Dying Step Name %s, Exit Code %s", stepName, exitCode)
+						if exitCode == "0" {
 							stepStatus = db.Success
+						} else if exitCode == "137" {
+							// Service containers are killed with exit code 137
+							// we can treat them as step success
+							if isService {
+								stepStatus = db.Success
+							} else { // when Pipeline is killed steps are killed with eit code 137, we can treat them to be stopped
+								stepStatus = db.Stopped
+							}
 						} else {
 							stepStatus = db.Error
 						}
 						stage.Steps[stepIdx].Status = stepStatus
-						//update the overall stage status only if the current step is last step or any error occurred
-						c.updateStatuses(stage, stepIdx == len(stage.Steps)-1 || stepStatus == db.Error)
+						// update the overall stage status only
+						// if the current step is last step
+						// or any error occurred
+						// or the pipeline is stopped
+						c.updateStatuses(stage, stepIdx == len(stage.Steps)-1 || stepStatus == db.Error || stepStatus == db.Stopped)
 					default:
 						//no requirement to handle other cases
 					}
@@ -235,7 +246,7 @@ func (c *Config) updateStatuses(stage *db.Stage, updateStage bool) {
 func updateStageStatus(ctx context.Context, dbConn bun.IDB, stage *db.Stage) error {
 	var status db.Status
 	for _, step := range stage.Steps {
-		if step.Status > status {
+		if step.Status >= status {
 			status = step.Status
 		}
 	}

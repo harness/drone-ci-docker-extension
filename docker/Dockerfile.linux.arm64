@@ -54,5 +54,6 @@ COPY etc/logo.svg .
 COPY ui/build ui
 
 COPY backend/scripts/run-drone.sh /tools/run-drone
+COPY backend/scripts/kill-drone.sh /tools/kill-drone
 
 CMD /backend -socket /run/guest-services/extension-drone-ci.sock

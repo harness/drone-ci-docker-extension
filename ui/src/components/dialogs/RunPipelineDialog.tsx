@@ -28,11 +28,9 @@ import { refreshPipelines, selectPipelines, selectStagesByPipeline } from '../..
 import * as _ from 'lodash';
 import { Pipeline, Status } from '../../features/types';
 import { RootState } from '../../app/store';
-import { useAppDispatch } from '../../app/hooks';
 
 export default function RunPipelineDialog({ ...props }) {
   const pipelines = useSelector(selectPipelines);
-  const dispatch = useAppDispatch();
   const ddClient = getDockerDesktopClient();
   const { pipelineFile, workspacePath, logHandler } = props;
   const [pipelineSteps, setPipelineSteps] = useState<string[]>([]);
@@ -202,6 +200,8 @@ export default function RunPipelineDialog({ ...props }) {
       pipelineExecArgs.push(`--network=${dockerNetwork}`);
     }
 
+    //The pipeline pid file id
+    pipelineExecArgs.push(md5(pipelineFile));
     //The pipeline file to use
     pipelineExecArgs.push(pipelineFile);
 

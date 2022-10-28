@@ -14,7 +14,9 @@ export const Pipeline = (props) => {
   const [runViewURL, setRunViewURL] = useState({});
 
   const { labelId, pipelineFile, selected, onClick } = props;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [open, setOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [logs, setLogs] = useState('');
 
   const isSelected = (id: string) => selected.indexOf(id) !== -1;
