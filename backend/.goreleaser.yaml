@@ -1,3 +1,6 @@
+project_name: drone-ci-docker-extension
+gomod:
+  proxy: true
 builds:
   - id: backend
     main: cmd/backend/main.go

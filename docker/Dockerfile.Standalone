@@ -1,120 +1,79 @@
-#syntax=docker/dockerfile:1.3-labs
+#syntax=docker/dockerfile:1.4
 
-FROM golang:1.18-alpine AS builder
-ENV CGO_ENABLED=0
-RUN apk add --update make git
+FROM goreleaser/goreleaser AS bin
+
 WORKDIR /build
-COPY go.* .
-RUN go install github.com/goreleaser/goreleaser@latest 
-COPY . .
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    make bin-all
 
-FROM --platform=$BUILDPLATFORM node:17.7-alpine3.14 AS client-builder
-WORKDIR /ui
-# cache packages in layer
-COPY ui/package.json /ui/package.json
-COPY ui/package-lock.json /ui/package-lock.json
-RUN --mount=type=cache,target=/usr/src/app/.npm \
-    npm set cache /usr/src/app/.npm && \
-    npm ci
-# install
-COPY ui /ui
-RUN npm run build
+COPY  --from=backendsrc . .
 
-FROM alpine AS dl
+RUN goreleaser build --snapshot --rm-dist
 
-RUN apk add --update --no-cache curl \
-    && mkdir -p /tools/darwin/amd64 /tools/darwin/arm64 \
-    && mkdir -p /tools/linux/amd64 /tools/linux/arm64 \
-    && mkdir -p /tools/windows/amd64
+FROM kameshsampath/drone-ci-extension-ui-base AS ui
 
-# Download yq
-RUN curl -sL https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_darwin_amd64 -o /tools/darwin/amd64/yq \
-  &&  curl -sL https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_darwin_arm64 -o /tools/darwin/arm64/yq \
-  && chmod +x /tools/darwin/arm64/yq \
-  && chmod +x /tools/darwin/amd64/yq
+WORKDIR /app
 
-RUN curl -sL https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_amd64 -o /tools/linux/amd64/yq \
-  &&  curl -sL https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_arm64 -o /tools/linux/arm64/yq \
-  && chmod +x /tools/linux/arm64/yq \
-  && chmod +x /tools/linux/amd64/yq 
+COPY --from=uisrc . .
 
-RUN curl -sL https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_windows_amd64 -o /tools/windows/amd64/yq.exe \
-  && chmod +x /tools/windows/amd64/yq.exe
-# End Download yq
+RUN pnpm install \
+  && pnpm run clean && pnpm run build
 
 FROM alpine
-LABEL org.opencontainers.image.title="drone-desktop" \
-    org.opencontainers.image.description="An extension to help developers do CI on their laptops using Drone" \
-    org.opencontainers.image.vendor="Kamesh Sampath" \
+
+LABEL org.opencontainers.image.title="Drone CI" \
+    org.opencontainers.image.description="Run Continuous Integration & Delivery Pipelines (CI/CD) from within Docker Desktop." \
+    org.opencontainers.image.vendor="Harness" \
+    com.docker.desktop.extension.icon="https://github.com/harness/drone-ci-docker-extension/raw/main/etc/icon.png" \
     com.docker.desktop.extension.api.version=">= 0.2.3" \
-    com.docker.extension.screenshots="" \
-    com.docker.extension.detailed-description="" \
-    com.docker.extension.publisher-url="" \
-    com.docker.extension.additional-urls="" \
-    com.docker.extension.changelog=""
+    com.docker.extension.screenshots="[{\"alt\":\"List of Pipelines\", \"url\":\"https://github.com/harness/drone-ci-docker-extension/raw/main/docs/images/list.png\"}, {\"alt\":\"Pipeline Details\", \"url\":\"https://github.com/harness/drone-ci-docker-extension/raw/main/docs/images/details.png\"}]" \
+    com.docker.extension.detailed-description="Drone is a self-service Continuous Integration platform for busy development teams. This extension will help developers do Continuous Integration on their laptops using <a href=\"https://drone.io\">Drone</a> CI." \
+    com.docker.extension.publisher-url="https://www.drone.io/" \
+    com.docker.extension.additional-urls="[{\"title\":\"Documentation\",\"url\":\"https://docs.drone.io\"}, {\"title\":\"Support\",\"url\":\"https://github.com/harness/drone-ci-docker-extension/issues\"}, {\"title\":\"License\",\"url\":\"https://github.com/harness/drone-ci-docker-extension/blob/main/LICENSE\"}, {\"title\":\"Discussions\",\"url\":\"https://github.com/harness/drone-ci-docker-extension/discussions\"}]" \
+    com.docker.extension.changelog="https://github.com/harness/drone-ci-docker-extension/blob/main/CHANGELOG.md"
 
 ARG TARGETARCH
 
-RUN apk add --update --no-cache jq bash
+RUN apk add --update --no-cache jq bash curl \
+    && mkdir -p /tools/darwin \
+    && mkdir -p /tools/linux \
+    && mkdir -p /tools/windows
 
-COPY --from=builder /build /build
-COPY --from=dl /tools /tools
+# Download yq
+RUN curl -sL "https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_darwin_${TARGETARCH}" -o /tools/darwin/yq 
 
-COPY ./drone-cli /build
+RUN curl -sL "https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_${TARGETARCH}" -o /tools/linux/yq 
+
+RUN chmod +x /tools/darwin/yq \
+  && chmod +x /tools/linux/yq
+
+# No arm64 yq exists for windows
+# End Download yq
 
 ## Copy Drone CLI
-RUN <<EOT
-  cp /build/drone-cli/darwin/$TARGETARCH/drone /tools/darwin/drone
-  chmod +x /tools/darwin/drone
-  cp /build/drone-cli/linux/$TARGETARCH/drone /tools/linux/drone
-  chmod +x /tools/linux/drone
-  if [ "$TARGETARCH" == "amd64" ];
-  then
-      cp /build/drone-cli/windows/$TARGETARCH/drone.exe /tools/windows/drone.exe
-  fi
-EOT
+COPY --from=bin "/build/dist/drone_darwin_${TARGETARCH}*/drone" /tools/darwin/drone
+COPY --from=bin "/build/dist/drone_linux_${TARGETARCH}*/drone"  /tools/linux/drone
+COPY --from=bin "/build/dist/drone_windows_${TARGETARCH}*/drone.exe"  /tools/windows/drone.exe
 
-## Copy yq
-RUN <<EOT
-    cp /tools/darwin/$TARGETARCH/yq /tools/darwin/yq
-    cp /tools/linux/$TARGETARCH/yq /tools/linux/yq
-    if [ "$TARGETARCH" == "amd64" ];
-    then
-      cp /tools/windows/$TARGETARCH/yq.exe /tools/windows/yq.exe
-    fi
-EOT
+RUN chmod +x /tools/darwin/drone /tools/linux/drone
 
 ## Copy pipelines-finder
-RUN <<EOT
-    jq -r --arg target_arch $TARGETARCH  '.[] | select(.name=="pipelines-finder" and .goos=="darwin" and .goarch==$target_arch) | .path' /build/dist/artifacts.json > /tmp/toolfile
-    cp $(cat /tmp/toolfile) /tools/darwin/pipelines-finder
-    chmod +x /tools/darwin/pipelines-finder
-    jq -r --arg target_arch $TARGETARCH  '.[] | select(.name=="pipelines-finder" and .goos=="linux" and .goarch==$target_arch) | .path' /build/dist/artifacts.json > /tmp/toolfile
-    cp $(cat /tmp/toolfile) /tools/linux/pipelines-finder
-    chmod +x /tools/linux/pipelines-finder
-    jq -r --arg target_arch $TARGETARCH  '.[] | select(.name=="pipelines-finder.exe" and .goos=="windows" and .goarch==$target_arch) | .path' /build/dist/artifacts.json > /tmp/toolfile
-    cp $(cat /tmp/toolfile) /tools/windows/pipelines-finder.exe
-    chmod +x /tools/windows/pipelines-finder.exe
-EOT
+
+COPY --from=bin  "/build/dist/pipelines-finder_darwin_${TARGETARCH}*/pipelines-finder" /tools/darwin/pipelines-finder
+COPY --from=bin  "/build/dist/pipelines-finder_linux_${TARGETARCH}*/pipelines-finder"  /tools/linux/pipelines-finder
+COPY --from=bin  "/build/dist/pipelines-finder_windows_${TARGETARCH}*/pipelines-finder.exe" /tools/windows/pipelines-finder.exe
+
+RUN chmod +x /tools/darwin/pipelines-finder /tools/linux/pipelines-finder
 
 # COPY backend service
-RUN <<EOT
-    jq -r --arg target_arch $TARGETARCH  '.[] | select(.name=="backend" and .goos=="linux" and .goarch==$target_arch) | .path' /build/dist/artifacts.json > /tmp/backendfile.txt
-    cp $(cat /tmp/backendfile.txt) /backend
-    chmod +x /backend
-EOT
+COPY --from=bin "/build/dist/backend_linux_${TARGETARCH}*/backend"  /backend
+RUN chmod +x /backend
 
-COPY docker-compose.yaml .
-COPY metadata.json .
-COPY *.svg .
+COPY --from=etc /docker-compose.yaml .
+COPY --from=etc /metadata.json .
+COPY --from=etc /logo.svg .
 
-COPY --from=client-builder /ui/build ui
-COPY scripts/run-drone.sh /tools/run-drone
+COPY --from=ui  /app/build ui
 
-RUN mkdir -p /data \
-   && rm -rf /build
+COPY --from=scripts run-drone.sh /tools/run-drone
+COPY --from=scripts kill-drone.sh /tools/kill-drone
 
 CMD /backend -socket /run/guest-services/extension-drone-ci.sock
