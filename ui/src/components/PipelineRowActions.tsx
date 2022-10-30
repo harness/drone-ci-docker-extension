@@ -1,17 +1,26 @@
 import React, { useEffect } from 'react';
 import { useState } from 'react';
 import { createSearchParams, Link as RouterLink, LinkProps as RouterLinkProps } from 'react-router-dom';
-import { Button, IconButton, Link, Stack, Tooltip } from '@mui/material';
-import { vscodeURI } from '../utils';
+import { IconButton, Stack, Tooltip } from '@mui/material';
+import { md5, vscodeURI } from '../utils';
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
+import DeleteIcon from '@mui/icons-material/Delete';
 import RemovePipelineDialog from './dialogs/RemovePipelineDialog';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
+import StopCircleIcon from '@mui/icons-material/StopCircle';
+import StopPipelineDialog from './dialogs/StopPipelineDialog';
+import { useSelector } from 'react-redux/es/hooks/useSelector';
+import { RootState } from '../app/store';
+import { selectPipelineStatus } from '../features/pipelinesSlice';
 
 export const PipelineRowActions = (props: { workspacePath: string; pipelineFile: string; logHandler; openHandler }) => {
   //!!!IMPORTANT - pass the location query params
   const [runViewURL, setRunViewURL] = useState({});
   const { pipelineFile, workspacePath } = props;
   const [removeConfirm, setRemoveConfirm] = useState(false);
+  const [stopConfirm, setStopConfirm] = useState(false);
+
+  const pipelineStatus = useSelector((state: RootState) => selectPipelineStatus(state, pipelineFile));
 
   /* Handlers */
   const handleDeletePipelines = () => {
@@ -21,6 +30,15 @@ export const PipelineRowActions = (props: { workspacePath: string; pipelineFile:
   const handleRemoveDialogClose = () => {
     setRemoveConfirm(false);
   };
+
+  const handleStopPipeline = () => {
+    setStopConfirm(true);
+  };
+
+  const handleStopPipelineDialogClose = () => {
+    setStopConfirm(false);
+  };
+
 
   useEffect(() => {
     const url = {
@@ -64,9 +82,26 @@ export const PipelineRowActions = (props: { workspacePath: string; pipelineFile:
           />
         </IconButton>
       </Tooltip>
+      <Tooltip title="Stop Pipeline">
+        <span>
+          <IconButton 
+            onClick={handleStopPipeline}
+            color="primary"
+            disabled={pipelineStatus != 2}>
+            <StopCircleIcon />
+          </IconButton>
+        </span>
+      </Tooltip>
+      {stopConfirm && (
+        <StopPipelineDialog
+          open={stopConfirm}
+          pipelineFile={pipelineFile}
+          onClose={handleStopPipelineDialogClose}
+        />
+      )}
       <Tooltip title="Remove Pipeline">
         <IconButton onClick={handleDeletePipelines}>
-          <RemoveCircleIcon color="error" />
+          <DeleteIcon color="error" />
         </IconButton>
       </Tooltip>
       {removeConfirm && (

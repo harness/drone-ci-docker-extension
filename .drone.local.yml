@@ -15,7 +15,7 @@ steps:
       CGO_ENABLED: "0"
     commands:
       - cd backend
-      - goreleaser build --snapshot --rm-dist --debug
+      - goreleaser build --snapshot --rm-dist
 
   - name: ui-build
     image: node:17.7-buster
@@ -25,6 +25,7 @@ steps:
       # static files from extension path on the Host
       PUBLIC_URL: .
       BROWSER: none
+      CI: false
     commands:
       - cd ui
       - curl -f https://get.pnpm.io/v6.16.js | node - add --global pnpm@7

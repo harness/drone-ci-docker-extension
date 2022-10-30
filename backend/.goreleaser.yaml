@@ -10,8 +10,22 @@ builds:
       - windows
     asmflags:
       - all=-trimpath={{.Env.GOPATH}}
-    flags:
-      - -mod=vendor
+    ldflags:
+      - -s -w -X main.build={{.Version}}
+    goarch:
+      - amd64
+      - arm64
+  - id: drone
+    main: cmd/drone/main.go
+    binary: drone
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    asmflags:
+      - all=-trimpath={{.Env.GOPATH}}
     ldflags:
       - -s -w -X main.build={{.Version}}
     goarch:
@@ -28,8 +42,6 @@ builds:
       - windows
     asmflags:
       - all=-trimpath={{.Env.GOPATH}}
-    flags:
-      - -mod=vendor
     ldflags:
       - -s -w -X main.build={{.Version}}
     goarch:

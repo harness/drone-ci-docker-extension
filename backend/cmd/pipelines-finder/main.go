@@ -8,18 +8,37 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
-	"github.com/harness/drone-ci-docker-extension/pkg/db"
 	"github.com/harness/drone-ci-docker-extension/pkg/ignore"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
+type Stage struct {
+	PipelineFile string    `json:"pipelineFile"`
+	PipelinePath string    `json:"pipelinePath"`
+	Name         string    `json:"name"`
+	Steps        []Step    `json:"steps"`
+	Services     []Service `json:"-"`
+}
+
+type Step struct {
+	Name    string `json:"name"`
+	Image   string `json:"image"`
+	Service int    `json:"isService"`
+}
+
+type Service struct {
+	Name  string `json:"name"`
+	Image string `json:"image"`
+}
+
+type Stages []*Stage
+
 func main() {
 	var directory string
-	var stages db.Stages
+	var stages Stages
 
 	flag.StringVar(&directory, "path", "", "Root Path to discover drone pipelines")
 	flag.Parse()
@@ -68,10 +87,9 @@ func main() {
 
 			decoder := yaml.NewDecoder(file)
 			for {
-				stage := new(db.Stage)
+				stage := new(Stage)
 				stage.PipelineFile = path
 				stage.PipelinePath = filepath.Dir(path)
-				stage.Logs = []byte("")
 				err := decoder.Decode(stage)
 				if stage == nil {
 					continue
@@ -81,6 +99,13 @@ func main() {
 				}
 				if err != nil {
 					log.Fatal(err)
+				}
+				for _, svc := range stage.Services {
+					stage.Steps = append(stage.Steps, Step{
+						Name:    svc.Name,
+						Image:   svc.Image,
+						Service: 1,
+					})
 				}
 				stages = append(stages, stage)
 			}
@@ -92,7 +117,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	sort.Sort(stages)
+	//sort.Sort(stages)
 	b, err := json.Marshal(stages)
 	if err != nil {
 		log.Fatal(err)

@@ -6,6 +6,8 @@ import RemovePipelineDialog from '../dialogs/RemovePipelineDialog';
 import PlayCircleOutlineOutlinedIcon from '@mui/icons-material/PlayCircleOutlineOutlined';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RunPipelineDialog from '../dialogs/RunPipelineDialog';
+import StopCircleOutlinedIcon from '@mui/icons-material/StopCircleOutlined';
+import StopPipelineDialog from '../dialogs/StopPipelineDialog';
 import { useSelector } from 'react-redux';
 import {
   Divider,
@@ -19,13 +21,12 @@ import {
   Tooltip,
   Typography
 } from '@mui/material';
-import { selectStagesByPipeline, refreshPipelines } from '../../features/pipelinesSlice';
+import { selectStagesByPipeline, refreshPipelines, selectPipelineStatus } from '../../features/pipelinesSlice';
 import { StepStatus } from '../StepStatus';
 import { LazyLog, ScrollFollow } from 'react-lazylog';
 import { RootState } from '../../app/store';
 import React from 'react';
-import _ from 'lodash';
-import { Stage, Status } from '../../features/types';
+import { Stage, Status, Step } from '../../features/types';
 import { ExecProcess } from '@docker/extension-api-client-types/dist/v1';
 import { useAppDispatch } from '../../app/hooks';
 
@@ -34,6 +35,7 @@ function useQuery(loc) {
   return useMemo(() => new URLSearchParams(search), [search]);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const StageRunnerView = (props) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -42,17 +44,18 @@ export const StageRunnerView = (props) => {
   const [logReaderContainerID, setLogReaderContainerID] = useState<undefined | string>();
   const [logReaderExec, setLogReaderExec] = useState<undefined | ExecProcess>();
   const ddClient = getDockerDesktopClient();
-  const [logFollow, setFollow] = useState(true);
   const [selectedStep, setSelectedStep] = useState(null);
   const loc = useLocation();
   const query = useQuery(loc);
 
   const pipelineFile = query.get('file');
   const stages = useSelector((state: RootState) => selectStagesByPipeline(state, pipelineFile));
+  const pipelineStatus = useSelector((state: RootState) => selectPipelineStatus(state, pipelineFile));
 
   const [workspacePath, setWorkspacePath] = useState('');
 
   const [removeConfirm, setRemoveConfirm] = useState(false);
+  const [stopConfirm, setStopConfirm] = useState(false);
   const [openRunPipeline, setOpenRunPipeline] = useState(false);
 
   const showLogs = async (stage, step) => {
@@ -259,6 +262,18 @@ export const StageRunnerView = (props) => {
     setOpenRunPipeline(false);
   };
 
+  const handleStopPipeline = () => {
+    setStopConfirm(true);
+  };
+
+  const handleStopPipelineDialogClose = () => {
+    setStopConfirm(false);
+  };
+
+  const hasServices = (steps: Step[]) => {
+    return steps && steps.find(s => s.isService);
+  }
+
   const logHandler = (data: any | undefined, clean?: boolean) => {
     console.debug('logHandler: clean : %s', clean);
     if (clean) {
@@ -291,22 +306,60 @@ export const StageRunnerView = (props) => {
     return (
       <>
         <Stack sx={{ pt: 2 }}>
-          <Typography variant="button">{stage.name}</Typography>
-          <List
-            component="div"
-            disablePadding
-          >
+          <Typography variant="h6" align='center'>{stage.name}</Typography>
+          {hasServices(stage.steps) && <Stack sx={{ pt: 2 }}>
+            <Typography variant="button"
+              sx={{
+                textTransform: 'initial',
+                fontWeight: 'bold',
+                textDecoration: 'underline'
+              }}
+            >
+              Services
+            </Typography>
             {stage.steps &&
               stage.steps.map((step) => {
-                return (
-                  <MemoizedStageItem
-                    key={`${stage.id}-${step.name}`}
-                    stage={stage}
-                    step={step}
-                  />
-                );
+                if (step.isService === 1) {
+                  return (
+                    <MemoizedStageItem
+                      key={`${stage.id}-${step.name}`}
+                      stage={stage}
+                      step={step}
+                    />
+                  );
+                }
               })}
-          </List>
+          </Stack>}
+          <Stack sx={{ pt: 2 }}>
+            <Typography variant="button"
+              sx={{
+                textTransform: 'initial',
+                fontWeight: 'bold',
+                textDecoration: 'underline'
+              }}
+            >
+              Steps
+            </Typography>
+            <List
+              component="div"
+              disablePadding
+            >
+
+              {stage.steps &&
+                stage.steps.map((step) => {
+                  if (step.isService === 0) {
+                    return (
+                      <MemoizedStageItem
+                        key={`${stage.id}-${step.name}`}
+                        stage={stage}
+                        step={step}
+                      />
+                    );
+                  }
+                })}
+            </List>
+          </Stack>
+
         </Stack>
         <Divider
           orientation="horizontal"
@@ -389,7 +442,7 @@ export const StageRunnerView = (props) => {
                 <PlayCircleOutlineOutlinedIcon
                   color="primary"
                   sx={{
-                    fontSize: '24px'
+                    fontSize: '26px'
                   }}
                 />
               </IconButton>
@@ -409,6 +462,30 @@ export const StageRunnerView = (props) => {
                 />
               </IconButton>
             </Tooltip>
+            <Tooltip title="Stop Pipeline">
+              <span>
+                <IconButton
+                  onClick={handleStopPipeline}
+                  color="primary"
+                  disabled={pipelineStatus != 2}
+                  sx={{
+                    fontSize: '24px'
+                  }}
+                >
+                  <StopCircleOutlinedIcon
+                    sx={{
+                      fontSize: '28px'
+                    }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+            {stopConfirm && (
+              <StopPipelineDialog
+                open={stopConfirm}
+                pipelineFile={pipelineFile}
+                onClose={handleStopPipelineDialogClose}
+              />
+            )}
             <Tooltip title="Remove Pipeline">
               <IconButton
                 onClick={handleDeletePipelines}
@@ -419,7 +496,7 @@ export const StageRunnerView = (props) => {
                 <DeleteIcon
                   color="primary"
                   sx={{
-                    fontSize: '24px'
+                    fontSize: '26px'
                   }}
                 />
               </IconButton>

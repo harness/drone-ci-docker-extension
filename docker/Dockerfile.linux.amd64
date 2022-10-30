@@ -31,11 +31,11 @@ RUN chmod +x /tools/darwin/yq \
 # End Download yq
 
 ## Copy Drone CLI
-COPY "${DRONE_WORKSPACE}/bin/drone-cli/darwin/${TARGETARCH}/drone" /tools/darwin/drone
-COPY "${DRONE_WORKSPACE}/bin/drone-cli/linux/${TARGETARCH}/drone" /tools/linux/drone
-COPY "${DRONE_WORKSPACE}/bin/drone-cli/windows/$TARGETARCH/drone.exe" /tools/windows/drone.exe
-RUN chmod +x /tools/darwin/drone \
-  && chmod +x /tools/linux/drone
+COPY "${DRONE_WORKSPACE}/backend/dist/drone_darwin_${TARGETARCH}/drone" /tools/darwin/drone
+COPY "${DRONE_WORKSPACE}/backend/dist/drone_linux_${TARGETARCH}/drone"  /tools/linux/drone
+COPY "${DRONE_WORKSPACE}/backend/dist/drone_windows_${TARGETARCH}/drone.exe"  /tools/windows/drone.exe
+
+RUN chmod +x /tools/darwin/drone /tools/linux/drone 
 
 ## Copy pipelines-finder
 
@@ -43,8 +43,7 @@ COPY "${DRONE_WORKSPACE}/backend/dist/pipelines-finder_darwin_${TARGETARCH}_${AR
 COPY "${DRONE_WORKSPACE}/backend/dist/pipelines-finder_linux_${TARGETARCH}_${ARCH_VERSION}"/pipelines-finder  /tools/linux/pipelines-finder
 COPY "${DRONE_WORKSPACE}/backend/dist/pipelines-finder_windows_${TARGETARCH}_${ARCH_VERSION}"/pipelines-finder.exe  /tools/windows/pipelines-finder.exe
 
-RUN chmod +x /tools/darwin/pipelines-finder \
-   && chmod + /tools/linux/pipelines-finder
+RUN chmod +x /tools/darwin/pipelines-finder /tools/linux/pipelines-finder
 
 # COPY backend service
 COPY "${DRONE_WORKSPACE}/backend/dist/backend_linux_${TARGETARCH}_${ARCH_VERSION}/backend"  /backend
@@ -57,5 +56,6 @@ COPY etc/logo.svg .
 COPY ui/build ui
 
 COPY backend/scripts/run-drone.sh /tools/run-drone
+COPY backend/scripts/kill-drone.sh /tools/kill-drone
 
 CMD /backend -socket /run/guest-services/extension-drone-ci.sock

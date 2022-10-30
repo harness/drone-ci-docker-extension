@@ -28,11 +28,9 @@ import { refreshPipelines, selectPipelines, selectStagesByPipeline } from '../..
 import * as _ from 'lodash';
 import { Pipeline, Status } from '../../features/types';
 import { RootState } from '../../app/store';
-import { useAppDispatch } from '../../app/hooks';
 
 export default function RunPipelineDialog({ ...props }) {
   const pipelines = useSelector(selectPipelines);
-  const dispatch = useAppDispatch();
   const ddClient = getDockerDesktopClient();
   const { pipelineFile, workspacePath, logHandler } = props;
   const [pipelineSteps, setPipelineSteps] = useState<string[]>([]);
@@ -202,6 +200,8 @@ export default function RunPipelineDialog({ ...props }) {
       pipelineExecArgs.push(`--network=${dockerNetwork}`);
     }
 
+    //The pipeline pid file id
+    pipelineExecArgs.push(md5(pipelineFile));
     //The pipeline file to use
     pipelineExecArgs.push(pipelineFile);
 
@@ -227,6 +227,12 @@ export default function RunPipelineDialog({ ...props }) {
           onOutput(data) {
             console.debug('onOutput:%s', JSON.stringify(data));
             if (data.stderr) {
+              // any signals to kill the drone process will be treated 
+              // graciously - as it will denote docker signal 137 which
+              // wil be shown as "Stopped"
+              if (data.stderr === 'received signal, terminating process'){
+                return;
+              }
               showError(data.stderr);
               return;
             }

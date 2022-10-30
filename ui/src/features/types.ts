@@ -11,7 +11,8 @@ export const enum Status {
   NONE = 0,
   SUCCESS,
   RUNNING,
-  ERROR
+  ERROR,
+  STOP
 }
 
 export interface Event {
@@ -33,6 +34,7 @@ export interface Step {
   name: string;
   image: string;
   status: Status;
+  isService?: boolean;
 }
 
 //Pipeline defines the single Pipeline row that is displayed

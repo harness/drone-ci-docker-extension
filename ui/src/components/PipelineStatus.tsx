@@ -11,7 +11,7 @@ export const PipelineStatus = (props) => {
   const [statusText, setStatusText] = useState('');
 
   useEffect(() => {
-    console.log('pipelineFile %s Status %s', pipelineFile, pipelineStatus);
+    console.debug('pipelineFile %s Status %s', pipelineFile, pipelineStatus);
 
     switch (pipelineStatus) {
       case 1:
@@ -25,6 +25,10 @@ export const PipelineStatus = (props) => {
       case 3:
         setStatusColor('error');
         setStatusText('error');
+        break;
+      case 4:
+        setStatusColor('error');
+        setStatusText('stopped');
         break;
       default:
         setStatusColor('primary');

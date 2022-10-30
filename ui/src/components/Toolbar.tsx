@@ -1,5 +1,6 @@
 import { IconButton, Toolbar, Tooltip, Typography } from '@mui/material';
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import { alpha } from '@mui/material/styles';
 
 export const PipelineTableToolbar = (props) => {
@@ -37,7 +38,7 @@ export const PipelineTableToolbar = (props) => {
       {numSelected > 0 ? (
         <Tooltip title="Remove Pipelines">
           <IconButton onClick={handleRemove}>
-            <RemoveCircleIcon color="error" />
+            <DeleteSweepIcon color="error" />
           </IconButton>
         </Tooltip>
       ) : (
