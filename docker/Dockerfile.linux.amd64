@@ -31,9 +31,9 @@ RUN chmod +x /tools/darwin/yq \
 # End Download yq
 
 ## Copy Drone CLI
-COPY "${DRONE_WORKSPACE}/backend/dist/drone_darwin_${TARGETARCH}/drone" /tools/darwin/drone
-COPY "${DRONE_WORKSPACE}/backend/dist/drone_linux_${TARGETARCH}/drone"  /tools/linux/drone
-COPY "${DRONE_WORKSPACE}/backend/dist/drone_windows_${TARGETARCH}/drone.exe"  /tools/windows/drone.exe
+COPY "${DRONE_WORKSPACE}/backend/dist/drone_darwin_${TARGETARCH}_${ARCH_VERSION}/drone" /tools/darwin/drone
+COPY "${DRONE_WORKSPACE}/backend/dist/drone_linux_${TARGETARCH}_${ARCH_VERSION}/drone"  /tools/linux/drone
+COPY "${DRONE_WORKSPACE}/backend/dist/drone_windows_${TARGETARCH}_${ARCH_VERSION}/drone.exe"  /tools/windows/drone.exe
 
 RUN chmod +x /tools/darwin/drone /tools/linux/drone 
 
