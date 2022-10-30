@@ -13,3 +13,4 @@ backend/demo.db
 test.db
 ui/.pnpm-store
 backend/work
+dist

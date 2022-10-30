@@ -1,4 +1,7 @@
 IMAGE?=drone/drone-ci-docker-extension
+IMAGE_CACHE?=kameshsampath/drone-ci-docker-extension-cache
+UI_CACHE?=type=registry,ref=kameshsampath/docker-extension-ui-cache
+UI_BAS_IMAGE=kameshsampath/drone-ci-extension-ui-base
 TAG?=latest
 
 BUILDER=buildx-multi-arch
@@ -16,16 +19,19 @@ bin:	## Build binaries
 bin-all:	## Build binaries for all targetted architectures
 	goreleaser build --snapshot --rm-dist
 
-build-extension: ## Build service image to be deployed as a desktop extension
-	drone exec --trusted --secret-file=.secret .drone.local.yml
+build-ui-base:	prepare-buildx ## Build service image to be deployed as a desktop extension drone exec --trusted .drone.local.yml
+	docker buildx build --builder=$(BUILDER) -f docker/Dockerfile.pnpm ui --push --pull=true --cache-from $(UI_CACHE) --cache-to $(UI_CACHE) --platform linux/amd64,linux/arm64 -t $(UI_BASE_IMAGE):$(TAG)
+
+build-extension:	prepare-buildx	## Build service image to be deployed as a desktop extension drone exec --trusted .drone.local.yml
+	docker buildx build --builder=$(BUILDER) -f docker/Dockerfile.standalone docker --load --push=false --pull=true --build-context=backendsrc=backend --build-context=uisrc=ui --build-context=scripts=backend/scripts --build-context=etc=etc --cache-from $(IMAGE_CACHE) --cache-to $(IMAGE_CACHE)  -t $(IMAGE):$(TAG) 
 
 install-extension: build-extension ## Install the extension
 	docker extension install $(IMAGE):$(TAG)
 
 uninstall-extension:	## Uninstall the extension
-	docker extension rm $(IMAGE):$(TAG)
+	docker extension rm $(IMAGE):$(TAG) || true
 
-update-extension: build-extension ## Update the extension
+update-extension:	build-extension ## Update the extension
 	docker extension update $(IMAGE):$(TAG)
 
 prepare-buildx: ## Create buildx builder for multi-arch build, if not exists
