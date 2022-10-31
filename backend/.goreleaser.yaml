@@ -3,7 +3,8 @@ gomod:
   proxy: true
 builds:
   - id: backend
-    main: cmd/backend/main.go
+    dir: cmd/backend
+    main: main.go
     binary: backend
     env:
       - CGO_ENABLED=0
@@ -19,7 +20,8 @@ builds:
       - amd64
       - arm64
   - id: drone
-    main: cmd/drone/main.go
+    dir: cmd/drone
+    main: main.go
     binary: drone
     env:
       - CGO_ENABLED=0
@@ -35,7 +37,8 @@ builds:
       - amd64
       - arm64
   - id: pipelines-finder
-    main: cmd/pipelines-finder/main.go
+    dir: cmd/pipelines-finder
+    main: main.go
     binary: pipelines-finder
     env:
       - CGO_ENABLED=0
