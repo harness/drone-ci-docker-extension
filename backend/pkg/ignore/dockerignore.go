@@ -50,7 +50,7 @@ type dockerIgnorer struct {
 }
 
 // NewOrDefault builds and returns the new or default FileIgnorer interface
-// In all file not found cases the this wil return the default ignorer
+// In all file not found cases the this will return the default ignorer
 func NewOrDefault(dir string) (FileIgnorer, error) {
 
 	ignoreFile := filepath.Join(dir, dockerIgnoreFile)
@@ -86,7 +86,7 @@ func (i *dockerIgnorer) CanIgnore(path string, fi os.FileInfo) (Ignorable, error
 	// start with assuming nothing is ignored
 	ignorable := No
 
-	// dont append the root directory as its always included
+	// don't append the root directory as its always included
 	var isRootDir bool
 	if isRootDir = path == i.directory; isRootDir {
 		return No, nil
@@ -160,7 +160,7 @@ func (i *dockerIgnorer) CanIgnore(path string, fi os.FileInfo) (Ignorable, error
 // scanAndBuildPatternsList takes the file typically the .dockerignore file
 // splits the file by new line (\n) and normalize them with following rules
 // - removes the UTF8 Byte Order Mark (BOM) characters
-// - scanner comments line starting with "#"
+// - skips comment lines starting with "#"
 // - trim spaces in the pattern
 // - make the pattern as clean filenames using golang filepath utils
 func scanAndBuildPatternsList(ignoreFile string, patterns *[]string) error {

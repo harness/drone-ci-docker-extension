@@ -44,7 +44,7 @@ func main() {
 	flag.Parse()
 
 	if directory == "" {
-		log.Fatal("Require base directory to discover pipelines. Run the command with e.g. pipelines-finder -path <base dir path>")
+		log.Fatal("Requires base directory to discover pipelines. Run the command with e.g. pipelines-finder -path <base dir path>")
 	}
 
 	ignorer, err := ignore.NewOrDefault(directory)
