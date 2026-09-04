@@ -34,7 +34,7 @@ type fileIgnorePattern struct {
 // sanitize the pattern to make it more file path friendly
 func sanitizePattern(pattern string) string {
 
-	// removes the all unwanted spaces from the beginning and end of the string
+	// removes all unwanted spaces from the beginning and end of the string
 	// e.g. "\n\t\nfoo bar\n\t" will be trimmed to "foo bar"
 	pattern = strings.TrimSpace(pattern)
 
@@ -73,7 +73,7 @@ func sanitizePattern(pattern string) string {
 // toFileIgnorePattern is used to perform normalization on the pattern like
 // - clean up the path to be good file path
 // - make sure paths start with /
-// - check if the patterns has inversions i.e !foo kind of things
+// - check if the patterns have inversions i.e !foo kind of things
 // - compile the pattern to regular expression
 func toFileIgnorePattern(directory, pattern string) fileIgnorePattern {
 	// clean the pattern to be well formed Go path

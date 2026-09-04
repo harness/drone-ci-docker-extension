@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-// Ignorable  holds the what type of ignore
+// Ignorable  holds what type of ignore
 type Ignorable int
 
 const (
@@ -30,7 +30,7 @@ const (
 	No Ignorable = iota
 	// Transitive marks the directory is transitive ignore so not to be skipped
 	Transitive
-	// Current marks the directory to be not having any transitive dependencies
+	// Current marks the directory as not having any transitive dependencies
 	// so clean be skipped from walking
 	Current
 )
@@ -72,7 +72,7 @@ func (i *defaultIgnorer) CanIgnore(path string, fi os.FileInfo) (Ignorable, erro
 	// start with assuming nothing is ignored
 	ignorable := No
 
-	// dont append the root directory as its always included
+	// don't append the root directory as its always included
 	if isRootDir := path == i.directory; isRootDir {
 		return No, nil
 	}
